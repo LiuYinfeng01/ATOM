@@ -28,6 +28,7 @@ from atom.model_ops.minimax_m3.index_topk import (
     build_n_valid_column_per_row,
     flydsl_ops,
 )
+from atom.model_ops.sparse_indexer_chunk import LogitsWorkspace
 
 # Page-16 SHUFFLE layout for the AITER paged-attention path. The KV
 # cache is allocated with physical page size 16 (the ASM kernel page), and each
@@ -71,6 +72,9 @@ class MiniMaxM3SparsePrefillMetadata:
     block_table: torch.Tensor
     max_query_len: int
     max_seq_len: int
+    score_workspace: LogitsWorkspace | None = None
+    """Where the bf16 / FP8 index scorer writes; None on MXFP4 (its record's) and in
+    the bridges, which allocate per step."""
 
 
 @dataclass
@@ -117,9 +121,11 @@ def make_sparse_prefill_metadata(
     num_idx_heads: int,
     n_valid_column_per_row_out: torch.Tensor | None = None,
     index_scorer: IndexScoreBuffers | None = None,
+    score_workspace: LogitsWorkspace | None = None,
 ) -> MiniMaxM3SparseMetadata:
     """``index_scorer`` is the builder's MXFP4 index scorer record (None for any other
     index cache); a prefill step uses only its score workspace, so the map is dropped.
+    ``score_workspace`` is the builder's bf16 / FP8 one (None: the scorer allocates).
     """
     query_lens = cu_seqlens_q[1 : num_prefills + 1] - cu_seqlens_q[:num_prefills]
     prefix_lens = seq_lens - query_lens
@@ -132,6 +138,7 @@ def make_sparse_prefill_metadata(
         block_table=block_table,
         max_query_len=max_query_len,
         max_seq_len=max_seq_len,
+        score_workspace=score_workspace,
     )
     return MiniMaxM3SparseMetadata(
         seq_lens=seq_lens,

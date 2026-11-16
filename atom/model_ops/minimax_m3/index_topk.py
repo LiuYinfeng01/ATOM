@@ -1156,6 +1156,7 @@ def minimax_m3_index_topk(
     n_valid_column_per_row: torch.Tensor | None = None,
     pages_per_block: int = PAGES_PER_SPARSE_BLOCK,
     index_scorer=None,
+    score_workspace=None,
 ):
     """Index block-score + top-k selection. block_size_q == 1 (per-token).
 
@@ -1163,7 +1164,8 @@ def minimax_m3_index_topk(
     ``index_kv_cache`` is the uint8 ``[num_blocks, 8704]`` page cache and aiter's
     FlyDSL prefill scorer writes the scores into ``index_scorer.scores`` (shared by
     every layer, never filled: the selection reads a row only up to its valid
-    blocks). Without one the Triton scorer runs. ``pages_per_block`` /
+    blocks). Without one the Triton scorer runs, into ``score_workspace`` (a
+    `LogitsWorkspace`, the same way) or else a fresh buffer. ``pages_per_block`` /
     ``block_page_stride`` describe the emitted block table: 8 / 8 page-16 SHUFFLE,
     1 / 1 MXFP4 KV.
 
@@ -1225,6 +1227,7 @@ def minimax_m3_index_topk(
             max_query_len,
             max_block,
             sm_scale,
+            out=score_workspace,
         )
 
     topk_idx = torch.empty(
@@ -1273,13 +1276,15 @@ def _triton_prefill_score(
     max_query_len,
     max_block,
     sm_scale,
+    out=None,
 ):
     total_q, num_idx_heads, head_dim = idx_q.shape
     batch = cu_seqlens_q.shape[0] - 1
-    score = torch.empty(
-        (num_idx_heads, total_q, max_block),
-        dtype=torch.float32,
-        device=idx_q.device,
+    shape = (num_idx_heads, total_q, max_block)
+    score = (
+        torch.empty(shape, dtype=torch.float32, device=idx_q.device)
+        if out is None
+        else out.logits(num_idx_heads * total_q, max_block).view(shape)
     )
     q_tiles = triton.cdiv(max_query_len, SCORE_BLOCK_SIZE_Q)
     chunk_blocks = _score_chunk_blocks(

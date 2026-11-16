@@ -1734,6 +1734,7 @@ class SparseMHAPagedAttentionImpl(PagedAttentionImpl):
                 emit_sparse_block_table=True,
                 n_valid_column_per_row=sparse_metadata.n_valid_column_per_row,
                 index_scorer=self._index_scorer(sparse_metadata),
+                score_workspace=prefill_md.score_workspace,
                 **self._select_page_kwargs,
             )
             self._store_cached_topk(
