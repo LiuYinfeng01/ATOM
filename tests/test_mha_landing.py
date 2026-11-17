@@ -301,8 +301,23 @@ def test_page_capacity_fallback_preserves_bytes_and_completion(
         else not any(staged_sources)
     )
     assert h.c._kv_staging_slots.free == [0]
-    h.recv.stage_done(21, h.pp_rank, 3, True, h.req.get("_landed_slots", []))
+    # What write-done reports: a stage whose PAGE never fits the decode's
+    # landing slot cannot land there, so the decode takes its partition back.
+    done = []
+    h.c._send_write_done = lambda *_a, **kwargs: done.append(kwargs)
+    notify = {"notify_host": "decode", "notify_port": 1, "request_id": 21}
+    type(h.c)._notify_transfer_result(h.c, {**h.req, **notify}, success=True)
+    [report] = done
+    partition = h.req["mla_landing"]["slots"]
+    if capacity == "landing_too_small":
+        assert report["landed_slots"] is None
+    else:
+        assert report["landed_slots"] == h.req.get("_landed_slots", [])
+    h.recv.stage_done(21, h.pp_rank, 3, True, report["landed_slots"])
     assert h.finished == [(21, False)]
+    if capacity == "landing_too_small":
+        assert h.recv.advertise("s0", 1) is None  # not offered slots again
+        assert sorted(h.recv.advertise("other", 1)["slots"]) == sorted(partition)
 
 
 def test_bad_unit_layout_fails_before_any_rdma():

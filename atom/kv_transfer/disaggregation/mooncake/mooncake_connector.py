@@ -3570,9 +3570,13 @@ class MooncakeConnector(KVConnectorBase):
             else:
                 # P can gather this PAGE, but D cannot land it. Use staged
                 # direct writes without acquiring credits or sending READYs.
+                # The slot width is fixed per consumer, so every transfer to
+                # this rank falls back too. Write-done reports that this stage
+                # cannot land, and the rank takes its partition back.
                 _log_page_wider_than_landing(
                     target, plan.minimum_slot_bytes, int(landing["slot_bytes"])
                 )
+                request["_cannot_land"] = True
                 landing = None
         slots = plan.pack(slot_bytes)
         stream = self._send_worker_stream()
@@ -4289,12 +4293,14 @@ class MooncakeConnector(KVConnectorBase):
             request_data.get("write_nonce", 0),
             success=success,
             # None unless the consumer offered landing slots and this stage
-            # can land (it has a KV staging pool), so the consumer can tell
-            # "landed none" from "cannot land" and take a partition back.
+            # can land (it has a KV staging pool and its PAGEs fit the
+            # offered slots), so the consumer can tell "landed none" from
+            # "cannot land" and take a partition back.
             landed_slots=(
                 request_data.get("_landed_slots", [])
                 if request_data.get("mla_landing") is not None
                 and self._kv_staging is not None
+                and not request_data.get("_cannot_land")
                 else None
             ),
             handoff=request_data.get("prefill_handoff"),
