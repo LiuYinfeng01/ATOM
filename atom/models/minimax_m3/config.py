@@ -6,6 +6,19 @@ imports neither the model nor AITER until the architecture check needs it."""
 
 from atom.config import FP4_CACHE_DTYPES
 
+NVFP4_PAGE_CONNECTORS = frozenset({"mooncake", "mooncake_store"})
+
+
+def _connectors_move_nvfp4_pages(config) -> bool:
+    """Whether every configured transport can move NVFP4 pages."""
+    from atom.kv_transfer.disaggregation.factory import KVConnectorFactory
+
+    try:
+        leaves = KVConnectorFactory.leaf_connectors(config)
+    except ValueError:  # an unknown connector: refused by the caller
+        return False
+    return bool(leaves) and all(name in NVFP4_PAGE_CONNECTORS for name, _ in leaves)
+
 
 def _mxfp4_kv_refusal(config) -> str | None:
     """Why ``--kv-cache-dtype fp4`` cannot run this MiniMax-M3 here, or None.
@@ -18,8 +31,11 @@ def _mxfp4_kv_refusal(config) -> str | None:
     if config.torch_dtype != torch.bfloat16:
         # aiter's MXFP4 pa_decode only writes bf16; an fp16 model fails in its first forward.
         return f"it needs a bfloat16 model, got {config.torch_dtype}"
-    if config.kv_transfer_config:
-        # Offload / P-D transfer moves pages by a layout that does not know this format.
+    # NVFP4 pages move by the head runs their layout declares (Mooncake P/D) or as
+    # opaque blocks (the Mooncake Store); MXFP4 pages declare no runs.
+    if config.kv_transfer_config and not (
+        config.kv_cache_dtype == "nvfp4" and _connectors_move_nvfp4_pages(config)
+    ):
         return "it does not run with KV offload or --kv-transfer-config"
     if config.sequence_parallel_size > 1:
         # Ulysses leaves a top-k reusing layer's qkv without index columns; the fused
@@ -66,7 +82,8 @@ def validate_runtime_config(config):
     - an FP4 KV also: the same FP4 index cache (the default when omitted, an explicit other value is refused;
       MXFP4 and NVFP4 never pair),
       every attention layer an indexed sparse one (M3.1), a bf16 model, no sequence parallelism, no KV offload
-      or ``--kv-transfer-config``, and no speculative draft left with FP4 KV.
+      or ``--kv-transfer-config`` (NVFP4: Mooncake P/D and the Mooncake Store only), and no
+      speculative draft left with FP4 KV.
     """
     from atom.config import is_plugin_mode
 

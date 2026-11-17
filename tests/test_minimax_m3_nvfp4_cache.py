@@ -213,3 +213,58 @@ def test_nvfp4_index_cache_is_one_9216_byte_uint8_page():
     )
     with pytest.raises(ValueError, match="NVFP4 index cache is 128-wide"):
         b._index_cache_spec(256)
+
+
+NV_RUNS = (4, 8192, 1024, 8192, 1024)
+
+
+@pytest.mark.parametrize("heads", [1, 4])
+def test_transfer_pages_declare_the_four_runs_of_a_page(heads):
+    p = pool(layers=2, heads=heads)
+    p.allocate(3, "cpu")
+    pages = p.transfer_pages("mha", "mha.x", [10, 11], [16, 16])
+    want = (NV_RUNS[0], heads, *NV_RUNS[1:])
+    assert [pg.head_major_runs for pg in pages] == [want] * 2
+    assert pages[0].region.unit_bytes == kv_page_bytes(heads)
+    # each run's heads tile the page in order: K data, K scales, V data, V scales
+    assert sum(heads * w for w in NV_RUNS[1:]) == kv_page_bytes(heads)
+    assert head_regions(1, 0, heads)[0] == heads * (8192 + 1024)
+
+
+def _connector(name, role):
+    return {"kv_connector": name, "kv_role": role}
+
+
+@pytest.mark.parametrize(
+    "kvt",
+    [
+        _connector("mooncake", "kv_producer"),
+        _connector("mooncake", "kv_consumer"),
+        {
+            "kv_connector": "multi",
+            "connectors": [
+                _connector("mooncake", "kv_producer"),
+                _connector("mooncake_store", "offload"),
+            ],
+        },
+    ],
+)
+def test_nvfp4_pages_run_under_mooncake_pd_and_store(kvt):
+    check(kv_transfer_config=kvt, **NV)
+
+
+@pytest.mark.parametrize(
+    "kw",
+    [
+        {"kv_transfer_config": _connector("lmcache_offload", "offload"), **NV},
+        {"kv_transfer_config": _connector("moriio", "kv_producer"), **NV},
+        {
+            "kv_transfer_config": _connector("mooncake", "kv_producer"),
+            "kv_cache_dtype": "fp4",
+            "index_cache_dtype": "fp4",
+        },
+    ],
+)
+def test_other_fp4_transports_still_refuse(kw):
+    with pytest.raises(ValueError, match="KV offload"):
+        check(**kw)
