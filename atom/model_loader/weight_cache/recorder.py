@@ -1,0 +1,523 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026, Advanced Micro Devices, Inc. All rights reserved.
+"""Record the inputs Python code reads while the daemon builds and loads its
+model; what loading read becomes part of the cache key.
+
+Recorded: environment variables and config fields that loading read,
+construction-time attributes (instance and class) that loading read or
+probed for in vain, globals the loading code referenced, and files it
+opened. Phases: ``init`` (process setup), ``construct`` and ``load``
+(checkpoint load and post-processing); recording stops there. Native code
+(C++ getenv, files opened by C++) is invisible here.
+"""
+
+from __future__ import annotations
+
+import builtins
+import contextlib
+import functools
+import importlib
+import io
+import os
+import sys
+import threading
+import types
+from typing import Any
+
+from atom.model_loader.weight_cache.key import (
+    _code_location,
+    _package_roots,
+    file_identity,
+)
+from atom.model_loader.weight_cache.values import (
+    _MODULE_INTERNALS,
+    _attrs,
+    _import_qual,
+    _is_plain,
+    _ref_name,
+    _resolve,
+    _walk_objects,
+    config_objects,
+    key_fp,
+    safe_fp,
+)
+
+_REC: InputRecorder | None = None
+_ENV_ORIG = None
+_OPEN_ORIG = None
+_SKIP_FRAME_FILES = (
+    "/os.py",
+    "/_collections_abc.py",
+    "/atom/utils/envs.py",
+    "/weight_cache/recorder.py",
+)
+_BULK_THRESHOLD = 25  # distinct variables read from one line: a copy of the environment
+# Environment reads that count for the cache key: made by these packages'
+# code. Others (a progress bar reading COLUMNS) do not decide weights.
+KEY_ENV_PREFIXES = ("atom/", "aiter/", "flydsl/", "triton/", "mori/")
+
+
+def _roots() -> list[str]:
+    """The directories the packages whose reads count are installed in (as
+    imported by now: some come in late)."""
+    names = ("atom", "aiter", "torch", "flydsl", "triton", "mori")
+    return [
+        os.path.dirname(os.path.dirname(os.path.realpath(mod.__file__)))
+        for mod in map(sys.modules.get, names)
+        if getattr(mod, "__file__", None)
+    ]
+
+
+@functools.cache
+def _shown(filename: str) -> str:
+    """A source file's path below the directory its package is installed in."""
+    path = os.path.realpath(filename)
+    for root in _roots():
+        if path.startswith(root + os.sep):
+            return os.path.relpath(path, root)
+    return path
+
+
+def _where(frame) -> tuple[str, bool]:
+    """(location of the first caller outside os/envs plumbing, whether it is a bulk copy)."""
+    bulk = False
+    while frame is not None:
+        fn = frame.f_code.co_filename
+        # os/_collections_abc are frozen modules ("<frozen os>") on 3.12.
+        if fn.startswith("<frozen") or fn.endswith(_SKIP_FRAME_FILES):
+            if frame.f_code.co_name in (
+                "copy",
+                "__iter__",
+                "items",
+                "values",
+                "keys",
+                "__repr__",
+            ):
+                bulk = True
+            frame = frame.f_back
+            continue
+        return f"{_shown(fn)}:{frame.f_lineno} {frame.f_code.co_name}", bulk
+    return "?", bulk
+
+
+def _env_getitem(self, key):
+    value = None  # as read when unset (KeyError)
+    try:
+        value = _ENV_ORIG(self, key)
+        return value
+    finally:
+        rec = _REC
+        if rec is not None:
+            rec._env_read(key, value)
+
+
+def _recording_open(file, mode="r", *args, **kwargs):
+    rec = _REC
+    if (
+        rec is not None
+        and rec.on
+        and isinstance(file, (str, bytes, os.PathLike))
+        and not rec._busy()
+        and not any(c in mode for c in "wax+")
+    ):
+        rec._file_read(os.fsdecode(file))
+    return _OPEN_ORIG(file, mode, *args, **kwargs)
+
+
+def _raw_class_attr(cls: type, name: str):
+    for c in cls.__mro__:
+        if name in c.__dict__:
+            return c.__dict__[name]
+    raise KeyError(name)
+
+
+class InputRecorder:
+    def __init__(self):
+        self.phase = "init"
+        self.env: dict[str, set] = {}  # variable -> where loading read it
+        self.pre_load_env: dict[str, str] = {}
+        self.env_by_line: dict[str, set] = {}
+        self.attrs: dict[tuple, dict] = {}  # (kind, path, name) -> info
+        self.absent: set[tuple] = set()  # (path, name) loading probed for in vain
+        self.paths: dict[int, tuple[str, str]] = {}  # id(obj) -> (kind, path)
+        self.configs: dict[str, Any] = {}  # path -> config object
+        self.pre_load_fps: dict[tuple[str, str], Any] = {}
+        self.pre_load_globals: dict[str, dict] = {}  # module -> name -> fingerprint
+        self.files: dict[str, set] = {}
+        self.globals: dict[tuple, Any] = {}
+        self.on = False
+        self._patched: list[tuple[type, Any, bool]] = []
+        self._local = threading.local()
+        # (object id, name, phase) already handled: loading reads the same
+        # attributes millions of times, and only the first read counts.
+        self._seen: set[tuple[int, str, str]] = set()
+
+    # -- lifecycle -----------------------------------------------------------
+
+    @classmethod
+    def start(cls) -> InputRecorder:
+        global _REC, _ENV_ORIG
+        rec = cls()
+        if _ENV_ORIG is None:
+            _ENV_ORIG = os._Environ.__getitem__
+            os._Environ.__getitem__ = _env_getitem
+        _REC = rec
+        return rec
+
+    def enter_construct(self, config) -> None:
+        global _OPEN_ORIG
+        self.phase = "construct"
+        self._register_config(config)
+        if _OPEN_ORIG is None:
+            _OPEN_ORIG = builtins.open
+            builtins.open = io.open = _recording_open
+        self.on = True
+
+    def enter_load(self, model) -> None:
+        self.phase = "load"
+        self.on = True
+        self._local.busy = True  # these reads are not loading's
+        try:
+            self._take_pre_load_values(model)
+        finally:
+            self._local.busy = False
+
+    def _take_pre_load_values(self, model) -> None:
+        # The construction-time values: what a client builds, and what loading
+        # started from. (The first value loading reads may be one it wrote.)
+        self.pre_load_globals = _module_globals()
+        self.pre_load_env = dict(os.environ)
+        for (kind, path, name), info in self.attrs.items():
+            # Read while constructing, which may have rewritten it since.
+            if kind == "config" and path in self.configs:
+                info["fp"] = safe_fp(key_fp, getattr(self.configs[path], name, None))
+            elif kind == "class":
+                with contextlib.suppress(Exception):
+                    cls = _import_qual(*path.split(":"))
+                    info["fp"] = safe_fp(key_fp, _raw_class_attr(cls, name))
+        values = {}
+        for path, obj, is_module in _walk_objects(model):
+            self.paths[id(obj)] = ("model", path)
+            for name, v in _attrs(obj, is_module).items():
+                values[(path, name)] = v
+            if is_module:
+                for name, b in obj._buffers.items():
+                    if b is not None:
+                        values[(path, f"[buffer]{name}")] = b
+            self._patch_class(type(obj))
+        # Fingerprint now, before loading mutates anything in place.
+        self.pre_load_fps = {k: safe_fp(key_fp, v) for k, v in values.items()}
+
+    def finish_load(self, codes) -> None:
+        """Stop recording; ``codes``: the code objects that ran during load."""
+        global _REC, _ENV_ORIG, _OPEN_ORIG
+        self.on = False
+        self._unpatch()
+        if _OPEN_ORIG is not None:
+            builtins.open = io.open = _OPEN_ORIG
+            _OPEN_ORIG = None
+        if _ENV_ORIG is not None:
+            os._Environ.__getitem__ = _ENV_ORIG
+            _ENV_ORIG = None
+        _REC = None
+        self._collect_globals(codes)
+
+    # -- recording -----------------------------------------------------------
+
+    def _busy(self) -> bool:
+        return getattr(self._local, "busy", False)
+
+    def _env_read(self, key: str, value) -> None:
+        if self._busy():
+            return
+        self._local.busy = True
+        try:
+            where, bulk = _where(sys._getframe(2))
+            if bulk:
+                where = "bulk: " + where
+            self.env_by_line.setdefault(where, set()).add(key)
+            if self.phase == "load":
+                self.env.setdefault(key, set()).add(where)
+        finally:
+            self._local.busy = False
+
+    def _attr_read(self, kind: str, path: str, name: str, value) -> None:
+        if self._busy():
+            return
+        self._local.busy = True
+        try:
+            key = (kind, path, name)
+            info = self.attrs.get(key)
+            if info is None:
+                # The first read is the value the load consumed.
+                info = self.attrs[key] = {"phases": set(), "fp": key_fp(value)}
+            info["phases"].add(self.phase)
+        except Exception:  # noqa: BLE001, S110 - recording must never break loading
+            pass
+        finally:
+            self._local.busy = False
+
+    def _file_read(self, path: str) -> None:
+        if path.endswith((".py", ".pyc")) or path.startswith(("/proc", "/sys", "/dev")):
+            return
+        self.files.setdefault(os.path.realpath(path), set()).add(self.phase)
+
+    # -- class patching --------------------------------------------------------
+
+    def _register_config(self, config) -> None:
+        for path, obj in config_objects(config):
+            self.paths.setdefault(id(obj), ("config", path))
+            self.configs[path] = obj
+            self._patch_class(type(obj))
+
+    def _patch_class(self, cls: type) -> None:
+        if any(c is cls for c, _, _ in self._patched):
+            return
+        own = "__getattribute__" in cls.__dict__
+        orig_own = cls.__dict__.get("__getattribute__")
+        current = cls.__getattribute__
+        if getattr(current, "_atom_input_recorder", False) and not own:
+            return  # inherits a recording parent
+        rec = self
+        skip = _MODULE_INTERNALS
+
+        def __getattribute__(obj, name, _orig=current):
+            try:
+                value = _orig(obj, name)
+            except AttributeError:
+                # nn.Module buffers/parameters are served by __getattr__
+                # after this raises.
+                if rec.on and name[:2] != "__" and name not in skip:
+                    hit = rec.paths.get(id(obj))
+                    if hit is not None:
+                        rec._on_missing(obj, hit, name)
+                raise
+            if rec.on and name[:2] != "__" and name not in skip:
+                hit = rec.paths.get(id(obj))
+                if hit is not None:
+                    rec._on_attr(obj, hit, name, value)
+            return value
+
+        __getattribute__._atom_input_recorder = True
+        try:
+            cls.__getattribute__ = __getattribute__
+        except (TypeError, AttributeError):
+            return  # builtin / extension type
+        self._patched.append((cls, orig_own, own))
+
+    def _first(self, obj, name: str) -> bool:
+        key = (id(obj), name, self.phase)
+        if key in self._seen:
+            return False
+        self._seen.add(key)
+        return True
+
+    def _on_attr(self, obj, hit, name: str, value) -> None:
+        # The recorder's own reads must not pass for the load's first one.
+        if self._busy() or not self._first(obj, name):
+            return
+        kind, path = hit
+        try:
+            d = object.__getattribute__(obj, "__dict__")
+        except Exception:  # noqa: BLE001
+            d = {}
+        if name in d:
+            self._attr_read(kind, path, name, value)
+            return
+        # A class attribute (layout constants and the like), not a method or property.
+        try:
+            raw = _raw_class_attr(type(obj), name)
+        except KeyError:
+            return
+        if _is_plain(raw) or _ref_name(raw):
+            cls = type(obj)
+            self._attr_read("class", f"{cls.__module__}:{cls.__qualname__}", name, raw)
+
+    def _on_missing(self, obj, hit, name: str) -> None:
+        if self._busy() or not self._first(obj, f"[buffer]{name}"):
+            return
+        try:
+            d = object.__getattribute__(obj, "__dict__")
+        except Exception:  # noqa: BLE001
+            return
+        buffers = d.get("_buffers")
+        if isinstance(buffers, dict) and buffers.get(name) is not None:
+            self._attr_read(hit[0], hit[1], f"[buffer]{name}", buffers[name])
+        elif (
+            self.phase == "load"
+            and hit[0] == "model"
+            and not any(name in (d.get(k) or ()) for k in ("_parameters", "_modules"))
+        ):
+            # Probed and not there (hasattr, getattr with a default): a
+            # client that has it would have loaded another way.
+            self.absent.add((hit[1], name))
+
+    def _unpatch(self) -> None:
+        for cls, orig, own in reversed(self._patched):
+            try:
+                if own:
+                    cls.__getattribute__ = orig
+                else:
+                    del cls.__getattribute__
+            except (TypeError, AttributeError):
+                pass
+        self._patched.clear()
+
+    # -- globals -------------------------------------------------------------
+
+    def _collect_globals(self, codes) -> None:
+        """The globals the loading code referenced, as the load found them (one
+        it set itself travels with process_export)."""
+        by_file = {}
+        for mod in list(sys.modules.values()):
+            f = getattr(mod, "__file__", None)
+            if f:
+                by_file[os.path.realpath(f)] = mod
+        roots = _package_roots()
+        for code in codes:
+            if _code_location(code.co_filename, roots) is None:
+                continue
+            mod = by_file.get(os.path.realpath(code.co_filename))
+            if mod is None:
+                continue
+            g = vars(mod)
+            before = self.pre_load_globals.get(mod.__name__)
+            for name in code.co_names:
+                if name not in g or name.startswith("__") or not _keyed(g[name]):
+                    continue
+                if before is None:  # imported by the load: as importing builds it
+                    self.globals[(mod.__name__, name)] = key_fp(g[name])
+                elif name in before:
+                    self.globals[(mod.__name__, name)] = before[name]
+
+    # -- results -------------------------------------------------------------
+
+    def key_reads(self, checkpoint_dir: str | None = None) -> dict:
+        """What the load read, for the cache key (load phase only)."""
+        bulk = {
+            w
+            for w, keys in self.env_by_line.items()
+            if w.startswith("bulk") or len(keys) >= _BULK_THRESHOLD
+        }
+        env = {}
+        for k, info in self.env.items():
+            where = [w for w in info if w not in bulk]
+            if any(w.startswith(KEY_ENV_PREFIXES) for w in where):
+                env[k] = self.pre_load_env.get(k)  # loading may write it first
+        config, attrs, classattrs = {}, {}, {}
+        for (kind, path, name), info in self.attrs.items():
+            if "load" not in info["phases"]:
+                continue
+            if kind == "config":
+                config[f"{path}.{name}"] = info["fp"]
+            elif kind == "class":
+                classattrs[f"{path}\t{name}"] = info["fp"]
+            elif (path, name) in self.pre_load_fps:
+                attrs[f"{path}\t{name}"] = self.pre_load_fps[(path, name)]
+        for path, name in self.absent - set(self.pre_load_fps):
+            attrs.setdefault(f"{path}\t{name}", _MISSING)
+        ckpt = os.path.realpath(checkpoint_dir) + os.sep if checkpoint_dir else None
+        files = {}
+        for p, phases in self.files.items():
+            if (
+                "load" in phases
+                and not (ckpt and p.startswith(ckpt))
+                and os.path.isfile(p)
+            ):
+                files[p] = file_identity(p)
+        return {
+            "env": env,
+            "config": config,
+            "attrs": attrs,
+            "classattrs": classattrs,
+            "globals": {f"{m}\t{n}": fp for (m, n), fp in self.globals.items()},
+            "files": files,
+        }
+
+
+def _keyed(v) -> bool:
+    """A global whose value enters the key."""
+    if isinstance(v, (types.ModuleType, type)):
+        return False
+    return (
+        _is_plain(v) or bool(_ref_name(v)) or isinstance(v, types.BuiltinFunctionType)
+    )
+
+
+def _module_globals() -> dict[str, dict]:
+    """The keyed globals of the ATOM/AITER modules there are, fingerprinted."""
+    out = {}
+    for name, mod in list(sys.modules.items()):
+        if mod is not None and name.split(".")[0] in ("atom", "aiter"):
+            out[name] = {
+                k: safe_fp(key_fp, v)
+                for k, v in list(vars(mod).items())
+                if not k.startswith("__") and _keyed(v)
+            }
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Client side: compare a daemon's reads with this process
+# ---------------------------------------------------------------------------
+
+_MISSING = ("<missing>",)
+
+
+def _now(kind: str, key: str, config, model):
+    """This process's value of one read, rendered like the daemon's."""
+    if kind == "env":
+        return os.environ.get(key)
+    if kind == "files":
+        return file_identity(key)
+    if kind == "config":
+        root, *rest = key.split(".")
+        obj = config if root == "config" else getattr(config, "hf_config", None)
+        for part in rest:
+            obj = getattr(obj, part)
+        return key_fp(obj)
+    a, name = key.split("\t")
+    if kind == "classattrs":
+        return key_fp(_raw_class_attr(_import_qual(*a.split(":")), name))
+    if kind == "globals":
+        return key_fp(vars(importlib.import_module(a))[name])
+    obj = _resolve(model, a)  # attrs: on the freshly built (meta) model
+    if name.startswith("[buffer]"):
+        return key_fp(obj._buffers[name[len("[buffer]") :]])
+    d = vars(obj)
+    if name in d:
+        return key_fp(d[name])
+    # Where a load probed for the name, a buffer is there too (not an empty one).
+    return key_fp(d["_buffers"][name].detach())
+
+
+def _describe(kind: str, key: str, then, now) -> str:
+    if kind == "files":
+        return f"file {key} changed"
+    if kind == "env":
+        return f"env {key}: daemon={then} client={now}"
+    if kind == "config":
+        what = key
+    else:
+        a, name = key.split("\t")
+        what = {
+            "classattrs": f"class attribute {a.split(':')[-1]}.{name}",
+            "globals": f"global {a}.{name}",
+            "attrs": f"{a or '<root>'}.{name}",
+        }[kind]
+    return f"{what}: daemon={str(then)[:80]} client={str(now)[:80]}"
+
+
+def diff_reads(reads: dict, config, model) -> list[str]:
+    """What the daemon's load read that differs here, with ``model`` built as
+    the daemon's was (on meta)."""
+    out = []
+    for kind, read in reads.items():
+        for key, then in sorted(read.items()):
+            try:
+                now = _now(kind, key, config, model)
+            except Exception:  # noqa: BLE001
+                now = _MISSING
+            if now != then:
+                out.append(_describe(kind, key, then, now))
+    return out

@@ -144,6 +144,18 @@ cannot affect a server that does not use the feature.
 | **ATOM_FUSE_SHARED_EXPERT** | bool | 1 (true) | Fuse the shared expert into the routed MoE kernel, loaded as one more expert, where the quant config allows it. Under DP attention with MoRI EP, the fused path exists only for MXFP4 / NVFP4 routed experts: an FP8 MoE such as DeepSeek-V3 makes `FusedMoE` raise `NotImplementedError` unless this is `0`, which keeps the shared expert a separate MLP. vLLM likewise requires shared-expert fusion off with MoRI. |
 | **ATOM_FUSE_MXFP8_SHARED_INTO_MXFP4** | bool | 0 (false) | Fuse an MXFP8 shared expert into MXFP4 routed experts (the Quark MXFP4 export of MiniMax-M3.1), so the MoE runs as one fused MoE with the shared expert as one more expert (129 experts, top-5). The shared expert is staged in MXFP8 while loading and re-quantized to MXFP4 after it, so it carries MXFP4 rounding error. Not supported with EPLB under all2all EP, with an `--online_quant_config` that re-quantizes the MoE, or across a weight reload. Off keeps the shared expert a separate MXFP8 MLP. Part of the compile cache key. |
 
+### Weight cache
+
+`ATOM_PRELOAD=1` keeps a launch's loaded weights (and drafter) on the GPUs in a daemon, so a restart of the server maps them over CUDA IPC instead of reading the checkpoint. `python -m atom.model_loader.weight_cache status|stop [--force]` shows or stops this user's daemons. Not with PP, EPLB, multi-node DP or TP, or a custom runner (those launches fail). A load that leaves state the cache cannot share is loaded from disk.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| **ATOM_PRELOAD** | bool | false | The API server starts a daemon with its own command line if there is none, maps its weights when the cache key matches, and restarts it once when it does not (e.g. after an edit to weight loading); if that daemon cannot be used either, it loads from disk. Outside the API server it loads from disk. |
+| **ATOM_WEIGHT_CACHE** | str | `off` | `daemon`: this launch only loads the weights and serves them to `ATOM_PRELOAD` servers, no requests (what `ATOM_PRELOAD` starts; set it by hand to load ahead of the first server). |
+| **ATOM_PRELOAD_IDLE_TIMEOUT_S** | int | 3600 | A daemon exits after this long without a connected server (`0`: never). |
+| **ATOM_WEIGHT_CACHE_DIR** | str | `/tmp/atom_weight_cache_<uid>` | Sockets, locks and daemon logs; daemons and servers must use the same one. |
+| **ATOM_WEIGHT_CACHE_WAIT_S** | float | 1800 | How long a server waits for a daemon that is still loading. |
+
 ## Plugin mode
 
 | Variable | Type | Default | Description |
