@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import importlib
 import logging
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any, ClassVar
 
 from atom.kv_transfer.disaggregation.base import (
@@ -21,6 +21,7 @@ from atom.kv_transfer.disaggregation.base import (
     KVConnectorSchedulerBase,
 )
 from atom.kv_transfer.offload import register_backends
+from atom.kv_transfer.offload.config import DEFAULT_MIN_LOAD_TOKENS, connector_extras
 from atom.kv_transfer.offload.tier import OffloadTierProfile
 from atom.utils import envs
 
@@ -84,10 +85,11 @@ class KVConnectorFactory:
     _aliases: ClassVar[dict[str, str]] = {}
     _requires_pd_staging: ClassVar[dict[str, bool]] = {}
     # Whether a backend reads the attention builder's PAGE region map.
-    # Absent means yes: a backend that never says otherwise is refused the
-    # cache layouts that cannot publish one, rather than handed a `None`
-    # its `register_kv_caches` may not survive.
-    _reads_block_regions: ClassVar[dict[str, bool]] = {}
+    # A bool, or a predicate of the engine config when the answer depends on
+    # the model. Absent means yes: a backend that never says otherwise is
+    # refused the cache layouts that cannot publish one, rather than handed a
+    # `None` its `register_kv_caches` may not survive.
+    _reads_block_regions: ClassVar[dict[str, bool | Callable[[Any], bool]]] = {}
     # Whether a region-reading backend copies whole blocks of every published
     # region, so a layer may publish several planes per role (the FP4 indexer's
     # data and e8m0 scale). Absent means no: the P/D backends parse one region
@@ -96,12 +98,14 @@ class KVConnectorFactory:
     # Whether a backend is a KV offload tier, whose scheduler half rewrites the
     # completion sets it is handed (`process_completions`). Absent means no.
     _offload: ClassVar[dict[str, bool]] = {}
+    _min_load_tokens: ClassVar[dict[str, int | None]] = {}
     # Whether a backend's tier is one store every DP rank reads (an LMCache MP
     # server, Mooncake Store), not one per rank. Absent means per rank.
     _shared_tier: ClassVar[dict[str, bool]] = {}
     # A backend's transfer granularity, read off its connector config alone:
     # "module:function" taking the leaf's `kv_transfer_config`. Absent means 1.
     _chunk_tokens: ClassVar[dict[str, str]] = {}
+    _lowers_hbm_hit_to_chunk: ClassVar[dict[str, bool]] = {}
 
     @classmethod
     def register(
@@ -113,12 +117,14 @@ class KVConnectorFactory:
         scheduler_module: str,
         scheduler_class: str,
         aliases: Iterable[str] = (),
-        reads_block_regions: bool = True,
+        reads_block_regions: bool | Callable[[Any], bool] = True,
         copies_whole_block_regions: bool = False,
         requires_pd_staging: bool = True,
         offload: bool = False,
+        min_load_tokens: int | None = None,
         shared_tier: bool = False,
         chunk_tokens: str | None = None,
+        lowers_hbm_hit_to_chunk: bool = False,
     ) -> None:
         """Register a KV connector backend.
 
@@ -130,11 +136,19 @@ class KVConnectorFactory:
             scheduler_class: Class name within *scheduler_module*.
             offload: The backend is a KV offload tier; a ``multi`` runs at most
                 one (`is_offload_backend`).
+            min_load_tokens: This tier's own default for the smallest hit worth
+                loading (`resolve_min_load_tokens`); None keeps the global
+                default.
+            reads_block_regions: Whether this backend reads the PAGE region
+                map. A predicate of the engine config is asked when the answer
+                depends on the model. The default is True.
             shared_tier: The offload tier is shared by all DP ranks
                 (`offload_tier`).
             chunk_tokens: ``"module:function"`` returning the tier's transfer
                 granularity in tokens from the leaf's ``kv_transfer_config``
                 (`offload_tier`).
+            lowers_hbm_hit_to_chunk: Admission may reload an unaligned HBM tail
+                from the preceding transfer chunk, rather than recompute it.
         """
         cls._registry[name] = {
             "worker_module": worker_module,
@@ -156,10 +170,17 @@ class KVConnectorFactory:
                 )
             cls._aliases[normalized] = name
         cls._requires_pd_staging[name] = bool(requires_pd_staging)
-        cls._reads_block_regions[name] = bool(reads_block_regions)
+        if isinstance(reads_block_regions, bool) or callable(reads_block_regions):
+            cls._reads_block_regions[name] = reads_block_regions
+        else:
+            raise TypeError(
+                "reads_block_regions must be a bool or a predicate of the config"
+            )
         cls._copies_whole_block_regions[name] = bool(copies_whole_block_regions)
         cls._offload[name] = bool(offload)
+        cls._min_load_tokens[name] = min_load_tokens
         cls._shared_tier[name] = bool(shared_tier)
+        cls._lowers_hbm_hit_to_chunk[name] = bool(lowers_hbm_hit_to_chunk)
         if chunk_tokens:
             cls._chunk_tokens[name] = chunk_tokens
 
@@ -190,6 +211,38 @@ class KVConnectorFactory:
         return cls._offload.get(name, False)
 
     @classmethod
+    def shared_offload_connectors(cls) -> frozenset[str]:
+        return frozenset(
+            name
+            for name in cls._registry
+            if cls._offload.get(name, False) and cls._shared_tier.get(name, False)
+        )
+
+    @classmethod
+    def lowers_hbm_hit_to_chunk(cls, name: str) -> bool:
+        return cls._lowers_hbm_hit_to_chunk.get(name, False)
+
+    @classmethod
+    def resolve_min_load_tokens(cls, config: Any) -> int:
+        """`OFFLOAD_MIN_LOAD_TOKENS` for this configuration: the user's value,
+        else the configured offload tier's own default, else
+        `DEFAULT_MIN_LOAD_TOKENS`.
+
+        Called once, by `Config`, which keeps it in `offload_min_load_tokens`;
+        it is never written into the process environment, so another engine in
+        the process keeps its own. A ``multi`` runs at most one offload tier, so
+        this reads that leaf, not the P/D transport beside it.
+        """
+        override = envs.OFFLOAD_MIN_LOAD_TOKENS
+        if override is not None:
+            return override
+        for name, _ in cls.leaf_connectors(config) or ():
+            if cls.is_offload_backend(name):
+                tier = cls._min_load_tokens.get(name)
+                return DEFAULT_MIN_LOAD_TOKENS if tier is None else tier
+        return DEFAULT_MIN_LOAD_TOKENS
+
+    @classmethod
     def offload_tier(cls, config: Any) -> OffloadTierProfile:
         """The configured offload tier's `OffloadTierProfile`, from the
         registry and `config` alone (nothing is built)."""
@@ -198,13 +251,13 @@ class KVConnectorFactory:
             return OffloadTierProfile()
         tier = shared = False
         chunk_tokens = 1
+        lowers_hbm_hit_to_chunk = False
         for name, sub in cls.leaf_connectors(config) or ():
             role = (getattr(sub, "kv_transfer_config", None) or {}).get(
                 "kv_role", "offload"
             )
             if cls.is_offload_backend(name) and role in ("offload", "kv_both"):
                 if name == "mooncake_store":
-                    from atom.kv_transfer.offload.config import connector_extras
                     from atom.kv_transfer.offload.mooncake_store.config import (
                         parse_mooncake_store_config,
                     )
@@ -218,12 +271,13 @@ class KVConnectorFactory:
                         store = parse_mooncake_store_config(sub.kv_transfer_config)
                         if len(store.store_masters()) > 1:
                             raise ValueError(
-                                "--dp-load-balance prefix_spread requires one shared "
+                                "Shared-prefix DP routing requires one shared "
                                 "Mooncake Store pool; mooncake_store.pools addresses "
                                 "distinct master/metadata pairs"
                             )
                 tier = True
                 shared |= cls._shared_tier.get(name, False)
+                lowers_hbm_hit_to_chunk |= cls._lowers_hbm_hit_to_chunk.get(name, False)
                 hook = cls._chunk_tokens.get(name)
                 if hook:
                     module, _, attr = hook.partition(":")
@@ -234,8 +288,9 @@ class KVConnectorFactory:
             return OffloadTierProfile()
         return OffloadTierProfile(
             loads=shared,
-            min_load_tokens=int(envs.OFFLOAD_MIN_LOAD_TOKENS),
+            min_load_tokens=config.offload_min_load_tokens,
             load_chunk_tokens=chunk_tokens,
+            lowers_hbm_hit_to_chunk=lowers_hbm_hit_to_chunk,
         )
 
     @classmethod
@@ -319,17 +374,14 @@ class KVConnectorFactory:
 
         The verdict comes from `reads_block_regions` on the registration, so a
         new backend declares it where it is written rather than by editing a
-        table here, and the default refuses. Two things the registry cannot
-        answer are resolved on top of it:
-
-        * `multi` is whatever it wraps. Each entry of `connectors` is a full
-          transfer config, and `MultiConnector.register_kv_caches` forwards the
-          same tensors to every sub, so one region reader settles it.
-        * An offload backend registered with `reads_block_regions=False`
-          (`lmcache_offload`, `mooncake_store`) picks its codec from the MODEL,
-          not the config: only the dense codec ignores the regions, the PAGE
-          layouts (hybrid, m3, kimi_k3, V4.1) source their bytes from them.
-          That is not knowable at registration, so the layout is asked here.
+        table here, and the default refuses. A backend whose answer depends on
+        the model registers a predicate of the config instead of a bool.
+        `lmcache_offload` and `mooncake_store` do: only the dense codec ignores
+        the regions, and the PAGE layouts (hybrid, m3, kimi_k3, V4.1) source
+        their bytes from them. `multi` is whatever it wraps: each entry of
+        `connectors` is a full transfer config, and
+        `MultiConnector.register_kv_caches` forwards the same tensors to every
+        sub, so one region reader settles it.
         """
 
         leaves = cls.leaf_connectors(config)
@@ -362,15 +414,10 @@ class KVConnectorFactory:
 
     @classmethod
     def _leaf_reads_block_regions(cls, connector: str, config: Any) -> bool:
-        if cls._reads_block_regions.get(connector, True):
-            return True
-        if cls._offload.get(connector, False):
-            # An offload tier reads the map only on a PAGE layout; the dense
-            # codec builds from the `KVCacheTensor`s.
-            from atom.kv_transfer.offload.config import select_offload_layout
-
-            return select_offload_layout(config) != "dense"
-        return False
+        declared = cls._reads_block_regions.get(connector, True)
+        if isinstance(declared, bool):
+            return declared
+        return bool(declared(config))
 
     @classmethod
     def kv_budget_reserve_bytes(cls, config: Any) -> int:

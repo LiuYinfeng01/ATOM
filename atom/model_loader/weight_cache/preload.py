@@ -56,12 +56,17 @@ def _initial_environ() -> dict[str, str]:
     return env
 
 
-def _pid_running(pid) -> bool:
-    """Alive and not a zombie (the container's PID 1 may never reap)."""
+def _pid_running(pid, created=None) -> bool:
+    """Alive and not a zombie (the container's PID 1 may never reap);
+    ``created``: and the process started then, not a later one with its pid."""
     if not pid:
         return False
     try:
-        status = psutil.Process(int(pid)).status()
+        proc = psutil.Process(int(pid))
+        # Within a tick or two: the boot time psutil adds can shift a second.
+        if created is not None and abs(proc.create_time() - created) > 2:
+            return False
+        status = proc.status()
     except (psutil.Error, ValueError, TypeError):
         return False
     return status not in (psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD)
@@ -92,16 +97,13 @@ def _prune_logs(d: str, keep: int = 9) -> None:
 def record_launch() -> None:
     """Called by the API server before it starts any process (weight cache
     on). The time it runs tells the processes that load which sources may
-    have changed under
-    them. A daemon tells its processes its main process (stopping that stops
-    the daemon). An ATOM_PRELOAD server saves its command line and
-    environment, to start a daemon with them."""
+    have changed under them. A daemon tells its processes its main process
+    (stopping that stops the daemon). An ATOM_PRELOAD server saves its
+    command line and environment, to start a daemon with them."""
     # The processes that load start, and import their code, after this moment.
     os.environ[_LAUNCH_T0_ENV] = repr(time.time())
     if envs.ATOM_WEIGHT_CACHE == "daemon":
         os.environ[_DAEMON_PID_ENV] = str(os.getpid())
-        return
-    if not envs.ATOM_PRELOAD:
         return
     if os.getpid() == 1:
         logger.warning(
@@ -166,8 +168,7 @@ def _started_by_launch() -> dict | None:
 
 def _spawn_daemon() -> dict:
     """Start a daemon with this server's command line and environment. Every
-    rank calls this; the first one starts it, the others get its pid and log.
-    (Per API server launch, so each node of a multi-node launch starts its own.)"""
+    rank calls this; the first one starts it, the others get its pid and log."""
     launch_path = os.environ[_LAUNCH_ENV]  # callers check launch_recorded()
     marker = launch_path + ".daemon"
     try:
@@ -211,7 +212,9 @@ def _spawn_daemon() -> dict:
             raise RuntimeError(
                 f"launcher exited with {out.returncode}: {out.stderr.strip()[-2000:]}"
             )
-        info = {"pid": int(out.stdout.strip()), "log": log}
+        pid = int(out.stdout.strip())
+        # With when it started: its pid alone may come to name another process.
+        info = {"pid": pid, "log": log, "created": psutil.Process(pid).create_time()}
     except Exception as e:  # noqa: BLE001 - the other ranks wait for the marker
         info = {"error": f"could not start a weight cache daemon: {e!r}"}
     with os.fdopen(fd, "w") as f:

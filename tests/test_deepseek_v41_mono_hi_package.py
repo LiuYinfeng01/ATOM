@@ -120,9 +120,10 @@ def test_the_hook_and_its_entry_modules_import():
         importlib.import_module(f"{PKG}.{entry}")
 
 
-def test_the_served_schedules_build_dual_copy_mailboxes():
-    """V4.1's schedules (MI355X, TP4) put its tagged mailboxes in dual copies (``NUMA_DUAL``, "numa2" regions): the
-    served programs need the run-time half of the dual-copy scratch (``runtime.dual``).
+@pytest.mark.parametrize("tp", [2, 4, 8])
+def test_the_served_schedules_build_dual_copy_mailboxes(tp):
+    """V4.1's schedules (MI355X, TP2, TP4 and TP8) put its tagged mailboxes in dual copies (``NUMA_DUAL``, "numa2"
+    regions): the served programs need the run-time half of the dual-copy scratch (``runtime.dual``).
     """
     pytest.importorskip("flydsl")
     pytest.importorskip(
@@ -132,10 +133,29 @@ def test_the_served_schedules_build_dual_copy_mailboxes():
 
     for kind in schedules.KINDS:
         for rows in (6, 12, 24):
-            assert schedules.knobs(kind, rows)["NUMA_DUAL"] > 0, (
+            assert schedules.knobs(kind, rows, tp=tp)["NUMA_DUAL"] > 0, (
                 kind,
                 rows,
             )
+
+
+@pytest.mark.parametrize("tp", [2, 8])
+def test_a_tp_schedule_entry_cannot_set_a_steps_or_a_process_knob(monkeypatch, tp):
+    """``schedules._check_entries`` holds ``TP_SCHEDULES`` to the rule ``SCHEDULES`` is held to: a (kind, rows)
+    entry never sets a chain knob (``CHAIN_KNOBS``, a step's) or a precision knob (``PRECISION_KNOBS``, a
+    process's)."""
+    pytest.importorskip("flydsl")
+    pytest.importorskip(
+        "aiter"
+    )  # (the hi device code re-exports atom.mono.device's primitives)
+    from atom.models.deepseek_v41.mono.hi.v41 import schedules
+
+    schedules._check_entries()  # the shipped tables pass
+    for knob in (*schedules.CHAIN_KNOBS, *schedules.PRECISION_KNOBS):
+        table = {**schedules.TP_SCHEDULES[tp], (schedules.WINDOW, 6): {knob: True}}
+        monkeypatch.setitem(schedules.TP_SCHEDULES, tp, table)
+        with pytest.raises(ValueError, match=f"TP{tp} schedule entry"):
+            schedules._check_entries()
 
 
 def test_a_dual_copy_scratch_takes_its_calibrated_word(monkeypatch):
@@ -181,20 +201,49 @@ def test_a_dual_copy_scratch_takes_its_calibrated_word(monkeypatch):
         k.buffers(device="cpu", scratch=arena[256:], word=0)
 
 
-def test_a_flydsl_change_keeps_flydsls_locations_and_warns_once(monkeypatch, caplog):
-    """``atom.mono.runtime.srcloc.scoped``: on a fingerprint miss (a FlyDSL whose location capture is not the one
-    reproduced) FlyDSL's own capture stays in place and one WARNING a process says what is skipped and its cost.
-    """
+def test_a_launch_does_not_trace_the_program_again(monkeypatch):
+    """After the first launch, ``MonoKernel.launch`` calls the compiled function: later launches trace nothing and
+    still pass their own ``layer``. The program's one task stores its launch's tag
+    (``step * LAYER_SLOTS + layer + 1``)."""
     pytest.importorskip("flydsl")
-    from atom.mono.runtime import srcloc
+    pytest.importorskip(
+        "aiter"
+    )  # (the hi device code re-exports atom.mono.device's primitives)
+    from atom.models.deepseek_v41.mono.hi.target import MI355X, device_arch
 
-    original = srcloc.meta.capture_user_location
-    monkeypatch.setattr(srcloc, "FINGERPRINT", "0" * 16)
-    srcloc._warn_miss.cache_clear()
-    with caplog.at_level("WARNING", logger="atom"):
-        for _ in range(3):
-            with srcloc.scoped():
-                assert srcloc.meta.capture_user_location is original
-    srcloc._warn_miss.cache_clear()
-    warned = [r for r in caplog.records if "srcloc" in r.getMessage()]
-    assert len(warned) == 1 and "twice the build time" in warned[0].getMessage()
+    if device_arch() != MI355X.arch:
+        pytest.skip("an MI355X program")
+    import torch
+    from flydsl.compiler.kernel_function import KernelFunction
+
+    from atom.models.deepseek_v41.mono.hi.device.gfx950 import buffer_ops as bo
+    from atom.models.deepseek_v41.mono.hi.device.gfx950.ops import rsrc
+    from atom.models.deepseek_v41.mono.hi.plan.program import (
+        Program,
+        Scenario,
+        Stage,
+    )
+    from atom.models.deepseek_v41.mono.hi.runtime.kernel import MonoKernel
+
+    def store_tag(k, t):
+        bo.buffer_store(k.tag, rsrc(k.args["out"]), 0)
+
+    stage = Stage("tag", 1, store_tag, args=("out",), base=0)
+    kernel = MonoKernel(Program("launch_tag", Scenario(1, 1), [stage]))
+    bufs, out = kernel.buffers(), torch.zeros(1, dtype=torch.int32, device="cuda")
+    table = kernel.table({"out": out})
+    kernel.launch(table, bufs)
+    torch.cuda.synchronize()
+    assert out.item() == 1
+    emitted = []
+    emit = KernelFunction._emit_kernel
+    monkeypatch.setattr(
+        KernelFunction,
+        "_emit_kernel",
+        lambda *a, **k: emitted.append(1) or emit(*a, **k),
+    )
+    for layer in (1, 2):
+        kernel.launch(table, bufs, layer=layer)
+        torch.cuda.synchronize()
+        assert out.item() == layer + 1
+    assert not emitted

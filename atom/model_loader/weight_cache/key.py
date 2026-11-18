@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026, Advanced Micro Devices, Inc. All rights reserved.
 """The cache key, apart from what loading read (recorder.py): identity
-(checkpoint, model, rank, GPU, libraries), the code that ran during load,
-and the model structure."""
+(checkpoint, model, rank, GPU, libraries), the code that ran during load
+with the outline of the model's classes, and the model structure."""
 
 from __future__ import annotations
 
@@ -108,6 +108,7 @@ def _versions() -> dict:
         "hip": str(torch.version.hip),
     }
     for name, dists in (
+        ("aiter", ("amd-aiter", "aiter")),  # its compiled kernels, from a wheel
         ("triton", ("triton",)),
         ("flydsl", ("flydsl", "FlyDSL")),
         ("mori", ("mori", "amd-mori")),
@@ -348,8 +349,8 @@ class _StripDocstrings(ast.NodeTransformer):
 
 
 class _Outline(ast.NodeTransformer):
-    """Function bodies left out: a module or class body that ran only defined
-    its functions, and those that ran are keyed on their own."""
+    """Function bodies left out: a module or class body only defines its
+    functions, and those a load ran are keyed on their own."""
 
     def visit_FunctionDef(self, node):
         node.body = [ast.Pass()]
@@ -378,14 +379,13 @@ class _SourceHasher:
             )
             try:
                 changed = os.stat(path).st_ctime > self.t0
-                if not changed:
-                    with open(path, "rb") as f:
-                        self._sources[key] = f.read()
+                with open(path, "rb") as f:
+                    src = f.read()
             except OSError:
-                self._sources[key] = None
-            else:
-                if changed:
-                    raise _SourceChanged(key)
+                changed, src = False, None
+            if changed:
+                raise _SourceChanged(key)
+            self._sources[key] = src
         return self._sources[key]
 
     def file_hash(self, pkg: str, rel: str) -> str | None:
@@ -444,23 +444,42 @@ class _SourceHasher:
         return hashlib.sha256("\n".join(dumps).encode()).hexdigest()[:16]
 
 
+def _loader_digest(hasher: _SourceHasher) -> str:
+    """All of atom/model_loader by content: the loader and this cache decide
+    the weights, whichever of their functions a load happens to run."""
+    root = hasher.roots.get("atom", "/nonexistent")
+    h = hashlib.sha256()
+    for dirpath, dirnames, filenames in os.walk(os.path.join(root, "model_loader")):
+        dirnames.sort()
+        for name in sorted(f for f in filenames if f.endswith(".py")):
+            rel = os.path.relpath(os.path.join(dirpath, name), root)
+            h.update(f"{rel}\0{hasher.file_hash('atom', rel)}\n".encode())
+    return h.hexdigest()[:16]
+
+
 def _outer_qualname(code) -> str:
     qual = getattr(code, "co_qualname", code.co_name).split(".<locals>")[0]
     parts = [p for p in qual.split(".") if not p.startswith("<")]
     return ".".join(parts) if parts else "<module>"
 
 
-def code_fingerprint(codes, kernels) -> dict:
+def code_fingerprint(codes, kernels, classes=()) -> dict:
     """What ran during load: functions (AST hashes, plus the hash of each
     file, so a client with the same bytes skips parsing) and launched Triton
     kernels. (Module constants and bound functions the code used are keyed
-    as globals by the recorder.)"""
+    as globals by the recorder.) And the outline of the model's ``classes``:
+    a method or class constant added to one changes what a load would run."""
     hasher = _SourceHasher()
     fns = set()
     for code in codes:
         where = _code_location(code.co_filename, hasher.roots)
         if where is not None:
             fns.add((*where, _outer_qualname(code)))
+    for cls in {base for model_cls in classes for base in model_cls.__mro__}:
+        file = getattr(sys.modules.get(cls.__module__), "__file__", None)
+        where = _code_location(file, hasher.roots) if file else None
+        if where is not None and "<" not in cls.__qualname__:
+            fns.add((*where, cls.__qualname__))
     entries = [
         ("fn", pkg, rel, qual, hasher.digest(pkg, rel, qual)) for pkg, rel, qual in fns
     ]
@@ -469,13 +488,19 @@ def code_fingerprint(codes, kernels) -> dict:
         module, qual = getattr(fn, "__module__", "?"), getattr(fn, "__qualname__", "?")
         entries.append(("jit", module, qual, "", _kernel_key(jf)))
     files = {f"{pkg}/{rel}": hasher.file_hash(pkg, rel) for pkg, rel, _ in fns}
-    return {"entries": sorted(set(entries)), "files": files}
+    return {
+        "entries": sorted(set(entries)),
+        "files": files,
+        "loader": _loader_digest(hasher),
+    }
 
 
 def verify_code(fingerprint: dict) -> list[str]:
     """Entries whose code differs in this process (raises _SourceChanged)."""
     hasher = _SourceHasher()
     changed = []
+    if _loader_digest(hasher) != fingerprint["loader"]:
+        changed.append("atom/model_loader (the loader, or this cache)")
     for kind, a, b, c, digest in fingerprint["entries"]:
         if kind == "fn":
             same_file = hasher.file_hash(a, b) == fingerprint["files"].get(f"{a}/{b}")

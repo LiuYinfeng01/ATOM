@@ -4,17 +4,18 @@
 model; what loading read becomes part of the cache key.
 
 Recorded: environment variables and config fields that loading read,
-construction-time attributes (instance and class) that loading read, globals
-the loading code referenced, and files it opened. Phases: ``init`` (process
-setup), ``construct`` and ``load`` (checkpoint load and
-post-processing); recording stops there. Native code (C++ getenv, files opened
-by C++) is invisible here.
+construction-time attributes (instance and class) that loading read or
+probed for in vain, globals the loading code referenced, and files it
+opened. Phases: ``init`` (process setup), ``construct`` and ``load``
+(checkpoint load and post-processing); recording stops there. Native code
+(C++ getenv, files opened by C++) is invisible here.
 """
 
 from __future__ import annotations
 
 import builtins
 import contextlib
+import functools
 import importlib
 import io
 import os
@@ -54,22 +55,27 @@ _BULK_THRESHOLD = 25  # distinct variables read from one line: a copy of the env
 # Environment reads that count for the cache key: made by these packages'
 # code. Others (a progress bar reading COLUMNS) do not decide weights.
 KEY_ENV_PREFIXES = ("atom/", "aiter/", "flydsl/", "triton/", "mori/")
-_ROOTS_CACHE: list[str] | None = None
-_REALPATHS: dict[str, str] = {}
 
 
 def _roots() -> list[str]:
-    global _ROOTS_CACHE
-    if _ROOTS_CACHE is None:
-        out = []
-        for name in ("atom", "aiter", "torch"):
-            mod = sys.modules.get(name)
-            if mod is not None and getattr(mod, "__file__", None):
-                out.append(
-                    os.path.dirname(os.path.dirname(os.path.realpath(mod.__file__)))
-                )
-        _ROOTS_CACHE = out
-    return _ROOTS_CACHE
+    """The directories the packages whose reads count are installed in (as
+    imported by now: some come in late)."""
+    names = ("atom", "aiter", "torch", "flydsl", "triton", "mori")
+    return [
+        os.path.dirname(os.path.dirname(os.path.realpath(mod.__file__)))
+        for mod in map(sys.modules.get, names)
+        if getattr(mod, "__file__", None)
+    ]
+
+
+@functools.cache
+def _shown(filename: str) -> str:
+    """A source file's path below the directory its package is installed in."""
+    path = os.path.realpath(filename)
+    for root in _roots():
+        if path.startswith(root + os.sep):
+            return os.path.relpath(path, root)
+    return path
 
 
 def _where(frame) -> tuple[str, bool]:
@@ -90,30 +96,19 @@ def _where(frame) -> tuple[str, bool]:
                 bulk = True
             frame = frame.f_back
             continue
-        path = _REALPATHS.get(fn)
-        if path is None:
-            path = os.path.realpath(fn)
-            for root in _roots():
-                if path.startswith(root + os.sep):
-                    path = os.path.relpath(path, root)
-                    break
-            _REALPATHS[fn] = path
-        return f"{path}:{frame.f_lineno} {frame.f_code.co_name}", bulk
+        return f"{_shown(fn)}:{frame.f_lineno} {frame.f_code.co_name}", bulk
     return "?", bulk
 
 
 def _env_getitem(self, key):
+    value = None  # as read when unset (KeyError)
     try:
         value = _ENV_ORIG(self, key)
-    except KeyError:
+        return value
+    finally:
         rec = _REC
         if rec is not None:
-            rec._env_read(key, None)
-        raise
-    rec = _REC
-    if rec is not None:
-        rec._env_read(key, value)
-    return value
+            rec._env_read(key, value)
 
 
 def _recording_open(file, mode="r", *args, **kwargs):
@@ -143,6 +138,7 @@ class InputRecorder:
         self.pre_load_env: dict[str, str] = {}
         self.env_by_line: dict[str, set] = {}
         self.attrs: dict[tuple, dict] = {}  # (kind, path, name) -> info
+        self.absent: set[tuple] = set()  # (path, name) loading probed for in vain
         self.paths: dict[int, tuple[str, str]] = {}  # id(obj) -> (kind, path)
         self.configs: dict[str, Any] = {}  # path -> config object
         self.pre_load_fps: dict[tuple[str, str], Any] = {}
@@ -317,7 +313,8 @@ class InputRecorder:
         return True
 
     def _on_attr(self, obj, hit, name: str, value) -> None:
-        if not self._first(obj, name):
+        # The recorder's own reads must not pass for the load's first one.
+        if self._busy() or not self._first(obj, name):
             return
         kind, path = hit
         try:
@@ -337,14 +334,23 @@ class InputRecorder:
             self._attr_read("class", f"{cls.__module__}:{cls.__qualname__}", name, raw)
 
     def _on_missing(self, obj, hit, name: str) -> None:
-        if not self._first(obj, f"[buffer]{name}"):
+        if self._busy() or not self._first(obj, f"[buffer]{name}"):
             return
         try:
-            buffers = object.__getattribute__(obj, "__dict__").get("_buffers")
+            d = object.__getattribute__(obj, "__dict__")
         except Exception:  # noqa: BLE001
             return
+        buffers = d.get("_buffers")
         if isinstance(buffers, dict) and buffers.get(name) is not None:
             self._attr_read(hit[0], hit[1], f"[buffer]{name}", buffers[name])
+        elif (
+            self.phase == "load"
+            and hit[0] == "model"
+            and not any(name in (d.get(k) or ()) for k in ("_parameters", "_modules"))
+        ):
+            # Probed and not there (hasattr, getattr with a default): a
+            # client that has it would have loaded another way.
+            self.absent.add((hit[1], name))
 
     def _unpatch(self) -> None:
         for cls, orig, own in reversed(self._patched):
@@ -408,6 +414,8 @@ class InputRecorder:
                 classattrs[f"{path}\t{name}"] = info["fp"]
             elif (path, name) in self.pre_load_fps:
                 attrs[f"{path}\t{name}"] = self.pre_load_fps[(path, name)]
+        for path, name in self.absent - set(self.pre_load_fps):
+            attrs.setdefault(f"{path}\t{name}", _MISSING)
         ckpt = os.path.realpath(checkpoint_dir) + os.sep if checkpoint_dir else None
         files = {}
         for p, phases in self.files.items():
@@ -453,7 +461,6 @@ def _module_globals() -> dict[str, dict]:
 # Client side: compare a daemon's reads with this process
 # ---------------------------------------------------------------------------
 
-STATIC_READS = ("env", "config", "classattrs", "globals", "files")
 _MISSING = ("<missing>",)
 
 
@@ -477,7 +484,11 @@ def _now(kind: str, key: str, config, model):
     obj = _resolve(model, a)  # attrs: on the freshly built (meta) model
     if name.startswith("[buffer]"):
         return key_fp(obj._buffers[name[len("[buffer]") :]])
-    return key_fp(vars(obj)[name])
+    d = vars(obj)
+    if name in d:
+        return key_fp(d[name])
+    # Where a load probed for the name, a buffer is there too (not an empty one).
+    return key_fp(d["_buffers"][name].detach())
 
 
 def _describe(kind: str, key: str, then, now) -> str:
@@ -497,11 +508,12 @@ def _describe(kind: str, key: str, then, now) -> str:
     return f"{what}: daemon={str(then)[:80]} client={str(now)[:80]}"
 
 
-def diff_reads(reads: dict, kinds, config=None, model=None) -> list[str]:
-    """What the daemon's load read (of these kinds) that differs here."""
+def diff_reads(reads: dict, config, model) -> list[str]:
+    """What the daemon's load read that differs here, with ``model`` built as
+    the daemon's was (on meta)."""
     out = []
-    for kind in kinds:
-        for key, then in sorted(reads[kind].items()):
+    for kind, read in reads.items():
+        for key, then in sorted(read.items()):
             try:
                 now = _now(kind, key, config, model)
             except Exception:  # noqa: BLE001

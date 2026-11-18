@@ -109,7 +109,7 @@ Four rules carry the module:
 | `mp/connector.py` | Capability-selected public `lmcache_mp` worker/scheduler shells. |
 | `mp/deployment.py` | LMCache MP configuration, topology, model namespace and server adapters. |
 | `mp/worker.py`, `mp/scheduler.py` | LMCache MP connector halves. The worker registers PAGE views, plus checkpoint image groups when the backend publishes them; the vLLM plugin builds it directly. |
-| `page_codec.py` | `pure_page_codec`: complete PAGE-only geometry validation and the `DSV4PageSlotCodec` shared by M3 and Mooncake Store. |
+| `page_codec.py` | `pure_page_codec`: complete PAGE-only geometry (one tensor view per region, no SLOT state) and the `DSV4PageSlotCodec` shared by M3 and V4.1. |
 | `capabilities.py` | `publishes_native_state`, `copies_paged_state`, and `replays_state`: lightweight state-transfer capability checks, independent of Torch and byte codecs. |
 | `tier.py` | `OffloadTierProfile`: shared tier loadability and minimum-transfer contract consumed by the connector factory and DP routing. |
 | `load_math.py` | Pure functions for how many tokens a tier moves (`loadable_hit`, `tier_load_tokens`), used by the offload scheduler and by DP routing's `OffloadTierProfile`. |
@@ -120,13 +120,19 @@ Four rules carry the module:
 | `mp/transfer.py` | Transfer identity, terminal detection and the fail-stop transfer deadline. |
 | `mp/page_views.py` | Shared validation of backend-published PAGE views. |
 | `mp/native_state_{layout,scheduler,worker}.py` | The PAGE-backed native-state layout and `stores_state_images`, scheduler leases, and the worker's restore into an Active SLOT. Its registration and block-id validation are `mp/worker.py`'s (shared with the plugin), and `require_native_state_server` is `mp/deployment.py`'s. |
-| `mooncake_store/config.py` | The `mooncake_store.*` settings (per-NIC Store pools included), `uses_replay_pages`, and the startup refusals (layouts other than dense and V4.1 PAGE, DCP > 1, odd chunks). |
-| `mooncake_store/keys.py` | Layout namespace, the prompt's 16-byte chunk hash chain, and Store key spelling. |
+| `kv_store/client.py` | The store client protocol every KV-store backend implements (register/unregister/exists/put/get/close/stats), and `CallRefused`. |
+| `kv_store/keys.py` | Layout namespace (with each backend's own prefix), the prompt's 16-byte chunk hash chain, and object key spelling. |
+| `kv_store/layouts.py` | The layouts a KV store moves (dense, M3 PAGE, V4.1 replay PAGE) and the codec for each; a backend names the subset it moves. |
+| `kv_store/pool.py` | `TransferSlotPool`: the registered save/load slots in HBM, with quarantine. |
+| `kv_store/scheduler.py`, `kv_store/worker.py` | The scheduler (digest-carrying requests, paced save retries, lookup helpers) and worker (windowed put/get through the pool, completion protocol) every KV-store backend extends. |
+| `mooncake_store/config.py` | The `mooncake_store.*` settings (per-NIC Store pools included) and the startup refusals (layouts other than dense, M3 PAGE, and V4.1 PAGE, DCP > 1, odd chunks). |
+| `mooncake_store/layouts.py` | Which layouts this connector moves (dense, M3 PAGE, V4.1 replay PAGE). |
+| `mooncake_store/keys.py` | The `atomkv1-` namespace prefix, Mooncake groups, and the taint marker key. |
 | `mooncake_store/nic.py` | One PCI-local RDMA device per worker. |
 | `mooncake_store/client.py` | Pure zero-copy `MooncakeDistributedStore` client, result codes, per-call counters. |
-| `mooncake_store/pool.py` | `TransferSlotPool`: the registered save/load slots in HBM, with quarantine. |
+| `mooncake_store/pool.py` | `TransferSlotPool` named for the Mooncake Store. |
 | `mooncake_store/taint.py` | The Store's taint marker, placed after a put Mooncake gave up on, which every client of the Store checks before it loads. |
-| `mooncake_store/scheduler.py`, `mooncake_store/worker.py` | `mooncake_store` scheduler (Store lookups, digest-carrying requests) and worker (windowed put/get, startup probe). |
+| `mooncake_store/scheduler.py`, `mooncake_store/worker.py` | `mooncake_store` scheduler (lookups across the Store pools, the taint marker, read-lease renewal) and worker (NIC selection, Mooncake groups, RDMA-aware slot settlement, the taint marker, startup probe). |
 
 The engine-side counterpart of the state tier lives outside this directory:
 `atom/model_engine/state_offload.py` holds `StateOffloadIndex`, which applies the
@@ -173,6 +179,25 @@ one copy while every rank retrieves it. MiniMax-M3 publishes its GQA KV, scale,
 and NSA index-cache planes as zero-copy PAGE views and deliberately stores one
 shard per TP rank. Both use chunk-completion events to release source PAGE
 blocks before the remote store becomes terminal.
+
+GLM-5.3 and K3.1 Pro also support the OPUS FP4 indexer cache
+(`--index-cache-layout mfma`, `--index-cache-dtype fp4`, `--block-size 64`) with
+standalone `lmcache_mp`, including Mono decode (`ATOM_MONO_ENABLE=1`). Packed
+keys and e8m0 scales retain the OPUS MFMA layout and are transferred as separate
+opaque planes. Their namespace is distinct from legacy FP4. K3 additionally
+transfers its native KDA checkpoint, without TP rank collapse. PCP=PP=1 is
+required; plugins, P/D, `multi`, and `lmcache_offload` remain unsupported for
+OPUS DSA FP4. Model checkpoint weight quantization is unchanged.
+
+For GLM DSA and K3, MP also admits TP8+DCP8 with DP=1, no DP attention and no
+separate draft KV pool. Each rank stores its own local PAGE bytes; TP rank
+collapse is disabled. MP token ranges remain global, so one local PAGE covers
+`block_size * 8` tokens. Set **both** the server's `--chunk-size` and ATOM's
+`LMCACHE_CHUNK_SIZE` to a multiple of that logical block size: for page64, use
+512 (or a multiple), not 256. DCP interleave must divide the physical block size.
+K3's checkpoint boundaries must also align to the chunk size. DCP size and
+interleave are part of the cache namespace; this does not convert caches
+between DCP1 and DCP8. Other DCP topologies remain unsupported.
 
 ### Running the MP server
 
@@ -263,7 +288,9 @@ frees it. Instead, a transfer that is still not terminal after
 `lmcache.mp.transfer_deadline_s` (default 30 s) is fatal: the worker raises
 `LMCacheTransferUnprovable` and the engine stops. This is a per-transfer deadline
 from submission, including time queued at the MP server, not a model request
-timeout or a heartbeat timeout. It also catches a live server whose ZMQ handler
+timeout or a heartbeat timeout. A native-state load's restore is held to the same
+deadline, counted from when its copy is enqueued, not from submission.
+The deadline from submission also catches a live server whose ZMQ handler
 failed without replying; no LMCache transport changes are required. The scheduler
 independently watches dispatched operations with an additional 10 s margin for
 lost or never-aggregated completion reports. These checks run when the respective
@@ -331,7 +358,9 @@ RESTORE
 - One MP server supports TP, single-host DP, and single-host DP-attention with
   EP. DP replicas use private request-session IDs but share the same
   content-addressed model namespace.
-- Multi-node DP, PP, PCP, DCP, and engine-driven transfers are rejected.
+- Multi-node DP, PP, PCP, and engine-driven transfers are rejected.
+  DCP is limited to GLM DSA / K3 TP8+DCP8 with DP=1, no DP attention
+  or separate draft KV pool, and matching DCP-aware chunks as described above.
   Multi-node DP needs one GPU-local LMCache server per host plus routing.
 - PAGE tensors are registered as zero-copy `uint8` views, preserving FP8/BF16
   bit patterns and avoiding numerical dtype conversion in ROCm pointer paths.
@@ -374,12 +403,21 @@ comparison, per-rank retrieve counts, one-writer storage, and promoted ranges.
 `ChunkedOffloadSchedulerBase` (save cadence, load decisions, early block
 release, exact operation completions), the `DenseOffloadConnector` worker
 plumbing (executors, per-step producer fence, completion reports),
-`BlockGPUConnector` and a byte codec (`DenseKVByteCodec`, or the PAGE-only
-`DSV4PageSlotCodec` for V4.1). What replaces LMCache is a Mooncake
+`BlockGPUConnector` and a byte codec (`DenseKVByteCodec`, or `DSV4PageSlotCodec`
+through `pure_page_codec` for M3 and V4.1). What replaces LMCache is a Mooncake
 Store whose memory belongs to separate owner processes -- on the prefill node's
 NUMA nodes and, across two nodes, on the decode node -- reached directly by
 every prefill worker. There is no CPU L1, no LMCache engine or lookup server,
 and no `import lmcache`.
+
+Dense layouts use `DenseKVByteCodec`. MiniMax-M3, M3.1, and V4.1 use
+`pure_page_codec`, which builds `DSV4PageSlotCodec` over the ordered PAGE
+regions in `KVTransferTensors.block_regions`, with no SLOT state and a tensor
+view for every region. M3's regions include the NSA index cache and the draft
+KV. The `m3-page-regions` codec namespace keeps these objects separate from
+dense KV objects and from V4.1's `v41-replay-page-v1` objects. V4.1 stores PAGE
+regions only; its request state is rebuilt by replay. Other stateful layouts
+and DCP greater than 1 remain unsupported.
 
 ### Data path
 
@@ -390,9 +428,12 @@ load: owners --batch_get_into--> run of slots of the registered pool --unpack (T
 
 A window whose slots are one run of the HBM pool is one chunk-major buffer, and
 the dense codec packs or unpacks it in place with one kernel and one stream
-sync. A window whose slots are scattered (quarantined slots broke the region
-up) goes through the block GPU connector's staging buffer instead: pack, then
-a copy into each slot (and the reverse).
+sync. The DSV4/M3 PAGE codec also restores (load only) a run of padded slots in
+place, reading each slot at the pool's slot stride and skipping the padding;
+saves into padded slots still go through staging. A window whose slots are
+scattered (quarantined slots broke the region up) goes through the block GPU
+connector's staging buffer instead: pack, then a copy into each slot (and the
+reverse).
 
 - One Store object is one (PP/TP rank, 256-token chunk): the dense codec's
   opaque bytes of that rank's layers, 16 blocks in one contiguous range
@@ -570,7 +611,15 @@ a copy into each slot (and the reverse).
   scheduler and the workers refuse to start where the kernel's boot ID
   (`/proc/sys/kernel/random/boot_id`) cannot be read, since every save would
   then read nothing.
-- A put of a key that already exists succeeds (Mooncake reports 0).
+- A put of a key that already exists succeeds (Mooncake reports 0). Before
+  it packs a window, a save asks the Store which of the window's chunks it
+  holds (one `batch_is_exist`, the shared `kv_store` worker's) and neither
+  reads nor puts those: they are source-safe at once and count as stored. The
+  scheduler's lookup counts only the prefix every rank holds, so a save often
+  starts below what this rank has stored. The lookup grants the chunks it finds
+  a read lease, as a scheduler lookup does; it covers only chunks already held
+  and never stops a new chunk's put. A failed lookup, or a key it answers with
+  an error, puts the chunk as before.
 - After a failed save that the base retries, no save is emitted for 1 s,
   doubled for each further such failure in a row up to 30 s. A stored save
   ends the pause and starts the doubling over, also when it reports after a
@@ -665,11 +714,17 @@ this worker config.
   path, or any other setting that rearranges the KV bytes without being named
   above. A Store whose log or workers report the taint marker needs a
   restart, not `remove_all` (see above).
-- **Logs.** `OFFLOAD_PROFILE=1` emits `[OFFLOAD-SAVE-PROF]` (`pack_ms`, `put_ms`)
+- **Logs.** `OFFLOAD_PROFILE=1` emits `[OFFLOAD-SAVE-PROF]` (`held_chunks` and
+  `put_chunks`; `windows`, the windows the save reached, each looked up once,
+  and `segments`, the runs of missing chunks it packed and put, of which
+  `in_place_segments` in place; `put_bytes`, the bytes of the chunks it
+  put, held chunks not included; `exists_ms`, `pack_ms`, `put_ms`)
   and `[OFFLOAD-LOAD-PROF]` (`get_ms`, `unpack_ms`, `retrieve_ms`,
   `effective_gbps`) per operation, with `status=ok` or the failure that ended
   it, whose rate-limited warning names the first Mooncake result code.
-  Every worker logs `[OFFLOAD-STORE-STATS]` (calls, keys, bytes, failures by
+  Every worker logs `[OFFLOAD-STORE-STATS]` (calls, keys, bytes, the saves'
+  lookups and the chunks they put or found held (`save_exists`,
+  `save_put_chunks`, `save_held_chunks`, `save_held_bytes`), failures by
   code, quarantined slots) at most once a minute while it transfers;
   `put_bytes` counts every chunk a put left in the Store, those it already
   held included, since Mooncake answers both alike. The
@@ -684,8 +739,9 @@ this worker config.
 
 ### Not supported in phase 1
 
-- Layouts other than dense and V4.1's replay PAGEs (DSV4 PAGE+SLOT, MiniMax-M3,
-  Kimi-K3 state tier) and DCP > 1 on the offload side: refused at startup.
+- Layouts other than dense, MiniMax-M3/M3.1 PAGE, and V4.1's replay PAGEs
+  (DSV4 PAGE+SLOT, Kimi-K3 state tier) and DCP > 1 on the offload side: refused
+  at startup.
 - Decode-side offload, and reading the Store from decode workers: decode DRAM
   joins as Store owners only.
 - A second offload connector beside it in one `multi`.
@@ -1220,6 +1276,16 @@ Under `--kv_cache_dtype fp8`, each KV block carries its own `k_scale` / `v_scale
 (`dense/kv_byte_codec.py`). The scales travel with the quantized data, so a
 reloaded fp8 block dequantizes identically; no scale is recomputed or dropped.
 
+### Multimodal prompts: salted keys
+
+Image placeholder ids are the same for every picture, so a prompt with a
+`cache_seed` keys its tier objects by it as well (`tier_cache_salt`,
+`_offload_common.py`): `lmcache_mp` as `IPCCacheServerKey.cache_salt`, the
+in-process engine as the `lmcache.tag.cache_salt` key tag. Lookups, saves and
+loads of the chunked schedulers and of DSV4 PAGE+SLOT carry it. Text prompts
+key unchanged. DSV4's SLOT boundary hashes start from the same `cache_seed`, as
+`BlockManager`'s chain does; Mooncake seeds its chain (`chain_seed`).
+
 ### Invariants enforced in code
 
 | Invariant | Where | Why |
@@ -1234,6 +1300,30 @@ reloaded fp8 block dequantizes identically; no scale is recomputed or dropped.
 | AOS1 identity, size, TP, and CRC match | `decode_checkpoint` | Stale geometry, wrong rank, truncation, and corruption all recompute rather than restore. |
 | Exact save generations aggregate across TP | `SaveOperationId`, aggregator | A failed or delayed rank from another save cannot commit a boundary. |
 | Dense save packs wait on the step's producer event | dense `start_load_kv`, `batched_from_gpu` | A non-final prefill chunk yields no token, so nothing else orders the save thread's pack stream after the producing kernels; `producer_fenced` in the transfer stats reports the wait was enqueued. Under PP the save frontier runs ahead of the forwards (`schedule()` advances it at dispatch), but it never covers the chunk of the batch whose metadata carries the save, and every stage takes metadata and batches in dispatch order: each records the event after enqueueing the forward of every chunk the save reads. |
+| Kimi-K3 state stores wait on the step's producer event | K3 `_start_state_stores`, `StateOffloadTier._do_store` | A checkpoint is READY once the batch carrying its slot->PAGE copy is issued, not once the copy has run, so the gather is ordered after the copy only by this event. |
+
+### Async save contract
+
+The dense KV save and the Kimi-K3 state store share one contract, written out
+above `record_save_fence` in `_offload_common.py`:
+
+- **Fence.** One event per step, recorded on the current stream after the
+  writes the step's saves read are enqueued (`record_save_fence`), is handed to
+  every save of the step; the save thread host-waits on it (`wait_save_fence`)
+  before it reads the source, and the KV save also passes it to `store()` for
+  the pack stream. A fence that cannot be recorded fails the step's saves, and
+  one that raises while waited on fails that save.
+- **Lifecycle.** "Source safe to release" and "store succeeded" are separate
+  facts. Each save releases its source at most once and reports exactly one
+  terminal outcome on every path. The state store reports them apart through
+  `SaveLifecycle`: the release as soon as the D2H drains, or at the terminal
+  when the store was refused or raised. The KV save's terminal comes from
+  `_do_save_req`, or from `_guard` when it raised; with early block release the
+  GPU connector reports the source per staging group, and without it (Kimi-K3)
+  the terminal releases the source.
+
+KV chunk packing and state image packing stay separate, and both saves keep
+the host wait.
 
 ### Failure handling
 
@@ -1451,7 +1541,8 @@ env var. This per-thread isolation is exactly why load and save never contend.
   `lookup_server_worker_ids=[0]` so rank 0 is the authoritative lookup answerer at
   TP>1. `build_lmcache_metadata()` fills `kv_shape` from `hf_config` and pins a
   shared `engine_id` so the scheduler's lookup client and the workers' lookup
-  servers derive the **same** ZMQ socket path.
+  servers derive the **same** ZMQ socket path, one per server
+  (`server_instance_id`) and DP rank.
 - **`metadata.py`** — `ATOMRawBytesLMCacheMetadata` overrides LMCache's allocation
   to hand out opaque `uint8` MemoryObjs (`get_shapes` returns
   `nblocks × bytes_per_block`) and asserts
@@ -1533,7 +1624,7 @@ Connector-specific tuning (env):
 | `OFFLOAD_MIN_LOAD_TOKENS` | 8192 | Don't reload a hit smaller than this; recompute is cheaper. |
 | `OFFLOAD_COPY_WORKERS` | 1 | SAVE daemon threads. |
 | `OFFLOAD_LOAD_WORKERS` | 1 | LOAD daemon threads. One is enough until the CPU tier serves real traffic; past that, requests park inside `retrieve` and the scheduler admits fewer of them. Each thread costs one more `gpu_staging_buffer_bytes` per rank. |
-| `OFFLOAD_MAX_PENDING_SAVES` | `max(2, 2 × OFFLOAD_COPY_WORKERS)` | Positive integer bound on total admitted worker saves (running + queued), acquired before SLOT snapshot or executor submission. |
+| `OFFLOAD_MAX_PENDING_SAVES` | `max(2, 2 × OFFLOAD_COPY_WORKERS)`, × `pipeline_parallel_size` on Kimi-K3's connector | Positive integer bound on total admitted worker saves (running + queued), acquired before SLOT snapshot or executor submission. |
 | `OFFLOAD_GPU_STAGING_CHUNKS` | 48 MiB worth, clamped to `[2, 64]` | Chunks per bounded GPU staging buffer. Unset, the count is derived from a byte target so geometries with different bytes-per-chunk get the same buffer size. Sizes **each** buffer — load and save own separate ones, so resident HBM ≈ `(OFFLOAD_LOAD_WORKERS + OFFLOAD_COPY_WORKERS) × chunks × chunk_bytes`. |
 | `OFFLOAD_GPU_STAGING_MAX_BYTES` | — (48 MiB for `mooncake_store`) | Hard cap on staging bytes (clamps the chunk count). |
 | `OFFLOAD_RELEASE_GPU_STAGING_AFTER_TRANSFER` | 0 | Free the staging buffer after each transfer (lower idle HBM, higher churn). |

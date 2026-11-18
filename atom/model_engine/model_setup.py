@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026, Advanced Micro Devices, Inc. All rights reserved.
-"""Build a rank's model: the process state building it needs
-(``init_model_env``), then the model with its weights (``get_model``).
-ModelRunner serves the model they build; the weight cache daemon only loads
-it."""
+"""Build a rank's model, in the steps ModelRunner takes: the process state
+building needs (``init_model_env``), the model (``get_model``, with
+``build_model`` and ``load_weights`` for its loader) and the drafter
+(``construct_drafter``). All but the last need no ModelRunner, so a process
+that only loads can use them too."""
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import os
-import time
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import torch
 from aiter import init_dist_env
@@ -21,27 +21,39 @@ from torch import nn
 from atom.config import Config, local_device_index, set_current_atom_config
 from atom.distributed.simulated_tp import apply_simulated_tp, reject_simulated_tp
 from atom.distributed.ulysses_sp import check_aiter_sp_api, sp_is_enabled
+from atom.model_engine.tp_multinode import managed_store_client
 from atom.model_loader.loader import load_model
 from atom.models.registry import support_model_arch_dict
+from atom.spec_decode.factory import build_drafter
 from atom.utils import resolve_obj_by_qualname
-from atom.utils.distributed.utils import raise_timeout_if_dp_spans_nodes
+from atom.utils.distributed.utils import (
+    raise_timeout_if_dp_spans_nodes,
+    raise_timeout_if_tp_spans_nodes,
+)
+
+if TYPE_CHECKING:
+    from atom.model_engine.model_runner import ModelRunner
+    from atom.spec_decode.drafter import Drafter
 
 logger = logging.getLogger("atom")
 
-# How get_model gets the weights: (config, model class, device) -> model.
+# What get_model calls for the model, loaded or to be filled by its caller:
+# (config, model class, device) -> model.
 ModelLoader = Callable[[Config, type, torch.device], nn.Module]
 
 
 def init_model_env(
-    config: Config, rank: int, *, device_communicators: bool = True
+    config: Config, rank: int, *, dist_env=init_dist_env
 ) -> torch.device:
-    """The current config, the device and the parallel groups (their ranks
-    decide what a rank loads). ``rank``: the worker's index in its stage.
-    ``device_communicators=False``: no RCCL/custom all-reduce buffers (~9 GiB
-    per GPU), for a process that runs no collectives (not with PP)."""
+    """Set up this process for building its rank's model: the current
+    config, its device and its parallel groups (their ranks decide what a
+    rank loads). Returns the device. ``dist_env`` builds the groups without
+    PP; a process that only loads may leave their device communicators out."""
+    # Read just below (sp_is_enabled) and by model construction.
     set_current_atom_config(config)
     if sp_is_enabled():
         check_aiter_sp_api()
+    # `rank` is this worker's local index (0..tp*pcp-1) within its stage.
     dp_rank_local = config.parallel_config.data_parallel_rank_local or 0
     pp_rank = config.parallel_config.pipeline_parallel_rank
     pp_size = config.pipeline_parallel_size
@@ -76,19 +88,15 @@ def init_model_env(
     dp_rank = config.parallel_config.data_parallel_rank
     global_rank = (dp_rank * pp_size + pp_rank) * stage_span + rank
     raise_timeout_if_dp_spans_nodes(config.parallel_config)
+    raise_timeout_if_tp_spans_nodes(config)
     if (
         config.parallel_config._managed_distributed_store
         and not torch.distributed.is_initialized()
     ):
         # Preserve AITER's environment setup when preinitializing its group.
-        os.environ.setdefault(
-            "HIP_VISIBLE_DEVICES", ",".join(map(str, range(world_size)))
-        )
-        store = torch.distributed.TCPStore(
-            config.parallel_config.data_parallel_master_ip,
-            config.parallel_config.data_parallel_base_port,
-            is_master=False,
-        )
+        visible = config.tp_size_local if config.is_multinode_tp else world_size
+        os.environ.setdefault("HIP_VISIBLE_DEVICES", ",".join(map(str, range(visible))))
+        store = managed_store_client(config)
         torch.distributed.init_process_group(
             backend="nccl", store=store, rank=global_rank, world_size=world_size
         )
@@ -114,55 +122,30 @@ def init_model_env(
     else:
         # The group spans the devices that exist; apply_simulated_tp then
         # makes it *report* the logical width so layers shard that many ways.
-        dcp_size = getattr(config, "decode_context_parallel_size", 1)
-        if device_communicators:
-            init_dist_env(
-                config.tp_world_size,
-                rankID=rank,
-                backend="nccl",
-                distributed_init_method=distributed_init_method,
-                # This node's physical device index. Without it aiter derives a
-                # local rank from the DP-scaled global rank, which overruns the
-                # device list on every node after the first.
-                local_rank=local_device_rank,
-                data_parallel_size=dp_size,
-                data_parallel_rank=dp_rank,
-                prefill_context_model_parallel_size=config.pcp_group_size,
-                decode_context_parallel_size=dcp_size,
-            )
-        else:
-            # init_dist_env's two steps; custom groups ({}: none) leave the
-            # standard groups without device communicators.
-            from aiter.dist.parallel_state import (
-                ensure_model_parallel_initialized,
-                init_distributed_environment,
-            )
-
-            init_distributed_environment(
-                world_size=config.tp_world_size * config.pcp_group_size,
-                rank=rank,
-                distributed_init_method=distributed_init_method,
-                backend="nccl",
-                local_rank=local_device_rank,
-                data_parallel_size=dp_size,
-                data_parallel_rank=dp_rank,
-            )
-            ensure_model_parallel_initialized(
-                config.tp_world_size,
-                1,
-                decode_context_model_parallel_size=dcp_size,
-                data_parallel_size=dp_size,
-                prefill_context_model_parallel_size=config.pcp_group_size,
-                custom_group_config={},
-            )
+        dist_env(
+            config.tp_world_size,
+            rankID=rank,
+            backend="nccl",
+            distributed_init_method=distributed_init_method,
+            # This node's physical device index. Without it aiter derives a
+            # local rank from the DP-scaled global rank, which overruns the
+            # device list on every node after the first.
+            local_rank=local_device_rank,
+            data_parallel_size=config.parallel_config.data_parallel_size,
+            data_parallel_rank=config.parallel_config.data_parallel_rank,
+            prefill_context_model_parallel_size=config.pcp_group_size,
+            decode_context_parallel_size=getattr(
+                config, "decode_context_parallel_size", 1
+            ),
+        )
         apply_simulated_tp(config)
     return device
 
 
 def get_model(config: Config, device: torch.device, load: ModelLoader) -> nn.Module:
-    """This rank's model with its weights, after ``init_model_env``: ``load``
-    builds it and gets the weights (``load_from_disk``, or a weight cache
-    client). Leaves the config's dtype as the default dtype."""
+    """This rank's model, after ``init_model_env``: ``load`` builds it and
+    gets its weights (``build_model`` then ``load_weights``, or a builder
+    whose weights come later). Leaves the config's dtype as the default."""
     torch.set_default_dtype(config.torch_dtype)
     model_class = resolve_obj_by_qualname(
         support_model_arch_dict[config.hf_config.architectures[0]]
@@ -188,49 +171,10 @@ def build_model(config: Config, model_class: type, device: torch.device) -> nn.M
         torch.set_default_device(None)
 
 
-def swap_param(old, new: nn.Parameter, attrs: dict) -> bool:
-    """Move ``new``'s data into ``old``, keeping the Parameter object other
-    references hold, with attributes ``attrs``. False: it cannot be swapped
-    (another type, or extra references to its data)."""
-    if type(old) is not nn.Parameter:
-        return False
-    try:
-        torch.utils.swap_tensors(old, new)
-    except Exception:  # noqa: BLE001 - the caller installs ``new`` instead
-        return False
-    old.__dict__.clear()
-    old.__dict__.update(attrs)
-    return True
-
-
-@contextlib.contextmanager
-def params_on_meta():
-    """Build with every Parameter on the meta device, for a model whose
-    weights come from elsewhere; buffers are built normally. Each Parameter
-    exists on the device only while registered, and stays the object the
-    constructor holds, so attributes set on it later land."""
-    orig = nn.Module.register_parameter
-
-    def register_parameter(self, name, param):
-        orig(self, name, param)
-        p = self._parameters.get(name)
-        if p is None or p.is_meta:
-            return
-        meta = nn.Parameter(p.detach().to("meta"), requires_grad=p.requires_grad)
-        if not swap_param(p, meta, dict(vars(p))):
-            meta.__dict__.update(vars(p))
-            self._parameters[name] = meta
-
-    nn.Module.register_parameter = register_parameter
-    try:
-        yield
-    finally:
-        nn.Module.register_parameter = orig
-
-
-def load_weights(model: nn.Module, config: Config) -> None:
-    """Load the checkpoint into a built model and process it for serving."""
-    load_model(
+def load_weights(model: nn.Module, config: Config) -> set[str]:
+    """Load the checkpoint into a built model and process it for serving.
+    Returns the names of the parameters loaded or created at load."""
+    return load_model(
         model,
         config.model,
         config.hf_config,
@@ -239,9 +183,11 @@ def load_weights(model: nn.Module, config: Config) -> None:
     )
 
 
-def construct_drafter(config: Config, device: torch.device, runner):
-    """Construct the drafter on ``device``, without its draft weights."""
-    from atom.spec_decode.factory import build_drafter
+def construct_drafter(
+    config: Config, device: torch.device, runner: ModelRunner
+) -> Drafter:
+    """Construct the drafter for ``runner`` on ``device``, without its
+    weights."""
     from atom.utils.backends import set_model_tag
 
     torch.set_default_device(device)
@@ -250,26 +196,3 @@ def construct_drafter(config: Config, device: torch.device, runner):
             return build_drafter(config, device, runner)
     finally:
         torch.set_default_device(None)
-
-
-def load_drafter_from_disk(config: Config, device: torch.device, runner, target):
-    """A drafter loader, as ``load_from_disk`` is a model's: (config, device,
-    runner, the loaded target model) -> drafter with its weights."""
-    drafter = construct_drafter(config, device, runner)
-    logger.info("Loading drafter model...")
-    drafter.attach_to_target(target, drafter.load_weights())
-    return drafter
-
-
-def load_from_disk(
-    config: Config, model_class: type, device: torch.device, tag: str
-) -> nn.Module:
-    """``tag``: how the log names this rank."""
-    model = build_model(config, model_class, device)
-    t0 = time.perf_counter()
-    load_weights(model, config)
-    logger.info(
-        f"[{tag}] Model load done: {config.model} "
-        f"(weights loaded in {time.perf_counter() - t0:.2f}s)"
-    )
-    return model

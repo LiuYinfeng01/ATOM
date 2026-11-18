@@ -88,10 +88,12 @@ def _import_qual(module: str, qual: str) -> Any:
 
 
 def _ref_name(v: Any) -> str | None:
-    """``module:qualname`` of a module-level function or class (pickles by reference)."""
+    """``module:qualname`` a module-level function or class is found under."""
     if not isinstance(v, (types.FunctionType, types.BuiltinFunctionType, type)):
         return None
-    mod, qual = getattr(v, "__module__", None), getattr(v, "__qualname__", None)
+    # A decorator's wrapper is bound to the name of the function it wraps.
+    named = getattr(v, "__wrapped__", v)
+    mod, qual = getattr(named, "__module__", None), getattr(named, "__qualname__", None)
     if not mod or not qual or "<" in qual:
         return None
     obj = sys.modules.get(mod)
@@ -128,6 +130,14 @@ def _is_plain(v: Any, depth: int = 0) -> bool:
     if isinstance(v, dict):
         return all(
             _is_plain(k, depth + 1) and _is_plain(x, depth + 1) for k, x in v.items()
+        )
+    # An immutable record of plain fields, e.g. a layer's quantization spec.
+    state = getattr(v, "__dict__", None)
+    if dataclasses.is_dataclass(v) and state is not None and not isinstance(v, type):
+        return (
+            type(v).__dataclass_params__.frozen
+            and _ref_name(type(v)) is not None
+            and all(_is_plain(x, depth + 1) for x in state.values())
         )
     return False
 
@@ -270,7 +280,9 @@ def _recursable(v: Any) -> bool:
         or mod.startswith(_NO_RECURSE)
     ):
         return False
-    return not (mod == "atom.config" and t.__name__ in _CONFIG_CLASSES)
+    if mod == "atom.config" and t.__name__ in _CONFIG_CLASSES:
+        return False
+    return not _is_plain(v)  # a plain record travels whole, as a value
 
 
 def config_objects(config) -> list[tuple[str, Any]]:
@@ -322,10 +334,12 @@ def _walk_objects(model: nn.Module):
 
 
 def _attrs(obj: Any, is_module: bool) -> dict:
+    """An object's attributes; a module's without its internals and the
+    modules it holds (the module tree has those)."""
     return {
         k: v
         for k, v in vars(obj).items()
-        if not (is_module and k in _MODULE_INTERNALS) and not isinstance(v, nn.Module)
+        if not (is_module and (k in _MODULE_INTERNALS or isinstance(v, nn.Module)))
     }
 
 

@@ -17,7 +17,6 @@ import multiprocessing
 import os
 import queue
 import signal
-import threading
 import time
 from types import SimpleNamespace
 
@@ -50,7 +49,6 @@ from atom.model_loader.weight_cache.key import (
 )
 from atom.model_loader.weight_cache.recorder import InputRecorder
 from atom.model_loader.weight_cache.transport import (
-    PROTOCOL_VERSION,
     _DaemonLock,
     _Server,
     gpu_identity,
@@ -58,6 +56,7 @@ from atom.model_loader.weight_cache.transport import (
 )
 from atom.model_loader.weight_cache.values import (
     _TAG,
+    _walk_objects,
     logger,
     release_digest_buffers,
 )
@@ -95,29 +94,29 @@ def run_daemon(engine_args) -> None:
     ]
     n = len(ranks)
     ctx = multiprocessing.get_context("spawn")
-    ready = ctx.Queue()
+    ready, all_serving = ctx.Queue(), ctx.Event()
     procs = [
         ctx.Process(
-            target=_serve_rank, args=(rank, cfg, ready, i), name=f"WeightCache{i}"
+            target=_serve_rank,
+            args=(rank, cfg, ready, i, all_serving),
+            name=f"WeightCache{i}",
         )
         for i, (rank, cfg) in enumerate(ranks)
     ]
-    stop = threading.Event()
-
-    def on_signal(signum, frame):
-        stop.set()  # no logging here: a signal can land inside a log write
-
-    signal.signal(signal.SIGINT, on_signal)
-    signal.signal(signal.SIGTERM, on_signal)
+    # A flag, and no logging: a signal can land inside a lock or a log write.
+    signaled = []
+    signal.signal(signal.SIGINT, lambda *_: signaled.append(1))
+    signal.signal(signal.SIGTERM, lambda *_: signaled.append(1))
     t0 = time.monotonic()
     for p in procs:
         p.start()
     serving: set[int] = set()
     failed = []
-    while not stop.is_set():
+    while not signaled:
         with contextlib.suppress(queue.Empty):
             serving.add(ready.get(timeout=1.0))
             if len(serving) == n:
+                all_serving.set()
                 logger.info(
                     f"{_TAG} daemon ready: {n} rank(s) serve their weights "
                     f"({time.monotonic() - t0:.0f}s)"
@@ -143,9 +142,10 @@ def run_daemon(engine_args) -> None:
         raise SystemExit(1)
 
 
-def _serve_rank(rank: int, config, ready, index: int) -> None:
+def _serve_rank(rank: int, config, ready, index: int, all_serving) -> None:
     """One GPU's daemon process: load this rank's shard, serve it, and wait
-    to be stopped. ``index``: what it reports on ``ready`` once serving."""
+    to be stopped. ``index``: what it reports on ``ready`` once serving;
+    ``all_serving``: set once every rank does."""
     from atom.config import local_device_index
     from atom.utils import enable_orphan_reaping, set_process_title
     from atom.utils.gc_utils import tune_gc
@@ -162,31 +162,26 @@ def _serve_rank(rank: int, config, ready, index: int) -> None:
     path = socket_path(gpu)
     lock = _DaemonLock(
         path,
-        rank=rank,
+        name=worker_process_name(config, rank),
         model=config.model,
         gpu=gpu_identity(gpu),
         idle_timeout_s=envs.ATOM_PRELOAD_IDLE_TIMEOUT_S,
     )
     recorder = InputRecorder.start()
-    # Loading runs no device collectives.
-    device = init_model_env(config, rank, device_communicators=False)
-    stop = threading.Event()
-    server, pool = _load_and_serve(
-        config,
-        rank,
-        device,
-        recorder,
-        path,
-        lock,
-        functools.partial(_stop_launch, lock, stop),
-        t0,
-    )
-    # Not stop.set(): a handler that runs inside stop.wait() would deadlock.
-    signaled = []
+    device = init_model_env(config, rank, dist_env=_groups_without_communicators)
+    server, pool = _load_and_serve(config, rank, device, recorder, path, lock, t0)
+    # Flags: a handler that takes a lock could land inside its holder.
+    signaled, idle = [], []
     signal.signal(signal.SIGTERM, lambda *_: signaled.append(1))
     signal.signal(signal.SIGINT, lambda *_: signaled.append(1))
+    if lock.info["idle_timeout_s"] > 0:
+        server.watch_idle(
+            lock.info["idle_timeout_s"],
+            functools.partial(_stop_launch, lock, idle),
+            all_serving,
+        )
     ready.put(index)
-    while not (signaled or stop.is_set()):
+    while not (signaled or idle):
         time.sleep(1.0)
     # Clients that mapped the weights keep them until they exit.
     server.close()
@@ -195,7 +190,47 @@ def _serve_rank(rank: int, config, ready, index: int) -> None:
     logger.info(f"{_TAG} {worker_process_name(config, rank)}: stopped serving")
 
 
-def _stop_launch(lock, stop: threading.Event) -> None:
+def _groups_without_communicators(
+    tp_size: int,
+    *,
+    rankID,
+    backend,
+    distributed_init_method,
+    local_rank,
+    data_parallel_size,
+    data_parallel_rank,
+    prefill_context_model_parallel_size,
+    decode_context_parallel_size,
+) -> None:
+    """aiter's init_dist_env without device communicators: loading does
+    without them, and RCCL with the custom and quick all-reduce buffers
+    takes about 9 GiB per GPU."""
+    from aiter.dist.parallel_state import (
+        ensure_model_parallel_initialized,
+        init_distributed_environment,
+    )
+
+    init_distributed_environment(
+        world_size=tp_size * prefill_context_model_parallel_size,
+        rank=rankID,
+        distributed_init_method=distributed_init_method,
+        backend=backend,
+        local_rank=local_rank,
+        data_parallel_size=data_parallel_size,
+        data_parallel_rank=data_parallel_rank,
+    )
+    # No custom groups ({}): the standard ones get no device communicator.
+    ensure_model_parallel_initialized(
+        tp_size,
+        1,
+        decode_context_model_parallel_size=decode_context_parallel_size,
+        data_parallel_size=data_parallel_size,
+        prefill_context_model_parallel_size=prefill_context_model_parallel_size,
+        custom_group_config={},
+    )
+
+
+def _stop_launch(lock, idle: list) -> None:
     """Idle timeout: shut the whole daemon down through its main process,
     as SIGTERM to the launch would."""
     main_pid = lock.info.get("daemon_pid")
@@ -203,7 +238,7 @@ def _stop_launch(lock, stop: threading.Event) -> None:
         with contextlib.suppress(ProcessLookupError):
             os.kill(main_pid, signal.SIGTERM)
     else:
-        stop.set()  # main process unknown or gone: stop serving and exit
+        idle.append(1)  # main process unknown or gone: stop serving and exit
 
 
 def _record(recorder: InputRecorder, config, build, load) -> SimpleNamespace:
@@ -214,12 +249,13 @@ def _record(recorder: InputRecorder, config, build, load) -> SimpleNamespace:
     recorder.enter_construct(config)
     try:
         rec.model = build()
-        rec.built, before = structure(rec.model), snapshot(rec.model)
+        rec.built, before = structure(rec.model), snapshot(rec.model, config)
+        rec.classes = {type(e["obj"]) for e in before["walk"].values()}
         with rec.tracer, _record_jit(rec.kernels):
             recorder.enter_load(rec.model)
             # Around the load only: what constructing does, clients do.
             states = [process_snapshot(config)]
-            with _skip_prepare_finalize(rec.model):
+            with _skip_prepare_finalize():
                 rec.loaded = load(rec.model)
             states.append(process_snapshot(config))
     finally:
@@ -255,8 +291,11 @@ class _RecordingLoad:
 
 def _load_draft(config, device, target, rank: int) -> SimpleNamespace | None:
     """The drafter's recorded load; None: servers load it from disk."""
+    from atom.kv_transfer.disaggregation import kv_config_has_producer
+
     recorder = InputRecorder.start()
-    # What building a drafter reads from its runner, as ModelRunner sets it.
+    # What building and attaching a drafter reads from its runner, as
+    # ModelRunner sets it.
     rope = getattr(get_hf_text_config(config.hf_config), "rope_parameters", None)
     runner = SimpleNamespace(
         model=target,
@@ -265,6 +304,9 @@ def _load_draft(config, device, target, rank: int) -> SimpleNamespace | None:
         rank=rank,
         world_size=config.tensor_parallel_size,
         use_mrope="mrope_section" in (rope or {}),
+        tokenID_processor=SimpleNamespace(
+            is_pd_producer=kv_config_has_producer(config.kv_transfer_config or {})
+        ),
     )
     drafters = []
 
@@ -286,7 +328,9 @@ def _load_draft(config, device, target, rank: int) -> SimpleNamespace | None:
 
 def _code(rec) -> dict:
     """What ran during the recorded load (raises _SourceChanged)."""
-    return code_fingerprint(rec.tracer.codes, rec.kernels.values())
+    # The classes of the model as built and as loaded (loading may swap some).
+    classes = rec.classes | {type(obj) for _, obj, _ in _walk_objects(rec.model)}
+    return code_fingerprint(rec.tracer.codes, rec.kernels.values(), classes)
 
 
 def _draft_payload(d, target, label: str) -> dict | None:
@@ -329,7 +373,7 @@ def _leave_out_shared(d, target) -> list[str]:
     return []
 
 
-def _load_and_serve(config, rank, device, recorder, path, lock, on_idle, t0):
+def _load_and_serve(config, rank, device, recorder, path, lock, t0):
     label = worker_process_name(config, rank)
     load = _RecordingLoad(rank, recorder)
     get_model(config, device, load)
@@ -352,7 +396,6 @@ def _load_and_serve(config, rank, device, recorder, path, lock, on_idle, t0):
         p["storages"] = {k: handles[k] for k in ks}
     total = sum(v.numel() for v in views.values())
     payload = {
-        "protocol": PROTOCOL_VERSION,
         "key": load.key,
         "reads": reads,
         "code": codes,
@@ -372,14 +415,7 @@ def _load_and_serve(config, rank, device, recorder, path, lock, on_idle, t0):
         f"attributes, {len(reads['globals'])} globals, {len(reads['files'])} files; it changed "
         f"{len(process['changes'])} globals and {len(process['env'])} env vars"
     )
-    server = _Server(
-        path,
-        payload,
-        views,
-        label,
-        idle_timeout_s=lock.info["idle_timeout_s"],
-        on_idle=on_idle,
-    )
+    server = _Server(path, payload, views, label)
     lock.set_state("serving", bytes=total)
     entries = sum(
         len(i["params"]) + len(i["buffers"]) + len(i["attrs"])

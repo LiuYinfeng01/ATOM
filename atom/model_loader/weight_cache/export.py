@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026, Advanced Micro Devices, Inc. All rights reserved.
-"""What the daemon serves: the model state ``load_model`` produced, found by
+"""What the daemon serves: the model state loading produced, found by
 diffing the model before and after loading, exported as CUDA IPC handles and
 applied to a client's meta-built model."""
 
 from __future__ import annotations
 
+import bisect
 import contextlib
 import importlib
 import os
@@ -16,12 +17,12 @@ from typing import Any
 import torch
 from torch import nn
 
-from atom.model_engine.model_setup import swap_param
 from atom.model_loader.weight_cache.values import (
     _MODULE_INTERNALS,
     _attrs,
     _entries,
     _fp,
+    _import_qual,
     _is_plain,
     _recursable,
     _ref_name,
@@ -36,13 +37,17 @@ _DEEP_DEPTH = 6  # how far below a module the fingerprints of unwalked objects g
 _STATE = ("atom", "aiter")  # the packages whose globals process_snapshot covers
 
 
-def snapshot(model: nn.Module) -> dict:
+def snapshot(model: nn.Module, config=None) -> dict:
     """Everything loading can change in ``model``, with tensor contents
     (daemon only): what the walk exports, and fingerprints of the objects it
-    does not reach, which loading must leave alone."""
+    does not reach, which loading must leave alone. ``held``: those objects
+    and the config's, which a client has where no walk path leads."""
     walk = {}
     for path, obj, is_module in _walk_objects(model):
-        entry = {"attrs": {k: _fp(v) for k, v in _attrs(obj, is_module).items()}}
+        entry = {
+            "obj": obj,  # held, so no later object can pass for it by its id
+            "attrs": {k: _fp(v) for k, v in _attrs(obj, is_module).items()},
+        }
         if is_module:
             entry["type"] = f"{type(obj).__module__}.{type(obj).__qualname__}"
             # Parameters are always exported, so their identity is enough.
@@ -52,14 +57,16 @@ def snapshot(model: nn.Module) -> dict:
             }
             entry["buffers"] = {k: _fp(b) for k, b in obj._buffers.items()}
         walk[path] = entry
-    return {"walk": walk, "deep": _unwalked(model)}
+    deep, held = _unwalked(model)
+    held += [obj for _, obj in config_objects(config)] if config is not None else []
+    return {"walk": walk, "deep": deep, "held": held}
 
 
-def _unwalked(model: nn.Module) -> dict:
-    """Fingerprints of the attributes of objects the walk does not export:
-    deeper than it goes, or held in containers."""
+def _unwalked(model: nn.Module) -> tuple[dict, list]:
+    """Fingerprints of the attributes of objects the walk does not export
+    (deeper than it goes, or held in containers), and those objects."""
     walked = {id(obj) for _, obj, _ in _walk_objects(model)}
-    out, seen = {}, set()
+    out, seen, held = {}, set(), []
     for mpath, mod in model.named_modules():
         queue = [
             (f"{mpath}::{k}", v, 1)
@@ -76,36 +83,82 @@ def _unwalked(model: nn.Module) -> dict:
                 queue += [(f"{path}[{k!r}]", x, depth + 1) for k, x in items]
             elif _recursable(v):
                 seen.add(id(v))
+                if id(v) not in walked:
+                    held.append(v)
                 for k, x in vars(v).items():
                     if id(v) not in walked:
                         out[f"{path}::{k}"] = _fp(x)
                     if not isinstance(x, (nn.Module, types.ModuleType)):
                         queue.append((f"{path}::{k}", x, depth + 1))
-    return out
+    return out, held
 
 
 _MAX_HOST_BYTES = 256 << 20  # host tensors travel in the payload
 
 
 class _Exporter:
-    """Tensors as views of whole storages, so aliasing survives: device ones
-    shared over IPC (``views``), host ones sent by value (``host``)."""
+    """What one export sends. Tensors as views of whole storages, so aliasing
+    survives: device ones shared over IPC (``views``), host ones sent by
+    value (``host``). And which objects a client has (``paths``, ``existed``)
+    or gets (``created``)."""
 
-    def __init__(self):
+    def __init__(self, paths: dict[int, str] | None = None, existed=None):
         self.views: dict[int, torch.Tensor] = {}  # device storages as uint8
         self.host: dict[str, tuple[torch.Tensor, bool]] = {}  # (bytes, pinned)
+        self.host_bytes = 0
+        self.int64s: list[torch.Tensor] = []  # may be tables of addresses
+        # What a client has too, its own: the modules and objects loading
+        # left at their walk paths (id -> path).
+        self.paths = paths or {}
+        # The other objects there were before loading (ids; None: unknown,
+        # so no object counts as created by it), and those sent so far.
+        self.existed = existed
+        self.created: dict[int, int] = {}
+
+    def creates(self, v) -> bool:
+        """Loading created ``v``, and its attributes are all there is to it."""
+        cls = type(v)
+        return (
+            self.existed is not None
+            and id(v) not in self.existed
+            and _recursable(v)
+            and cls.__new__ is object.__new__
+            and not any(getattr(c, "__slots__", None) for c in cls.__mro__)
+        )
 
     def unshippable(self) -> list[str]:
-        n = sum(b.numel() for b, _ in self.host.values())
-        return [f"{n >> 20} MiB of host tensors"] if n > _MAX_HOST_BYTES else []
+        out = []
+        if self.host_bytes > _MAX_HOST_BYTES:
+            out.append(f"{self.host_bytes >> 20} MiB of host tensors")
+        # An address in this process's memory means nothing in a client.
+        spans = [(ptr, ptr + v.numel()) for ptr, v in self.views.items()]
+        spans += [
+            (int(k[len("host:") :]), int(k[len("host:") :]) + b.numel())
+            for k, (b, _) in self.host.items()
+        ]
+        spans.sort()
+        starts, end = [lo for lo, _ in spans], max((hi for _, hi in spans), default=0)
+        for t in self.int64s if spans else ():
+            inside = t[(t >= starts[0]) & (t < end)]
+            if any(
+                x < spans[bisect.bisect_right(starts, x) - 1][1]
+                for x in inside.flatten().tolist()
+            ):
+                out.append(
+                    f"an int64 tensor {tuple(t.shape)} holds addresses of the "
+                    "daemon's memory"
+                )
+        return out
 
     def tensor(self, t: torch.Tensor) -> dict:
         t = t.detach()
+        if t.dtype == torch.int64 and 0 < t.numel() <= 1 << 16:
+            self.int64s.append(t)
         st = t.untyped_storage()
         if st.nbytes() == 0:
             # No allocation, so no IPC handle: rebuilt locally.
             return {
-                "empty": True,
+                "empty": "cuda" if t.is_cuda else "cpu",
                 "shape": tuple(t.shape),
                 "stride": tuple(t.stride()),
                 "dtype": t.dtype,
@@ -119,6 +172,9 @@ class _Exporter:
         else:
             key = f"host:{st.data_ptr()}"
             if key not in self.host:
+                self.host_bytes += st.nbytes()
+                if self.host_bytes > _MAX_HOST_BYTES:
+                    return {"refused": True}  # too much to send: see unshippable
                 pinned = torch.cuda.is_available() and t.is_pinned()
                 self.host[key] = (whole.clone(), pinned)
         return {
@@ -131,33 +187,106 @@ class _Exporter:
 
 
 def _pack(v: Any, ex: _Exporter, depth: int = 0):
+    """``v`` as it travels: ("T", meta) a tensor, ("R", name) a module-level
+    function or class, ("V", value) a plain value, ("P", path) the client's
+    own object at a walk path, ("B", path, name) a bound method of one,
+    ("O", class, n, attributes) an object loading created and ("M", n) that
+    one again, ("C", is_tuple, items) and ("D", items) containers. Raises
+    _Unshippable, and then nothing in ``v`` counts as sent."""
+    sent = len(ex.created)
+    try:
+        return _packed(v, ex, depth)
+    except _Unshippable:
+        for created in list(ex.created)[sent:]:
+            del ex.created[created]
+        raise
+
+
+def _packed(v: Any, ex: _Exporter, depth: int):
     if isinstance(v, torch.Tensor):
         return ("T", ex.tensor(v))
-    if _is_plain(v) or _ref_name(v):
-        return ("V", v)  # by value, or by reference for module-level functions/classes
-    if depth < 8 and isinstance(v, (list, tuple)):
+    ref = _ref_name(v)
+    if ref:
+        return ("R", ref)  # a module-level function or class, by name
+    if _is_plain(v):
+        return ("V", v)
+    if id(v) in ex.paths:
+        return ("P", ex.paths[id(v)])  # the client's own, where it has it
+    if (
+        isinstance(v, types.MethodType)
+        and id(v.__self__) in ex.paths
+        and getattr(v.__self__, v.__name__, None) == v
+    ):
+        return ("B", ex.paths[id(v.__self__)], v.__name__)
+    if id(v) in ex.created:
+        return ("M", ex.created[id(v)])  # sent already: that one again
+    # Not a tuple subclass: as a list, isinstance checks would go another way.
+    if depth < 8 and (isinstance(v, list) or type(v) is tuple):
         return ("C", type(v) is tuple, [_pack(x, ex, depth + 1) for x in v])
     if depth < 8 and isinstance(v, dict) and all(_is_plain(k) for k in v):
         return ("D", [(k, _pack(x, ex, depth + 1)) for k, x in v.items()])
+    cls = _ref_name(type(v))
+    if depth < 8 and cls and ex.creates(v):
+        # E.g. the method of experts quantized while loading. Numbered first:
+        # its attributes, or another holder, may refer to it.
+        ex.created[id(v)] = n = len(ex.created)
+        items = [(k, _pack(x, ex, depth + 1)) for k, x in vars(v).items()]
+        return ("O", cls, n, items)
     raise _Unshippable(f"{type(v).__module__}.{type(v).__qualname__}")
 
 
-def _unpack(p, make):
+def _unpack(p, make, resolve=None, created=None):
+    """``make``: a tensor from its meta; ``resolve``: the object at a path;
+    ``created``: the objects rebuilt so far, by number."""
     kind = p[0]
     if kind == "T":
         return make(p[1])
     if kind == "V":
         return p[1]
+    if kind == "R":
+        return _import_qual(*p[1].split(":"))
+    if kind == "P":
+        return resolve(p[1])
+    if kind == "B":
+        return getattr(resolve(p[1]), p[2])
+    if kind == "M":
+        return created[p[1]]
     if kind == "C":
-        items = [_unpack(x, make) for x in p[2]]
+        items = [_unpack(x, make, resolve, created) for x in p[2]]
         return tuple(items) if p[1] else items
-    return {k: _unpack(x, make) for k, x in p[1]}
+    if kind == "D":
+        return {k: _unpack(x, make, resolve, created) for k, x in p[1]}
+    obj = created[p[2]] = object.__new__(_import_qual(*p[1].split(":")))
+    vars(obj).update((k, _unpack(x, make, resolve, created)) for k, x in p[3])
+    return obj
+
+
+def _metas(p):
+    """The tensors in a packed value."""
+    if p[0] == "T":
+        yield p[1]
+    elif p[0] == "C":
+        for x in p[2]:
+            yield from _metas(x)
+    elif p[0] in ("D", "O"):
+        for _, x in p[-1]:
+            yield from _metas(x)
 
 
 def build_export(model: nn.Module, before: dict, after: dict) -> dict:
-    """The tensors and attributes ``load_model`` produced, as an import plan."""
-    ex = _Exporter()
+    """The tensors and attributes loading produced, as an import plan."""
     objects = {path: (obj, is_module) for path, obj, is_module in _walk_objects(model)}
+    # What loading left where it was, a client has there. Anything else that
+    # was there before, it has where the plan cannot point.
+    ex = _Exporter(
+        {
+            id(obj): path
+            for path, (obj, _) in objects.items()
+            if before["walk"].get(path, {}).get("obj") is obj
+        },
+        {id(o) for o in before["held"]}
+        | {id(e["obj"]) for e in before["walk"].values()},
+    )
     plan: dict[str, dict] = {}
     deep0, deep1 = before["deep"], after["deep"]
     unshippable = [
@@ -176,11 +305,20 @@ def build_export(model: nn.Module, before: dict, after: dict) -> dict:
         for p in after
         if "::" not in p and p not in before
     ]
+    by_id = {id(e["obj"]): e for e in before.values()}
     for path, entry in after.items():
         if path not in before:
-            continue  # a new object: the attribute holding it decides below
+            # A new object: the attribute holding it decides below. One that
+            # was reached another way before has no path a client could use.
+            if entry["attrs"] != by_id.get(id(entry["obj"]), entry)["attrs"]:
+                unshippable.append(
+                    f"{path}: changed during load, and held elsewhere before it"
+                )
+            continue
         obj, is_module = objects[path]
         prev = before[path]
+        if not is_module and prev["obj"] is not obj:
+            continue  # another object now: the attribute holding it sends it whole
         if prev.get("type") != entry.get("type"):
             unshippable.append(f"{path or '<root>'}: replaced by a {entry['type']}")
             continue
@@ -192,10 +330,11 @@ def build_export(model: nn.Module, before: dict, after: dict) -> dict:
                         item["params"][k] = None  # loading set it to None
                     continue
                 meta = ex.tensor(p)
-                meta["replaced"] = prev["params"].get(k, ("P", id(p)))[1] != id(p)
+                was = prev["params"].get(k)  # None: registered empty, or new
+                meta["replaced"] = was is None or was[1] != id(p)
                 meta["pattrs"] = {}
                 for a, v in vars(p).items():
-                    # Loaders (bound methods) are the client's own.
+                    # What cannot travel (a loader closure) is the client's own.
                     with contextlib.suppress(_Unshippable):
                         meta["pattrs"][a] = _pack(v, ex)
                 item["params"][k] = meta
@@ -236,18 +375,13 @@ def leave_out(export: dict, paths: set[str]) -> None:
     for p in [p for p in plan if p.partition("::")[0] in paths]:
         del plan[p]
     used = set()
-
-    def note(meta: dict) -> None:
-        used.add(meta.get("storage"))
-
     for item in plan.values():
+        packed = list(item["attrs"].values())
         for meta in (*item["params"].values(), *item["buffers"].values()):
             if meta is not None:
-                note(meta)
-                for packed in meta.get("pattrs", {}).values():
-                    _unpack(packed, note)
-        for packed in item["attrs"].values():
-            _unpack(packed, note)
+                used.add(meta.get("storage"))
+                packed += meta.get("pattrs", {}).values()
+        used.update(m.get("storage") for p in packed for m in _metas(p))
     export["views"] = {k: v for k, v in export["views"].items() if k in used}
     export["host"] = {k: v for k, v in export["host"].items() if k in used}
 
@@ -332,7 +466,46 @@ def share_storages(views: dict) -> dict:
     return {key: v.untyped_storage()._share_cuda_() for key, v in views.items()}
 
 
-def _install_param(obj, k: str, t: torch.Tensor, meta: dict, make, filled: dict):
+def _swap_param(old, new: nn.Parameter, attrs: dict) -> bool:
+    """Move ``new``'s data into ``old``, keeping the Parameter object other
+    references hold, with attributes ``attrs``. False: it cannot be swapped
+    (another type, or extra references to its data)."""
+    if type(old) is not nn.Parameter:
+        return False
+    try:
+        torch.utils.swap_tensors(old, new)
+    except Exception:  # noqa: BLE001 - the caller installs ``new`` instead
+        return False
+    old.__dict__.clear()
+    old.__dict__.update(attrs)
+    return True
+
+
+@contextlib.contextmanager
+def params_on_meta():
+    """Build a model with every Parameter on the meta device; buffers are
+    built normally. Each Parameter stays the object the constructor holds, so
+    attributes set on it later (set_weight_attrs) land."""
+    orig = nn.Module.register_parameter
+
+    def register_parameter(self, name, param):
+        orig(self, name, param)
+        p = self._parameters.get(name)
+        if p is None or p.is_meta:
+            return
+        meta = nn.Parameter(p.detach().to("meta"), requires_grad=p.requires_grad)
+        if not _swap_param(p, meta, dict(vars(p))):
+            meta.__dict__.update(vars(p))
+            self._parameters[name] = meta
+
+    nn.Module.register_parameter = register_parameter
+    try:
+        yield
+    finally:
+        nn.Module.register_parameter = orig
+
+
+def _install_param(obj, k: str, t: torch.Tensor, meta: dict, unpack, filled: dict):
     """Put ``t`` into parameter ``k``, swapping it into the Parameter object
     the model was built with (other references see it). ``filled``: objects
     swapped already; one tied to a parameter loading gave other data (it
@@ -342,12 +515,12 @@ def _install_param(obj, k: str, t: torch.Tensor, meta: dict, make, filled: dict)
     tied = built is not None and id(built) in filled
     if tied and filled[id(built)] == where:
         return  # still tied: it holds this data already
-    pattrs = {a: _unpack(x, make) for a, x in meta["pattrs"].items()}
+    pattrs = {a: unpack(x) for a, x in meta["pattrs"].items()}
     # A Parameter loading replaced has only the attributes it was given.
     keep = {} if built is None or meta["replaced"] else vars(built)
     attrs = {**keep, **pattrs}
     new = nn.Parameter(t, requires_grad=False)
-    if not tied and swap_param(built, new, attrs):
+    if not tied and _swap_param(built, new, attrs):
         filled[id(built)] = where
         return
     new.__dict__.update(attrs)
@@ -370,7 +543,10 @@ def _maker(export: dict, device: torch.device):
     def make(meta: dict) -> torch.Tensor:
         if meta.get("empty"):
             return torch.empty_strided(
-                meta["shape"], meta["stride"], dtype=meta["dtype"], device=device
+                meta["shape"],
+                meta["stride"],
+                dtype=meta["dtype"],
+                device=device if meta["empty"] == "cuda" else "cpu",
             )
         st = storages[meta["storage"]]
         t = torch.empty(0, dtype=meta["dtype"], device=st.device)
@@ -390,8 +566,14 @@ def apply_process(export: dict, device: torch.device) -> int:
         if packed is None:
             with contextlib.suppress(AttributeError):
                 delattr(owner, rest[-1])
+            continue
+        new, old = _unpack(packed, make), vars(owner).get(rest[-1])
+        if type(old) is type(new) and isinstance(new, (dict, list, set)):
+            # In place: other modules may hold the container itself.
+            old.clear()
+            (old.extend if isinstance(new, list) else old.update)(new)
         else:
-            setattr(owner, rest[-1], _unpack(packed, make))
+            setattr(owner, rest[-1], new)
     for k, v in export["env"].items():
         if v is None:
             os.environ.pop(k, None)
@@ -403,6 +585,11 @@ def apply_process(export: dict, device: torch.device) -> int:
 def apply_export(model: nn.Module, export: dict, device: torch.device) -> int:
     """Point ``model`` (built on meta) at the daemon's tensors. Returns bytes mapped."""
     make, mapped = _maker(export, device)
+    created = {}
+
+    def unpack(packed):
+        return _unpack(packed, make, lambda path: _resolve(model, path), created)
+
     filled = {}  # id(Parameter the model was built with) -> where its data is
     for path, item in export["plan"].items():
         obj = _resolve(model, path)
@@ -419,7 +606,7 @@ def apply_export(model: nn.Module, export: dict, device: torch.device) -> int:
             if meta is None:
                 obj._parameters[k] = None
                 continue
-            _install_param(obj, k, make(meta), meta, make, filled)
+            _install_param(obj, k, make(meta), meta, unpack, filled)
         for k, meta in item["buffers"].items():
             obj._buffers[k] = None if meta is None else make(meta)
         for k, packed in item["attrs"].items():
@@ -429,7 +616,7 @@ def apply_export(model: nn.Module, export: dict, device: torch.device) -> int:
                 raise RuntimeError(
                     f"{path}.{k}: attribute shadows a parameter, buffer or submodule"
                 )
-            d[k] = _unpack(packed, make)
+            d[k] = unpack(packed)
     return mapped
 
 
@@ -453,23 +640,23 @@ def _leftover_meta(model: nn.Module) -> list[str]:
 
 
 @contextlib.contextmanager
-def _skip_prepare_finalize(model: nn.Module):
-    """The daemon never serves: leave MoE comm/kernel setup to the client."""
+def _skip_prepare_finalize():
+    """The daemon never serves: leave MoE comm/kernel setup to the client.
+    On the classes, as loading may give a layer a new method object."""
     from atom.model_ops.moe import FusedMoEMethodBase
 
-    patched = []
-    for mod in model.modules():
-        qm = getattr(mod, "quant_method", None)
-        if isinstance(qm, FusedMoEMethodBase) and "init_prepare_finalize" not in vars(
-            qm
-        ):
-            qm.init_prepare_finalize = lambda layer: None
-            patched.append(qm)
+    patched, classes = {}, [FusedMoEMethodBase]
+    while classes:
+        cls = classes.pop()
+        classes += cls.__subclasses__()
+        if "init_prepare_finalize" in vars(cls) and cls not in patched:
+            patched[cls] = cls.init_prepare_finalize
+            cls.init_prepare_finalize = lambda self, layer: None
     try:
         yield
     finally:
-        for qm in patched:
-            vars(qm).pop("init_prepare_finalize", None)
+        for cls, orig in patched.items():
+            cls.init_prepare_finalize = orig
 
 
 def _run_prepare_finalize(model: nn.Module) -> int:

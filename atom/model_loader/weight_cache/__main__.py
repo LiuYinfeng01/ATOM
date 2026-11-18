@@ -44,8 +44,8 @@ def _status(launches: dict) -> None:
             f"  up {_age(now - st0.get('started', now))}, exits after "
             f"{f'{timeout}s idle' if timeout else 'no idle timeout'}; log {st0.get('log') or '-'}"
         )
-        for path, st in sorted(gpus, key=lambda g: g[1].get("rank", 0)):
-            line = f"  rank {st.get('rank', '?')}: {st.get('state', '?')}"
+        for path, st in sorted(gpus, key=lambda g: str(g[1].get("name"))):
+            line = f"  {st.get('name', '?')}: {st.get('state', '?')}"
             if st.get("state") == "serving":
                 try:
                     r = _ping(path, timeout=5)

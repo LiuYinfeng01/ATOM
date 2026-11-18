@@ -4,8 +4,12 @@
 load diff, export/import (CPU tensors stand in for device ones), the key filters, and
 daemon management with fake processes."""
 
+import dataclasses
 import json
 import os
+import pathlib
+import pickle
+import shutil
 import signal
 import socket
 import stat
@@ -21,12 +25,11 @@ from types import SimpleNamespace
 import psutil
 import pytest
 import torch
+from conftest import gpu_stack_import
 from torch import nn
 
 import atom.model_loader.weight_cache.__main__ as cli
-from atom.model_engine import model_setup
 from atom.model_loader.weight_cache import (
-    client,
     export,
     key,
     preload,
@@ -145,6 +148,7 @@ def test_same_file_bytes_skip_the_ast(tmp_path, no_source_stats, monkeypatch):
     fp = {
         "entries": [("fn", "pkg", "mod.py", "load", h.digest("pkg", "mod.py", "load"))],
         "files": {"pkg/mod.py": h.file_hash("pkg", "mod.py")},
+        "loader": key._loader_digest(h),
     }
     parsed = []
     tree = key._SourceHasher._tree
@@ -158,6 +162,37 @@ def test_same_file_bytes_skip_the_ast(tmp_path, no_source_stats, monkeypatch):
     assert key.verify_code(fp) == [] and parsed == ["mod.py"]
     _write(f, SRC.replace("return x * SCALE", "return x * SCALE * 2"))
     assert key.verify_code(fp) == ["pkg/mod.py:load"]
+
+
+def test_the_loader_is_keyed_whole(tmp_path, no_source_stats, monkeypatch):
+    f = tmp_path / "model_loader" / "sub" / "mod.py"
+    f.parent.mkdir(parents=True)
+    _write(f, SRC)
+    monkeypatch.setattr(key, "_package_roots", lambda: {"atom": str(tmp_path)})
+    fp = key.code_fingerprint([], [])
+    assert key.verify_code(fp) == []
+    _write(f, SRC.replace("return x + 1", "return x + 2"))  # a function no load ran
+    assert key.verify_code(fp) == ["atom/model_loader (the loader, or this cache)"]
+
+
+def test_a_method_added_to_a_class_of_the_model_is_seen(
+    tmp_path, no_source_stats, monkeypatch
+):
+    src = "class Layer:\n    K = 1\n\n    def forward(self, x):\n        return x\n"
+    f = tmp_path / "layers.py"
+    f.write_text(src)
+    mod = types.ModuleType("atom._wc_test_layers")
+    mod.__file__ = str(f)
+    mod.Layer = type("Layer", (), {"__module__": mod.__name__})
+    monkeypatch.setitem(sys.modules, mod.__name__, mod)
+    monkeypatch.setattr(key, "_package_roots", lambda: {"atom": str(tmp_path)})
+    fp = key.code_fingerprint([], [], [mod.Layer])
+    assert key.verify_code(fp) == []
+    f.write_text(src.replace("return x", "return x + 1"))  # a body no load ran
+    assert key.verify_code(fp) == []
+    # A hook the loader would now call, though nothing that ran has changed.
+    f.write_text(src + "\n    def process_weights_after_loading(self):\n        pass\n")
+    assert key.verify_code(fp) == ["atom/layers.py:Layer"]
 
 
 def test_checkpoint_rewritten_in_place_changes_the_key(tmp_path):
@@ -196,18 +231,33 @@ def module_level_function():
     return 1
 
 
+def _guard(fn):
+    def wrapper(*args, **kwargs):  # named after the decorator, like aiter's guards
+        return fn(*args, **kwargs)
+
+    wrapper.__wrapped__ = fn
+    return wrapper
+
+
+@_guard
+def guarded_function():
+    return 2
+
+
 def test_pack_unpack_roundtrip():
     ex = export._Exporter()
     value = {
         "a": [torch.arange(3), 2, ("x", torch.ones(2))],
         "fn": module_level_function,
+        "guarded": guarded_function,
     }
-    packed = export._pack(value, ex)
+    # As sent: the wrapper itself would not pickle.
+    packed = pickle.loads(pickle.dumps(export._pack(value, ex)))
     make, _ = export._maker({"storages": {}, "host": ex.host}, torch.device("cpu"))
     out = export._unpack(packed, make)
     assert torch.equal(out["a"][0], torch.arange(3)) and out["a"][1] == 2
     assert isinstance(out["a"][2], tuple) and torch.equal(out["a"][2][1], torch.ones(2))
-    assert out["fn"] is module_level_function
+    assert out["fn"] is module_level_function and out["guarded"] is guarded_function
     with pytest.raises(values._Unshippable):
         export._pack(lambda: 0, ex)
 
@@ -295,7 +345,7 @@ def test_export_import_reproduces_the_load(toy_packages):
     built, exp = _export(daemon, Toy.fake_load)
     assert exp["unshippable"] == []
     assert "scratch" in exp["plan"][""]["buffers"]  # written in place
-    with model_setup.params_on_meta():
+    with export.params_on_meta():
         client = Toy()
     assert key._diff_key(built, key.structure(client)) == []
     export.apply_export(client, exp, torch.device("cpu"))
@@ -318,11 +368,154 @@ def test_none_and_tensors_loading_sets_on_parameters_travel(toy_packages):
 
     _, exp = _export(Toy(), load)
     assert exp["unshippable"] == []
-    with model_setup.params_on_meta():
+    with export.params_on_meta():
         client = Toy()
     export.apply_export(client, exp, torch.device("cpu"))
     assert "bias" in client.child._parameters and client.child.bias is None
     assert torch.equal(client.w.scale, torch.full((2,), 3.0))
+
+
+def test_a_parameter_registered_empty_is_filled_by_loading():
+    def load(m):  # e.g. the scale of a layer quantized while loading
+        m.bias = nn.Parameter(torch.full((2,), 5.0), requires_grad=False)
+
+    _, exp = _export(nn.Linear(2, 2, bias=False), load)
+    with export.params_on_meta():
+        client = nn.Linear(2, 2, bias=False)
+    export.apply_export(client, exp, torch.device("cpu"))
+    assert torch.equal(client.bias, torch.full((2,), 5.0))
+
+
+@dataclasses.dataclass(frozen=True)
+class Spec:
+    kind: str = "raw"
+    block: tuple = (1, 32)
+
+
+def test_an_immutable_record_loading_replaces_travels_as_a_value(toy_packages):
+    def build():
+        m = Toy()
+        m.spec = Spec()
+        return m
+
+    def load(m):  # e.g. the spec of a layer quantized while loading
+        m.spec = Spec("fp8", (128, 128))
+
+    _, exp = _export(build(), load)
+    assert exp["unshippable"] == []
+    with export.params_on_meta():
+        client = build()
+    shared = client.spec  # other layers may hold the same record
+    export.apply_export(client, exp, torch.device("cpu"))
+    assert client.spec == Spec("fp8", (128, 128)) and shared == Spec()
+
+
+class Method:
+    def __init__(self, state):
+        self.state, self.kind, self.scale = state, "fp8", torch.ones(2)
+
+
+def test_an_object_loading_creates_travels_with_what_it_refers_to(toy_packages):
+    def load(m):  # e.g. the method of experts quantized while loading
+        m.method = Method(m.q)  # refers to an object every client has
+        m.hooks = {"loader": m.fake_load}  # and to a method of the model
+
+    _, exp = _export(Toy(), load)
+    assert exp["unshippable"] == []
+    exp["plan"] = pickle.loads(pickle.dumps(exp["plan"]))  # as sent
+    with export.params_on_meta():
+        client = Toy()
+    export.apply_export(client, exp, torch.device("cpu"))
+    assert type(client.method) is Method and client.method.state is client.q
+    assert client.method.kind == "fp8" and torch.equal(
+        client.method.scale, torch.ones(2)
+    )
+    assert client.hooks["loader"].__self__ is client
+
+
+def test_an_object_loading_creates_stays_one_object(toy_packages):
+    def load(m):
+        m.method = Method(m.q)
+        m.also = [m.method]  # held twice
+
+    _, exp = _export(Toy(), load)
+    exp["plan"] = pickle.loads(pickle.dumps(exp["plan"]))
+    with export.params_on_meta():
+        client = Toy()
+    export.apply_export(client, exp, torch.device("cpu"))
+    assert client.also[0] is client.method
+
+
+def test_what_was_not_sent_is_not_referred_to(toy_packages):
+    def load(m):
+        m.method = Method(m.q)
+        m.w.hooks = [m.method, lambda: 0]  # dropped: a closure cannot travel
+        m.also = m.method
+
+    _, exp = _export(Toy(), load)
+    assert exp["unshippable"] == []
+    with export.params_on_meta():
+        client = Toy()
+    export.apply_export(client, exp, torch.device("cpu"))
+    assert client.also is client.method and not hasattr(client.w, "hooks")
+
+
+def test_an_object_of_the_config_is_not_copied(toy_packages):
+    config, model = QuantState(), Toy()  # the config: held outside the model
+    before = export.snapshot(model, config)
+    model.settings = config  # loading hangs it on the model
+    exp = export.build_export(model, before, export.snapshot(model))
+    assert any(u.startswith("<root>.settings: ") for u in exp["unshippable"])
+
+
+def test_an_object_moved_onto_anothers_path_is_not_copied(toy_packages):
+    def build():
+        m = Toy()
+        m.child.other = QuantState()
+        return m
+
+    def load(m):
+        m.child.other.mode = "x"
+        m.q = m.child.other  # now reached where another object was
+
+    _, exp = _export(build(), load)
+    assert any(u.startswith("<root>.q: ") for u in exp["unshippable"])
+
+
+def test_an_object_held_where_no_path_leads_is_not_copied(toy_packages):
+    def build():
+        m = Toy()
+        m.holders = [QuantState()]
+        return m
+
+    def load(m):
+        m.picked = m.holders[0]  # a client's own is another object
+
+    _, exp = _export(build(), load)
+    assert any(u.startswith("<root>.picked: ") for u in exp["unshippable"])
+
+
+def test_prepare_finalize_is_skipped_on_methods_loading_creates():
+    FusedMoEMethodBase = gpu_stack_import("atom.model_ops.moe").FusedMoEMethodBase
+
+    class Method(FusedMoEMethodBase):
+        def init_prepare_finalize(self, layer):
+            raise AssertionError("ran in the daemon")
+
+    class Left(Method):
+        pass
+
+    class Right(Method):
+        pass
+
+    class Swapped(Left, Right):  # reached through both parents
+        def init_prepare_finalize(self, layer):
+            raise AssertionError("ran in the daemon")
+
+    with export._skip_prepare_finalize():
+        Swapped.init_prepare_finalize(None, None)
+    with pytest.raises(AssertionError):  # and put back afterwards
+        Swapped.init_prepare_finalize(None, None)
 
 
 class Tied(nn.Module):
@@ -341,7 +534,7 @@ def test_tied_parameters_stay_tied_unless_loading_untied_them(untie):
 
     daemon = Tied()
     _, exp = _export(daemon, load)
-    with model_setup.params_on_meta():
+    with export.params_on_meta():
         client = Tied()
     export.apply_export(client, exp, torch.device("cpu"))
     assert torch.equal(client.a.weight, daemon.a.weight)
@@ -355,7 +548,7 @@ def test_host_tensors_keep_their_aliasing(toy_packages):
         m.tail = m.absorbed[2:]
 
     _, exp = _export(Toy(), load)
-    with model_setup.params_on_meta():
+    with export.params_on_meta():
         client = Toy()
     export.apply_export(client, exp, torch.device("cpu"))
     client.absorbed[3] = -1.0
@@ -396,6 +589,31 @@ def test_change_out_of_the_walks_reach_is_reported(toy_packages):
     assert any("holders[0]::mode: changed during load" in u for u in exp["unshippable"])
 
 
+def test_change_to_an_object_now_reached_another_way_is_reported(toy_packages):
+    def build():
+        m = Toy()
+        m.child.shared = m.q  # one object, held twice
+        return m
+
+    def load(m):
+        m.q.mode = "shuffled"
+        m.q = None  # the walk now reaches it through the other holder
+
+    _, exp = _export(build(), load)
+    assert any(
+        u.startswith("child::shared: changed during load") for u in exp["unshippable"]
+    )
+
+
+def test_a_table_of_the_daemons_addresses_is_refused(toy_packages):
+    def load(m):
+        m.absorbed = torch.arange(4.0)
+        m.bases = torch.tensor([m.absorbed.data_ptr()])  # where this process has it
+
+    _, exp = _export(Toy(), load)
+    assert any("holds addresses" in u for u in exp["unshippable"])
+
+
 def test_submodule_replaced_by_another_class_is_reported(toy_packages):
     def load(m):
         m.child = nn.Identity()  # same path, another forward
@@ -415,7 +633,7 @@ def test_process_state_loading_changes_travels_or_is_refused(monkeypatch):
 
     for cls in (Settings, Holder):
         cls.__module__ = mod.__name__
-    mod.Settings, mod.FLAG, mod.TABLE = Settings, False, {"a": 1}
+    mod.Settings, mod.Holder, mod.FLAG, mod.TABLE = Settings, Holder, False, {"a": 1}
     mod.holder = Holder()
     monkeypatch.setitem(sys.modules, mod.__name__, mod)
     monkeypatch.delenv("ATOM_TEST_LOAD_SET", raising=False)
@@ -424,6 +642,7 @@ def test_process_state_loading_changes_travels_or_is_refused(monkeypatch):
     mod.TABLE["b"] = 2
     os.environ["ATOM_TEST_LOAD_SET"] = "1"
     mod.kernel = lambda: 0  # cannot be shared
+    mod.registry = Holder()  # nor an object: a client may hold its own elsewhere
     mod.holder.mode = "set"  # an object's attribute: out of reach
     new = types.ModuleType("atom._wc_test_imported")  # imported by the load:
     new.make = lambda: 0  # importing it again builds it again
@@ -437,19 +656,21 @@ def test_process_state_loading_changes_travels_or_is_refused(monkeypatch):
     }
     assert exp["env"] == {"ATOM_TEST_LOAD_SET": "1"}
     assert any(u.startswith(f"{mod.__name__}:kernel") for u in exp["unshippable"])
+    assert any(u.startswith(f"{mod.__name__}:registry") for u in exp["unshippable"])
     assert any(u.startswith(f"{mod.__name__}:holder.mode") for u in exp["unshippable"])
     # A client starts from the state before loading.
     mod.FLAG, mod.TABLE, Settings.LAYOUT = False, {"a": 1}, 1
+    held = mod.TABLE  # as a module that imported the name holds it
     del os.environ["ATOM_TEST_LOAD_SET"]
     exp["storages"] = export.share_storages(exp.pop("views"))
     export.apply_process(exp, torch.device("cpu"))
-    assert mod.FLAG and mod.TABLE == {"a": 1, "b": 2} and Settings.LAYOUT == 16
+    assert mod.FLAG and held == {"a": 1, "b": 2} and Settings.LAYOUT == 16
     assert os.environ["ATOM_TEST_LOAD_SET"] == "1"
 
 
 def test_module_tree_change_is_seen():
     built = key.structure(Toy())
-    with model_setup.params_on_meta():
+    with export.params_on_meta():
         client = Toy()
     client.extra = nn.Linear(2, 2)  # a constructor now builds another submodule
     assert key._diff_key(built, key.structure(client))
@@ -499,9 +720,9 @@ def test_recorder_keeps_what_loading_reads(layer_packages):
         f"{Layer.__module__}:{Layer.__qualname__}\tLAYOUT"
     ]
     # A client differing only where loading did not look still matches...
-    assert ir.diff_reads(reads, ("attrs",), model=Layer(max_len=8192)) == []
+    assert ir.diff_reads(reads, None, Layer(max_len=8192)) == []
     # ...but not where it did.
-    assert ir.diff_reads(reads, ("attrs",), model=Layer(interleave=False))
+    assert ir.diff_reads(reads, None, Layer(interleave=False))
 
 
 def test_attribute_written_then_read_keys_its_construction_value(layer_packages):
@@ -514,7 +735,24 @@ def test_attribute_written_then_read_keys_its_construction_value(layer_packages)
 
     reads = _record_load(Layer(), load)
     assert reads["attrs"]["\tinterleave"] == ("V", "true")
-    assert ir.diff_reads(reads, ("attrs",), model=Layer()) == []
+    assert ir.diff_reads(reads, None, Layer()) == []
+
+
+def test_attribute_loading_probes_for_in_vain_is_keyed(layer_packages):
+    def load(m):
+        if not getattr(m, "skip", False):  # optional, and not set here
+            m.w.data.zero_()
+
+    reads = _record_load(Layer(), load)
+    assert ir.diff_reads(reads, None, Layer()) == []
+    other = Layer()
+    other.skip = True  # built with it, the load would have gone another way
+    assert ir.diff_reads(reads, None, other)
+    other = Layer()
+    other.register_buffer("skip", None)  # registered empty: still not there
+    assert ir.diff_reads(reads, None, other) == []
+    other.register_buffer("skip", torch.ones(1))
+    assert ir.diff_reads(reads, None, other)
 
 
 def test_config_read_only_while_constructing_is_not_keyed():
@@ -532,6 +770,23 @@ def test_config_read_only_while_constructing_is_not_keyed():
     finally:
         rec.finish_load(set())
     assert rec.key_reads()["config"] == {}
+
+
+def test_config_read_while_constructing_and_loading_is_keyed():
+    class Cfg:
+        def __init__(self):
+            self.max_len, self.hf_config = 1, None
+
+    cfg = Cfg()
+    rec = ir.InputRecorder()
+    rec.enter_construct(cfg)
+    try:
+        assert cfg.max_len == 1  # constructing reads it...
+        rec.enter_load(nn.Module())
+        assert cfg.max_len == 1  # ...and so does loading
+    finally:
+        rec.finish_load(set())
+    assert rec.key_reads()["config"] == {"config.max_len": ("V", "1")}
 
 
 def test_env_loading_writes_then_reads_is_keyed_as_it_found_it(monkeypatch):
@@ -566,7 +821,7 @@ def test_recorder_keys_env_read_during_load_only(monkeypatch):
     assert os._Environ.__getitem__ is not ir._env_getitem  # unhooked
     monkeypatch.setenv("ATOM_TEST_UNSET_FLAG", "x")
     reads = {"env": env, "config": {}, "classattrs": {}, "globals": {}, "files": {}}
-    assert ir.diff_reads(reads, ir.STATIC_READS) == [
+    assert ir.diff_reads(reads, None, None) == [
         "env ATOM_TEST_UNSET_FLAG: daemon=None client=x"
     ]
 
@@ -580,7 +835,7 @@ def test_params_on_meta_keeps_the_constructor_object():
             p.loader = "set after registration"  # like set_weight_attrs
             self.held = p
 
-    with model_setup.params_on_meta():
+    with export.params_on_meta():
         m = M()
     assert m.p.is_meta and m.p is m.held and m.p.loader == "set after registration"
 
@@ -605,7 +860,7 @@ def test_zero_byte_cuda_buffer_is_rebuilt_locally():
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a GPU")
 def test_compact_moves_weights_out_of_segments_with_gaps():
-    from atom.model_loader.weight_cache import daemon
+    daemon = gpu_stack_import("atom.model_loader.weight_cache.daemon")
 
     torch.cuda.empty_cache()
     torch.empty(
@@ -631,7 +886,7 @@ def test_compact_moves_weights_out_of_segments_with_gaps():
 def test_daemon_leaves_out_what_attaching_replaces():
     """A drafter whose attach_to_target swaps its embedding for the target's:
     the daemon holds no copy of the drafter's own."""
-    from atom.model_loader.weight_cache import daemon
+    daemon = gpu_stack_import("atom.model_loader.weight_cache.daemon")
 
     class Draft(nn.Module):
         def __init__(self):
@@ -663,8 +918,9 @@ def test_daemon_leaves_out_what_attaching_replaces():
 
 
 @pytest.fixture
-def cache_dir(tmp_path, monkeypatch):
-    d = tmp_path / "wc"
+def cache_dir(monkeypatch):
+    # Under /tmp: a socket path holds 107 bytes.
+    d = pathlib.Path(tempfile.mkdtemp(prefix="wc", dir="/tmp")) / "wc"
     monkeypatch.setenv("ATOM_WEIGHT_CACHE_DIR", str(d))
     for k in (
         "ATOM_WEIGHT_CACHE",
@@ -674,8 +930,10 @@ def cache_dir(tmp_path, monkeypatch):
         transport._DAEMON_PID_ENV,
         transport._DAEMON_LOG_ENV,
     ):
-        monkeypatch.delenv(k, raising=False)
-    return d
+        monkeypatch.setenv(k, "")  # so what a test leaves there is undone too
+        monkeypatch.delenv(k)
+    yield d
+    shutil.rmtree(d.parent, ignore_errors=True)
 
 
 def _wait_for(cond, timeout=60.0):
@@ -769,7 +1027,7 @@ while True:
 _FAKE_RUNNER = """
 import signal, sys, time
 from atom.model_loader.weight_cache.transport import _DaemonLock
-lock = _DaemonLock(sys.argv[1], rank=0, model="toy-model", idle_timeout_s=0)
+lock = _DaemonLock(sys.argv[1], name="TP0", model="toy-model", idle_timeout_s=0)
 def stop(*_):
     lock.release()  # like a runner: the lock goes early in the shutdown
     time.sleep(2)
@@ -790,6 +1048,7 @@ def test_status_and_stop_a_daemon_launch(cache_dir, tmp_path, capsys):
     main = subprocess.Popen(
         [sys.executable, str(tmp_path / "main.py"), str(tmp_path / "runner.py"), path],
         env=env,
+        start_new_session=True,
     )
     try:
         _wait_for(
@@ -804,9 +1063,7 @@ def test_status_and_stop_a_daemon_launch(cache_dir, tmp_path, capsys):
         )
         assert cli.main(["status"]) == 0
         shown = capsys.readouterr().out
-        assert (
-            f"daemon pid {main.pid}: toy-model" in shown and "rank 0: loading" in shown
-        )
+        assert f"daemon pid {main.pid}: toy-model" in shown and "TP0: loading" in shown
         assert cli.main(["stop"]) == 0
         assert f"stopped daemon pid {main.pid}" in capsys.readouterr().out
         # Returns once the runner has exited, not when it let go of the lock.
@@ -816,21 +1073,18 @@ def test_status_and_stop_a_daemon_launch(cache_dir, tmp_path, capsys):
         assert "no weight cache daemon running" in capsys.readouterr().out
     finally:
         if main.poll() is None:
-            main.kill()
+            os.killpg(main.pid, signal.SIGKILL)  # the main process and its runner
 
 
 def test_idle_timeout_counts_connected_servers(cache_dir):
     path = os.path.join(transport.socket_dir(), "gpu_idle.sock")
-    idle = threading.Event()
-    server = transport._Server(
-        path,
-        {"summary": {"pid": 1, "bytes": 0}},
-        {},
-        "t",
-        idle_timeout_s=1,
-        on_idle=idle.set,
-    )
+    idle, all_serving = threading.Event(), threading.Event()
+    server = transport._Server(path, {"summary": {"pid": 1, "bytes": 0}}, {}, "t")
+    server.watch_idle(1, idle.set, all_serving)
     try:
+        # The clock starts once every rank of the daemon serves.
+        assert not idle.wait(1.6)
+        all_serving.set()
         conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         conn.connect(path)
         transport._send(conn, {"cmd": "get", "who": "test"})
@@ -912,7 +1166,8 @@ def test_start_early_only_without_any_daemon(cache_dir, monkeypatch):
 
 
 def test_daemon_lays_out_dp_ranks_as_the_engines_do():
-    from atom.model_engine.engine_core_mgr import engine_config, layout_engines
+    mgr = gpu_stack_import("atom.model_engine.engine_core_mgr")
+    engine_config, layout_engines = mgr.engine_config, mgr.layout_engines
 
     pc = SimpleNamespace(
         data_parallel_size=2,
@@ -942,6 +1197,15 @@ def test_daemon_lays_out_dp_ranks_as_the_engines_do():
 # --------------------------------------------------------------------------
 
 
+_NO_PID = (1 << 22) + 1  # above any pid_max: a fake that can never be signalled
+
+
+@pytest.fixture
+def client():
+    """The client module; importing it needs the GPU stack (aiter)."""
+    return gpu_stack_import("atom.model_loader.weight_cache.client")
+
+
 class _Model(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -958,8 +1222,10 @@ def _config():
     )
 
 
-def _from_daemon(config=None):
-    return client._from_daemon(config or _config(), _Model, torch.device("cpu"), 0)
+def _from_cache(client, config=None):
+    return client.load_from_cache(
+        config or _config(), _Model, torch.device("cpu"), rank=0
+    )
 
 
 class _Conn:
@@ -971,12 +1237,12 @@ class _Conn:
 
 
 @pytest.fixture
-def loop(monkeypatch):
+def loop(client, monkeypatch):
     """The client with the daemon replaced: ``probes`` lists what each probe
     finds, (daemon there, why it cannot be used)."""
     calls = SimpleNamespace(probes=[], spawned=0, stopped=0, attr_diffs=[])
     payload = {
-        "summary": {"pid": 7, "daemon_pid": 7},
+        "summary": {"pid": _NO_PID, "daemon_pid": _NO_PID},
         "structure": {},
         "export": {"plan": {}, "storages": {}},
         "process": {"changes": [], "env": {}, "storages": {}},
@@ -991,7 +1257,7 @@ def loop(monkeypatch):
         "reads": {},
     }
 
-    def probe(path, label, started, held, own_key):
+    def probe(me, started, held, own_key):
         present, reasons = calls.probes.pop(0)
         if not present:
             return None, None, [], client._NONE
@@ -1000,16 +1266,16 @@ def loop(monkeypatch):
 
     def spawn():
         calls.spawned += 1
-        return {"pid": 1, "log": "daemon.log"}
+        return {"pid": _NO_PID, "log": "daemon.log"}
 
     def stop(path):
         calls.stopped += 1
 
     for name, fn in {
         "_probe": probe,
-        "_wait_together": lambda path, label, started, group: None,
-        "_pid_running": lambda pid: False,  # the fake pids must never be signalled
-        "verify_code": lambda code: [],
+        "_wait_together": lambda me, started: False,
+        # The fake pids must never be signalled.
+        "_pid_running": lambda pid, created=None: False,
         "_spawn_daemon": spawn,
         "stop_daemon": stop,
         "socket_path": lambda device: "/nonexistent/gpu.sock",
@@ -1017,7 +1283,7 @@ def loop(monkeypatch):
         "launch_recorded": lambda: True,
         "_in_use_by_others": lambda path: None,
         "exported_structure": lambda built, export: {},
-        "diff_reads": lambda reads, kinds, **kw: list(calls.attr_diffs),
+        "diff_reads": lambda reads, config, model: list(calls.attr_diffs),
         "apply_export": lambda model, export, device: 0,
         "apply_process": lambda export, device: 0,
         "_leftover_meta": lambda model: [],
@@ -1026,32 +1292,21 @@ def loop(monkeypatch):
         monkeypatch.setattr(client, name, fn)
     monkeypatch.setattr(torch.cuda, "reset_peak_memory_stats", lambda *a, **k: None)
     monkeypatch.setattr(client, "_draft", None)
-    monkeypatch.delenv("ATOM_PRELOAD", raising=False)
-    monkeypatch.delenv("ATOM_WEIGHT_CACHE", raising=False)
     return calls
 
 
-def test_client_mode_without_a_daemon_loads_from_disk(loop, monkeypatch):
-    monkeypatch.setattr(client, "load_from_disk", lambda *a: "from disk")
-    loop.probes = [(False, [])]
-    loaded = client.load_from_cache(
-        _config(), _Model, torch.device("cpu"), rank=0, tag="TP0"
-    )
-    assert loaded == "from disk"
-
-
-def test_client_mode_refuses_a_daemon_it_cannot_use(loop):
-    loop.probes = [(True, ["env X: daemon=1 client=2"])]
-    with pytest.raises(RuntimeError, match="env X"):
-        _from_daemon()
-    assert loop.stopped == loop.spawned == 0
-
-
-def test_preload_starts_a_daemon_and_maps_it(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
+def test_starts_a_daemon_and_maps_it(loop, client):
     loop.probes = [(False, []), (True, [])]
-    assert isinstance(_from_daemon(), _Model)
+    assert isinstance(_from_cache(client), _Model)
     assert loop.spawned == 1
+
+
+def test_outside_the_api_server_it_loads_from_disk(loop, client, monkeypatch):
+    # No saved launch to start daemons with: any daemon there is left alone.
+    monkeypatch.setattr(client, "launch_recorded", lambda: False)
+    loop.probes = [(True, ["env X: daemon=1 client=2"])]
+    assert _from_cache(client) is None
+    assert loop.stopped == loop.spawned == 0 and len(loop.probes) == 1
 
 
 class _Drafter:
@@ -1062,40 +1317,32 @@ class _Drafter:
         self.attached = (target, loaded)
 
 
-def test_drafter_comes_from_the_daemon_the_model_came_from(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
+def test_drafter_comes_from_the_daemon_the_model_came_from(loop, client, monkeypatch):
     monkeypatch.setattr(client, "construct_drafter", lambda c, d, r: _Drafter(c))
-    monkeypatch.setattr(client, "load_drafter_from_disk", lambda *a: "from disk")
     cpu = torch.device("cpu")
     loop.probes = [(True, [])]
     config = _config()
-    target = _from_daemon(config)
+    target = _from_cache(client, config)
     drafter = client.load_drafter_from_cache(config, cpu, None, target, rank=0)
     assert drafter.attached == (target, {"mtp.0.w"})
-    # Taken once: a later drafter has nothing to map.
-    assert (
-        client.load_drafter_from_cache(config, cpu, None, target, rank=0) == "from disk"
-    )
+    # Taken once: a later drafter has nothing to map (a disk load follows).
+    assert client.load_drafter_from_cache(config, cpu, None, target, rank=0) is None
     # One built differently loads from disk, after unregistering its meta build.
     loop.probes = [(True, [])]
-    target = _from_daemon(config)
+    target = _from_cache(client, config)
     loop.attr_diffs = ["mtp.0.interleave: daemon=True client=False"]
     del config.compilation_config.static_forward_context["layers.0"]
-    assert (
-        client.load_drafter_from_cache(config, cpu, None, target, rank=0) == "from disk"
-    )
+    assert client.load_drafter_from_cache(config, cpu, None, target, rank=0) is None
     assert config.compilation_config.static_forward_context == {"other": 1}
 
 
-def test_drafter_modules_left_out_come_from_attaching(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
+def test_drafter_modules_left_out_come_from_attaching(loop, client, monkeypatch):
     made = []
     monkeypatch.setattr(
         client,
         "construct_drafter",
         lambda c, d, r: made.append(_Drafter(c)) or made[-1],
     )
-    monkeypatch.setattr(client, "load_drafter_from_disk", lambda *a: "from disk")
     # The daemon left the drafter's embedding out: on meta until attached.
     monkeypatch.setattr(
         client,
@@ -1106,31 +1353,32 @@ def test_drafter_modules_left_out_come_from_attaching(loop, monkeypatch):
     )
     loop.probes = [(True, [])]
     config = _config()
-    target = _from_daemon(config)
+    target = _from_cache(client, config)
     drafter = client.load_drafter_from_cache(
         config, torch.device("cpu"), None, target, rank=0
     )
     assert drafter is made[-1] and drafter.attached[0] is target
 
 
-def test_a_server_whose_sources_changed_leaves_the_daemon_alone(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
+def test_a_server_whose_sources_changed_leaves_the_daemon_alone(
+    loop, client, monkeypatch
+):
     stale = ["key.py changed after this server started; restart it"]
     monkeypatch.setattr(client, "_probe", lambda *a: (None, None, stale, client._STALE))
     with pytest.raises(RuntimeError, match="restart it"):
-        _from_daemon()
+        _from_cache(client)
     assert loop.stopped == loop.spawned == 0
 
 
-def test_a_daemon_that_vanished_is_not_no_daemon(tmp_path):
+def test_a_daemon_that_vanished_is_not_no_daemon(client, tmp_path):
     # Its memory may still be in use: a disk load could run out of it.
-    path = str(tmp_path / "gpu.sock")
-    assert client._probe(path, "TP0", None, False, dict)[3] == client._NONE
-    _, _, reasons, status = client._probe(path, "TP0", None, True, dict)
+    me = client._Rank("TP0", str(tmp_path / "gpu.sock"), None, None)
+    assert client._probe(me, None, False, dict)[3] == client._NONE
+    _, _, reasons, status = client._probe(me, None, True, dict)
     assert status == client._UNUSABLE and "exited before serving" in reasons[0]
 
 
-def test_no_rank_stops_a_daemon_another_rank_must_keep(monkeypatch):
+def test_no_rank_stops_a_daemon_another_rank_must_keep(client, monkeypatch):
     monkeypatch.setattr(client, "daemon_alive", lambda path: False)
     monkeypatch.setattr(client, "_in_use_by_others", lambda path: None)  # fine here...
     monkeypatch.setattr(
@@ -1140,27 +1388,30 @@ def test_no_rank_stops_a_daemon_another_rank_must_keep(monkeypatch):
         client, "_stop_and_reclaim", lambda *a: pytest.fail("stopped before agreeing")
     )
     with pytest.raises(RuntimeError):
-        client._stop_together("TP0", "/x.sock", None, None, [])
+        client._stop_together(client._Rank("TP0", "/x.sock", None, None), [], False)
 
 
-def test_preload_outside_the_api_server_only_uses_a_daemon(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
-    monkeypatch.setattr(client, "launch_recorded", lambda: False)
-    loop.probes = [(True, ["env X: daemon=1 client=2"])]
-    with pytest.raises(RuntimeError, match="env X"):
-        _from_daemon()
-    assert loop.stopped == loop.spawned == 0
+def test_a_gpu_no_daemon_had_is_not_waited_for(client, monkeypatch):
+    # A daemon of another layout: the GPUs it never held have nothing to free.
+    monkeypatch.setattr(client, "stop_daemon", lambda path: None)
+    monkeypatch.setattr(torch.cuda, "mem_get_info", lambda device: (1, 2))
+    t0 = time.monotonic()
+    client._stop_and_reclaim("/x.sock", torch.device("cuda", 0), False)
+    assert time.monotonic() - t0 < 1
 
 
-def test_give_up_leaves_another_launchs_daemon(monkeypatch):
+def test_another_launchs_daemon_is_not_stopped_as_ones_own(client, monkeypatch):
     monkeypatch.setattr(client, "daemon_alive", lambda path: True)
     monkeypatch.setattr(client, "daemon_state", lambda path: {"daemon_pid": 99})
     monkeypatch.setattr(
         client, "_stop_and_reclaim", lambda *a: pytest.fail("stopped another's daemon")
     )
     with pytest.raises(RuntimeError, match="another launch's daemon"):
-        client._give_up(
-            "TP0", "/x.sock", [], {"pid": 7, "log": "l"}, None, None, None, None
+        client._stop_together(
+            client._Rank("TP0", "/x.sock", None, None),
+            [],
+            False,
+            started={"pid": _NO_PID, "log": "l"},
         )
 
 
@@ -1178,44 +1429,66 @@ def test_socket_dir_must_be_private(monkeypatch):
         os.rmdir(d)
 
 
-def test_preload_restarts_a_daemon_it_cannot_use_once(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
+def test_restarts_a_daemon_it_cannot_use_once(loop, client):
     loop.probes = [(True, ["atom/model_loader/loader.py:load_model"]), (True, [])]
-    assert isinstance(_from_daemon(), _Model)
+    assert isinstance(_from_cache(client), _Model)
     assert loop.stopped == 1 and loop.spawned == 1
 
 
-def test_preload_loads_from_disk_when_its_own_daemon_does_not_fit(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
+def test_a_daemon_on_some_gpus_only_is_replaced(loop, client, monkeypatch):
+    # Another rank of the launch finds no daemon on its GPU (another layout).
+    lo = iter([client._NONE])
+    monkeypatch.setattr(client, "group_min", lambda status, group: next(lo, status))
+    loop.probes = [(True, []), (True, [])]
+    assert isinstance(_from_cache(client), _Model)
+    assert loop.stopped == 1 and loop.spawned == 1
+
+
+def test_loads_from_disk_when_its_own_daemon_does_not_fit(loop, client, monkeypatch):
     monkeypatch.setattr(
-        client, "_started_by_launch", lambda: {"pid": 1, "log": "d.log"}
+        client, "_started_by_launch", lambda: {"pid": _NO_PID, "log": "d.log"}
     )
     loop.probes = [(True, [])]
     loop.attr_diffs = ["layers.0.interleave: daemon=True client=False"]
     config = _config()
-    assert _from_daemon(config) is None  # a disk load follows
+    assert _from_cache(client, config) is None  # a disk load follows
     assert loop.stopped == 1 and loop.spawned == 0
     # The meta-built model is unregistered, so the disk load can build it again.
     assert config.compilation_config.static_forward_context == {"other": 1}
 
 
-def test_preload_loads_from_disk_when_no_daemon_can_start(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
+def test_loads_from_disk_when_the_model_cannot_be_built_on_meta(
+    loop, client, monkeypatch
+):
+    class Broken(nn.Module):
+        def __init__(self, config):
+            super().__init__()
+            config.compilation_config.static_forward_context["layers.0"] = self
+            raise RuntimeError("reads a parameter's value")
 
+    monkeypatch.setattr(
+        client, "_started_by_launch", lambda: {"pid": _NO_PID, "log": "d.log"}
+    )
+    loop.probes = [(True, [])]
+    config = _config()
+    assert client.load_from_cache(config, Broken, torch.device("cpu"), rank=0) is None
+    assert config.compilation_config.static_forward_context == {"other": 1}
+
+
+def test_loads_from_disk_when_no_daemon_can_start(loop, client, monkeypatch):
     def no_spawn():
-        raise values._Miss("this engine was not started by the API server")
+        raise values._Miss("launcher exited with 1")
 
     monkeypatch.setattr(client, "_spawn_daemon", no_spawn)
     loop.probes = [(False, [])]
-    assert _from_daemon() is None
+    assert _from_cache(client) is None
 
 
-def test_preload_leaves_a_daemon_other_servers_use(loop, monkeypatch):
-    monkeypatch.setenv("ATOM_PRELOAD", "1")
+def test_leaves_a_daemon_other_servers_use(loop, client, monkeypatch):
     monkeypatch.setattr(
         client, "_in_use_by_others", lambda path: "1 other running server(s) use it"
     )
     loop.probes = [(True, ["atom/model_loader/loader.py:load_model"])]
     with pytest.raises(RuntimeError, match="other running server"):
-        _from_daemon()
+        _from_cache(client)
     assert loop.stopped == loop.spawned == 0

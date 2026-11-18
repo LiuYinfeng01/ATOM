@@ -29,7 +29,6 @@ from atom.model_loader.weight_cache.values import (
 )
 from atom.utils import envs
 
-PROTOCOL_VERSION = 5
 # Set by a daemon's API server for its runners (preload.record_launch).
 _DAEMON_PID_ENV = "ATOM_WEIGHT_CACHE_DAEMON_PID"  # its main process
 _DAEMON_LOG_ENV = "ATOM_WEIGHT_CACHE_DAEMON_LOG"  # a daemon ATOM_PRELOAD started
@@ -194,16 +193,8 @@ class _Server:
     background once the last client has gone, on the spot if another one is
     still connected."""
 
-    def __init__(
-        self,
-        path: str,
-        payload: dict,
-        views: dict,
-        label: str,
-        idle_timeout_s: int = 0,
-        on_idle=None,
-    ):
-        self.path, self.payload, self.label = path, payload, label
+    def __init__(self, path: str, payload: dict, views: dict, label: str):
+        self.summary, self.label = payload["summary"], label
         self._payload_bytes = pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL)
         self.views = views
         t0 = time.perf_counter()
@@ -234,32 +225,33 @@ class _Server:
         threading.Thread(
             target=self._accept, name="weight-cache-server", daemon=True
         ).start()
-        if idle_timeout_s > 0 and on_idle is not None:
-            threading.Thread(
-                target=self._idle_watch,
-                args=(idle_timeout_s, on_idle),
-                name="weight-cache-idle",
-                daemon=True,
-            ).start()
 
     def _idle_for(self) -> float:
         busy = self.clients or self.pending
         return 0.0 if busy else time.monotonic() - self.idle_since
 
-    def _idle_watch(self, timeout_s: int, on_idle) -> None:
-        while True:
-            time.sleep(min(30.0, timeout_s / 4))
+    def watch_idle(self, timeout_s: int, on_idle, all_serving) -> None:
+        """Call ``on_idle`` after ``timeout_s`` without a server, counted from
+        when every rank of the daemon serves (``all_serving``, an Event):
+        servers connect only then."""
+
+        def watch():
+            all_serving.wait()
             with self._lock:
-                idle_for = self._idle_for()
-                if idle_for >= timeout_s:
-                    self.stopping = True  # no request is answered from here on
-            if self.stopping:
-                logger.info(
-                    f"{_TAG} {self.label}: no server connected for {idle_for:.0f}s "
-                    f"(ATOM_PRELOAD_IDLE_TIMEOUT_S={timeout_s}); stopping the daemon"
-                )
-                on_idle()
-                return
+                self.idle_since = time.monotonic()
+            while not self.stopping:
+                time.sleep(min(30.0, timeout_s / 4))
+                with self._lock:
+                    idle_for = self._idle_for()
+                    # No request is answered from here on.
+                    self.stopping = idle_for >= timeout_s
+            logger.info(
+                f"{_TAG} {self.label}: no server connected for {idle_for:.0f}s "
+                f"(ATOM_PRELOAD_IDLE_TIMEOUT_S={timeout_s}); stopping the daemon"
+            )
+            on_idle()
+
+        threading.Thread(target=watch, name="weight-cache-idle", daemon=True).start()
 
     def close(self) -> None:
         with contextlib.suppress(OSError):
@@ -281,9 +273,11 @@ class _Server:
                 connects, connected = self.connects, self.clients
             device = next(iter(self.views.values())).device if self.views else None
             on_gpu = device is not None and device.type == "cuda"
-            with torch.cuda.device(device) if on_gpu else contextlib.nullcontext():
-                now = _digests(self.views.values())
-            self._release_digest_memory()
+            try:
+                with torch.cuda.device(device) if on_gpu else contextlib.nullcontext():
+                    now = _digests(self.views.values())
+            finally:
+                self._release_digest_memory()
             changed = [k for k, d in zip(self.views, now) if d != self.digests[k]]
             if changed:
                 self.poisoned = changed
@@ -326,11 +320,10 @@ class _Server:
                 _send(
                     conn,
                     {
-                        "summary": self.payload["summary"],
+                        "summary": self.summary,
                         "poisoned": len(self.poisoned),
                         "clients": clients,
                         "idle_s": idle_s,
-                        "stopping": self.stopping,
                     },
                 )
                 return
