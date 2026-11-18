@@ -4349,7 +4349,12 @@ class MooncakeConnector(KVConnectorBase):
         """
         landing = self._landing
         if landing is not None and landing.stage_done(
-            req_id, pp_rank, write_nonce, success, landed_slots
+            req_id,
+            pp_rank,
+            write_nonce,
+            success,
+            landed_slots,
+            started_writes=started_writes,
         ):
             return False
         with self._completion_lock:
