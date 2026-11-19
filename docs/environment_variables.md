@@ -494,6 +494,12 @@ derive a bound.
 | **LMCACHE_CHUNK_SIZE** | int | 256 | LMCache's chunk size in tokens (an `lmcache.chunk_size` extra takes precedence). With `--dp-load-balance prefix_spread` and `lmcache_mp`, it must equal the MP server's `--chunk-size`; startup refuses a mismatch. |
 | **LMCACHE_EC_PIN_TIMEOUT_SEC** | float | LMCache's own (300) | LMCache's source-pin timeout. ATOM reads it only to derive the engine's save-abandon window (`pin + 30s`), so the two stay ordered: a lost store report is reclaimed only after LMCache would already have force-unpinned its source. Non-positive disables ATOM's reclamation. ATOM sets no default of its own and, when unset, assumes LMCache's. |
 
+## Mooncake Store lease renewal (opt-in)
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| **ATOM_STORE_ASYNC_RENEW** | bool | 0 (off; `1`, `true`, `yes` or `on` enable it) | Mooncake Store only. Renew the read leases of the chunks a load reads (a snapshot of immutable keys) on the bounded renewal executor instead of blocking the scheduler thread right before dispatch. A load whose renewal is still running stays parked and is retried on the next scheduler step; a finished renewal (whatever it answered), a timeout (1 s), an executor error or a full renewal queue all dispatch the GET as the synchronous path does, because the GET validates what the Store holds. Aborting a request before its load is dispatched cancels the renewal and releases its reservation without a GET; once dispatched, the blocks stay until the workers' terminal report. Off keeps the synchronous renewal. |
+
 ## KV cache events
 
 The scheduler can publish prefix-cache changes (`BlockStored`, `BlockRemoved`,

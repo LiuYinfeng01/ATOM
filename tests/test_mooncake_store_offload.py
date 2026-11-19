@@ -36,6 +36,7 @@ from atom.kv_transfer.disaggregation.factory import KVConnectorFactory
 from atom.kv_transfer.disaggregation.pp_kv_aggregator import PPKVAggregator
 from atom.kv_transfer.disaggregation.types import (
     ConnectorCompletion,
+    KVConnectorOutput,
     LoadOperationId,
     SaveOperationId,
     SaveSourceGroupId,
@@ -399,6 +400,9 @@ def aiter_arch(monkeypatch):
 
 @pytest.fixture
 def cluster(monkeypatch):
+    # The flag is opt-in: every test here runs the default synchronous renewal
+    # unless it sets ATOM_STORE_ASYNC_RENEW itself.
+    monkeypatch.delenv("ATOM_STORE_ASYNC_RENEW", raising=False)
     cluster = FakeCluster()
     monkeypatch.setattr(store_client, "_new_distributed_store", cluster.new_store)
     monkeypatch.setattr(
@@ -1801,6 +1805,112 @@ def _arm_load(scheduler, seq, *, hbm, lmc, end=None):
         scheduler._looked_up_at[sid] = scheduler_mod.time.monotonic()
 
 
+def _install_gate(scheduler, scheduler_clock, future, submitted):
+    from atom.kv_transfer.offload.mooncake_store.renewal_gate import RenewalGate
+
+    scheduler._lookup_client.renew_executor.shutdown()
+    scheduler._lookup_client.renew_executor = SimpleNamespace(
+        submit=lambda fn, keys: submitted.append(keys) or future,
+        shutdown=lambda: None,
+    )
+    scheduler._renew_gate = RenewalGate(
+        scheduler._lookup_client, clock=lambda: scheduler_clock.now
+    )
+
+
+@pytest.mark.parametrize("outcome", ["ready", "ready_polled_late", "timeout", "error"])
+@pytest.mark.parametrize("raw", ["1", "true"])
+def test_async_renewal_retains_load_then_always_dispatches_the_get(
+    cluster, scheduler_clock, monkeypatch, outcome, raw
+):
+    """No renewal outcome is a data-plane failure: the GET is dispatched.
+
+    A finished renewal (even polled long after), a timeout and an executor
+    error all dispatch like the synchronous path; none may reopen saves,
+    record a failed load attempt or count a load failure for a transfer that
+    never ran.
+    """
+    from concurrent.futures import Future
+
+    monkeypatch.setenv("ATOM_STORE_ASYNC_RENEW", raw)
+    scheduler = MooncakeStoreOffloadScheduler(_config("kv_consumer"))
+    assert scheduler._async_renew
+    seq = _seq(57, 50)
+    _arm_load(scheduler, seq, hbm=16, lmc=40)
+    scheduler_clock.now += 2.0
+    future = Future()
+    submitted = []
+    _install_gate(scheduler, scheduler_clock, future, submitted)
+    for name in ("_reopen_saves", "_record_failed_load_attempt"):
+        monkeypatch.setattr(
+            scheduler, name, lambda *a, _n=name: pytest.fail(f"{_n} must not run")
+        )
+    try:
+        spec = scheduler._load_specs[str(seq.id)]
+        assert scheduler.build_connector_meta().requests == []
+        assert scheduler.build_connector_meta().requests == []
+        assert len(submitted) == 1
+        assert scheduler._load_specs[str(seq.id)] is spec
+        assert scheduler._reqs_need_recv[str(seq.id)] is seq
+        assert scheduler.has_pending_work()
+        if outcome == "ready":
+            # A zero-hit renewal still dispatches the GET, whose failure has
+            # the existing all-rank completion contract.
+            future.set_result(0)
+        elif outcome == "ready_polled_late":
+            future.set_result(5)
+            scheduler_clock.now += 30.0
+        elif outcome == "timeout":
+            scheduler_clock.now += 1.01
+        else:
+            future.set_exception(RuntimeError("native RPC failed"))
+        [request] = scheduler.build_connector_meta().requests
+        assert request.load_operation == LoadOperationId(seq.id, 0)
+        assert not hasattr(request.load_spec, "dispatch_failure")
+        assert not scheduler._reqs_need_recv
+        assert scheduler.build_connector_meta().requests == []
+        assert scheduler.get_statistics()["load_failures"] == 0
+        fallback = {"timeout": "timeout", "error": "error"}.get(outcome)
+        assert dict(scheduler._renew_gate.fallbacks) == (
+            {fallback: 1} if fallback else {}
+        )
+    finally:
+        scheduler.close()
+
+
+@pytest.mark.parametrize("raw", [None, "", "0", "false", "off"])
+def test_async_renewal_off_by_default_keeps_the_synchronous_renewal(
+    cluster, scheduler_clock, monkeypatch, raw
+):
+    """Unset and explicitly disabled alike: main's blocking renewal, no gate."""
+    if raw is not None:
+        monkeypatch.setenv("ATOM_STORE_ASYNC_RENEW", raw)
+    scheduler = MooncakeStoreOffloadScheduler(_config("kv_consumer"))
+    assert not scheduler._async_renew
+    seq = _seq(57, 50)
+    _arm_load(scheduler, seq, hbm=16, lmc=40)
+    scheduler_clock.now += 2.0
+    renewals = []
+    scheduler._lookup_client.renew_executor.shutdown()
+    scheduler._lookup_client.renew_executor = SimpleNamespace(
+        submit=lambda *a: pytest.fail("no async renewal when the flag is off"),
+        shutdown=lambda: None,
+    )
+    monkeypatch.setattr(
+        scheduler._lookup_client,
+        "renew",
+        lambda s, start, end: renewals.append((s, start, end)) or 0,
+    )
+    try:
+        [request] = scheduler.build_connector_meta().requests
+        assert renewals == [(seq, 16, 40)]
+        assert request.load_operation == LoadOperationId(seq.id, 0)
+        assert scheduler._renew_gate is None
+        assert not scheduler._reqs_need_recv
+    finally:
+        scheduler.close()
+
+
 def test_save_requests_carry_digests_not_tokens(cluster, make_worker):
     scheduler = MooncakeStoreOffloadScheduler(_config("kv_producer"))
     seq = _seq(6, 30)
@@ -2003,6 +2113,79 @@ def _park_after_a_wait_for_blocks(cluster, scheduler_clock, store_engine, meanwh
     again = int(meanwhile != "lookups_paused")
     assert sum(1 for call in store.calls if call[0] == "exists") == asked + again
     return seq, loads[0]
+
+
+@pytest.mark.parametrize("dispatched", [False, True])
+@pytest.mark.parametrize("expired", [False, True])
+def test_abort_pending_renewal_cancels_only_undispatched_load(
+    cluster, scheduler_clock, monkeypatch, store_engine, dispatched, expired
+):
+    """Abort through the real scheduler, before and after worker ownership."""
+    from concurrent.futures import Future
+
+    from atom.kv_transfer.offload.mooncake_store.renewal_gate import RenewalGate
+
+    engine, offload = store_engine.engine, store_engine.offload
+    from atom.utils import envs
+
+    monkeypatch.setenv("ATOM_STORE_ASYNC_RENEW", "1")
+    offload._async_renew = envs.ATOM_STORE_ASYNC_RENEW
+    assert offload._async_renew
+    _store_chunks(cluster, _hashes(40), range(5))
+    seq = Sequence(list(range(41)), BLOCK, sampling_params=SamplingParams())
+    engine.add(seq)
+    store_engine.withheld.on = True
+    _await_store_lookup(offload, seq)
+    engine.schedule()
+    assert offload.get_num_new_matched_tokens(seq) == (40, True)
+    scheduler_clock.now += 3.0
+    future = Future()
+    # A native renewal already running cannot be cancelled; its late result
+    # must not transfer ownership of this aborted request to a worker.
+    assert future.set_running_or_notify_cancel()
+    offload._lookup_client.renew_executor.shutdown()
+    offload._lookup_client.renew_executor = SimpleNamespace(
+        submit=lambda fn, keys: future, shutdown=lambda: None
+    )
+    offload._renew_gate = RenewalGate(
+        offload._lookup_client, clock=lambda: scheduler_clock.now
+    )
+    store_engine.withheld.on = False
+    batch, _ = engine.schedule()
+    sid = str(seq.id)
+    assert seq.status == SequenceStatus.WAITING_FOR_REMOTE_KVS
+    assert seq._counted_as_inflight_load
+    assert sid in offload._renew_gate.tickets
+    assert batch.connector_meta_output.requests == []
+    assert sid not in offload._active_load_operations
+    if expired:
+        scheduler_clock.now += 1.01
+    if dispatched:
+        if not expired:
+            future.set_result((5, scheduler_clock.now, scheduler_clock.now))
+        [load] = offload.build_connector_meta().requests
+        assert offload._active_load_operations[sid] == (seq, load.load_operation)
+
+    assert engine.abort_request(seq.id)
+    assert seq.status == SequenceStatus.FINISHED
+    if dispatched:
+        # Submitted DMA still owns the reservation until an exact terminal.
+        assert seq._counted_as_inflight_load
+        assert seq._awaiting_aborted_load_cleanup
+        assert seq.block_table
+        engine._update_from_kv_xfer_finished(
+            KVConnectorOutput(failed_loading={load.load_operation})
+        )
+    if not future.done():
+        future.set_result((5, scheduler_clock.now, scheduler_clock.now))
+    assert offload.build_connector_meta().requests == []
+    assert sid not in offload._reqs_need_recv
+    assert sid not in offload._load_specs
+    assert sid not in offload._renew_gate.tickets
+    assert not seq._counted_as_inflight_load
+    assert not seq.block_table
+    assert engine._num_parked_remote_kv == 0
+    assert sid not in offload._active_load_operations
 
 
 @pytest.mark.parametrize(

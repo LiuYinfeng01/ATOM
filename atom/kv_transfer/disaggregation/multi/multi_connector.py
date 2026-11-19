@@ -653,6 +653,15 @@ class MultiConnectorScheduler(KVConnectorSchedulerBase):
         for c in self._connectors:
             c.cancel_pending_load(seq)
 
+    def cancel_undispatched_load(self, seq: Any) -> bool:
+        # Only the winning load owner can prove that no worker has started.
+        # An offload loser cannot authorize releasing a P/D owner's blocks.
+        owner = self._load_owner(seq)
+        if owner is None or not owner.cancel_undispatched_load(seq):
+            return False
+        self._load_winner.pop(seq.id, None)
+        return True
+
     def build_connector_meta(self) -> MultiConnectorMetadata:
         return MultiConnectorMetadata(
             metas=[c.build_connector_meta() for c in self._connectors]

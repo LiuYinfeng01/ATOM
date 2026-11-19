@@ -130,6 +130,9 @@ class FakeSchedSub:
         self.cancelled.append(seq)
         self.pending_load = False
 
+    def cancel_undispatched_load(self, seq):
+        return False
+
     def cancel_preadmission(self, seq):
         # The base default: the pending load's cancellation, for a sub that has one.
         if self._offload:
@@ -257,6 +260,29 @@ def _worker(connectors):
     obj.is_producer = any(getattr(c, "is_producer", False) for c in connectors)
     obj._state_tier = None
     return obj
+
+
+@pytest.mark.parametrize("pd_wins", [False, True])
+def test_cancel_undispatched_load_uses_only_the_winning_owner(pd_wins):
+    seq = SimpleNamespace(id=17)
+    pd = FakeSchedSub(match=(32, True) if pd_wins else (0, False))
+    offload = FakeSchedSub(match=(64, True), is_offload=True, offload_methods=True)
+    scheduler = _sched([pd, offload])
+    scheduler.get_num_new_matched_tokens(seq)
+    offload.cancelled.clear()
+
+    def cancel(request):
+        offload.cancel_pending_load(request)
+        return True
+
+    offload.cancel_undispatched_load = cancel
+    assert scheduler.cancel_undispatched_load(seq) is not pd_wins
+    if pd_wins:
+        assert scheduler._load_winner[seq.id] is pd
+        assert offload.cancelled == []
+    else:
+        assert seq.id not in scheduler._load_winner
+        assert offload.cancelled == [seq]
 
 
 def _save_meta(*req_ids):

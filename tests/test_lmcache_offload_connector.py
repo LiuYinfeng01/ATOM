@@ -40,6 +40,7 @@ from atom.kv_transfer.disaggregation import (
     KVConnectorOutput,
     KVOutputAggregator,
 )
+from atom.kv_transfer.disaggregation.base import KVConnectorSchedulerBase
 from atom.kv_transfer.disaggregation.types import (
     KVTransferRegion,
     LoadOperationId,
@@ -138,7 +139,7 @@ class _FailingLookupClient(_LookupClient):
         raise RuntimeError("lookup failed")
 
 
-class _OffloadMixinStub(OffloadSchedulerMixin):
+class _OffloadMixinStub(OffloadSchedulerMixin, KVConnectorSchedulerBase):
     """Concrete `OffloadSchedulerMixin` for tests that exercise only frontier and
     completion mechanics, not a real save/load lifecycle.
 
@@ -163,6 +164,19 @@ class _OffloadMixinStub(OffloadSchedulerMixin):
         return True
 
     def cancel_pending_load(self, seq) -> None: ...
+
+    # `KVConnectorSchedulerBase` is the real base of every scheduler connector
+    # (the engine calls its methods, e.g. `cancel_undispatched_load`, directly).
+    def get_num_new_matched_tokens(self, seq):
+        return 0, False
+
+    def build_connector_meta(self):
+        raise NotImplementedError
+
+    def update_state_after_alloc(self, seq) -> None: ...
+    def request_finished(self, seq) -> None: ...
+    def should_defer_free(self, seq) -> bool:
+        return False
 
 
 def _scheduler() -> LMCacheOffloadConnectorScheduler:

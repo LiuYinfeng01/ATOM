@@ -27,6 +27,7 @@ from atom.kv_transfer.offload.kv_store.scheduler import (  # noqa: F401  # re-ex
     monotonic_clock_id,
     prompt_chunk_hashes,
 )
+from atom.kv_transfer.offload.lookup_client import LookupPinStatus
 from atom.kv_transfer.offload.metadata import LoadSpec
 from atom.kv_transfer.offload.mooncake_store import client as store_client
 from atom.kv_transfer.offload.mooncake_store.async_lookup import (
@@ -45,6 +46,7 @@ from atom.kv_transfer.offload.mooncake_store.keys import (
     store_namespace,
 )
 from atom.model_engine.sequence import SequenceStatus
+from atom.utils import envs
 
 logger = logging.getLogger("atom")
 
@@ -194,24 +196,22 @@ class _StoreLookup(StoreLookupBase):
         )
         return hit
 
-    def renew(self, seq: Any, start: int, end: int) -> int:
-        """Renew the read leases of every rank's chunks in tokens ``[start, end)``.
-
-        Right before a load reads them: the leases of the lookup behind it may
-        have run out while the request waited for KV blocks. Returns how many
-        of those objects some pool holds; the load goes ahead whatever the
-        answer, and its all-or-nothing get fails on a chunk the Store lost.
-        A pool that fails is paused as after a lookup.
-        """
+    def renew_key_snapshot(self, seq: Any, start: int, end: int) -> tuple[str, ...]:
+        """Snapshot keys on the scheduler thread before background renewal."""
         hashes = prompt_chunk_hashes(seq, self._chunk_tokens)
         first = int(start) // self._chunk_tokens
         last = min(int(end) // self._chunk_tokens, len(hashes) // DIGEST_BYTES)
-        pools = self._pools_to_ask() if first < last else []
+        return tuple(self._rank_keys(hashes, first, last)) if first < last else ()
+
+    def renew_keys(self, keys: tuple[str, ...]) -> int:
+        pools = self._pools_to_ask() if keys else []
         if not pools:
             return 0
-        keys = self._rank_keys(hashes, first, last)
         answers = [a for a in self._exists_on(pools, keys) if a is not None]
         return sum(1 for codes in zip(*answers) if 1 in codes)
+
+    def renew(self, seq: Any, start: int, end: int) -> int:
+        return self.renew_keys(self.renew_key_snapshot(seq, start, end))
 
     def clear_lookup_status(self, lookup_id: str) -> None:
         """Nothing to release: a Store read lease expires by itself."""
@@ -396,6 +396,8 @@ class MooncakeStoreOffloadScheduler(KVStoreOffloadScheduler):
         namespace = store_namespace(config, cfg.chunk_tokens)
         # time.monotonic() of each request's last lookup; see `_ensure_lookup_pin`.
         self._looked_up_at: dict[str, float] = {}
+        self._renew_gate = None
+        self._async_renew = envs.ATOM_STORE_ASYNC_RENEW
         super().__init__(
             config,
             store_cfg=cfg,
@@ -444,8 +446,10 @@ class MooncakeStoreOffloadScheduler(KVStoreOffloadScheduler):
             self._looked_up_at[sid] = started
         return hit
 
-    def _ensure_lookup_pin(self, seq: Any, sid: str, spec: LoadSpec) -> bool:
-        """Renew the read leases of what a load reads; the load always goes ahead.
+    def _ensure_lookup_pin(
+        self, seq: Any, sid: str, spec: LoadSpec
+    ) -> bool | LookupPinStatus:
+        """Gate load dispatch on renewal without blocking the scheduler.
 
         The base trusts a hit it still holds from this request's lookup, a
         live pin for LMCache. A Store lookup holds its chunks only for its
@@ -454,12 +458,25 @@ class MooncakeStoreOffloadScheduler(KVStoreOffloadScheduler):
         chunks the load reads, ``[hbm, transfer_end)`` of every rank, are asked
         for again: that renews their leases right before the get.
 
-        The answer does not decide the load. The engine parked the request
-        when it admitted it, before this dispatch, and only the load's report
-        wakes it: a load dropped here would leave it parked for good, holding
-        its KV blocks and a ``max_num_seqs`` slot. A prefix evicted meanwhile
-        fails the worker's all-or-nothing get instead, and the request prefills
-        once that failure reports (``load_failed``).
+        The answer does not decide the load, synchronously or asynchronously.
+        The engine parked the request when it admitted it, before this
+        dispatch, and only the load's report wakes it: a load dropped here
+        would leave it parked for good, holding its KV blocks and a
+        ``max_num_seqs`` slot. A prefix evicted meanwhile fails the worker's
+        all-or-nothing get instead, and the request prefills once that failure
+        reports (``load_failed``).
+
+        With ``ATOM_STORE_ASYNC_RENEW`` the renewal runs on the renewal
+        executor. While it is running and younger than its timeout the load
+        stays parked and is retried next step (``PENDING``). A finished
+        renewal (judged by ``done()``, not by how late it is polled), a
+        timeout, an executor error or a full or stuck renewal executor all
+        dispatch the get exactly as the synchronous path does (zero held keys
+        included: the get validates residency); the gate counts and logs the
+        fallbacks. Cancellation before dispatch retires the renewal and the
+        reservation without worker work. Once dispatch has handed the blocks
+        to workers, cleanup waits for their terminal report so it cannot
+        release blocks still used by DMA.
         """
         looked_up_at = self._looked_up_at.get(sid)
         pending = self._lookup_results.get(sid)
@@ -469,6 +486,8 @@ class MooncakeStoreOffloadScheduler(KVStoreOffloadScheduler):
             and looked_up_at is not None
             and time.monotonic() - looked_up_at <= _LOOKUP_REUSE_S
         ):
+            if self._renew_gate is not None:
+                self._renew_gate.cancel(sid, seq)
             return True
         start = int(spec.hbm_cached_tokens)
         end = int(
@@ -476,6 +495,28 @@ class MooncakeStoreOffloadScheduler(KVStoreOffloadScheduler):
             if spec.transfer_end_tokens is None
             else spec.transfer_end_tokens
         )
+        if self._async_renew:
+            from atom.kv_transfer.offload.mooncake_store.renewal_gate import (
+                RenewalGate,
+                RenewalState,
+            )
+
+            if self._renew_gate is None:
+                self._renew_gate = RenewalGate(self._lookup_client)
+            identity = (start, end, tuple(seq.block_table))
+            ticket = self._renew_gate.tickets.get(sid)
+            if (
+                ticket is not None
+                and ticket.owner is seq
+                and ticket.identity[1] == identity
+            ):
+                keys = ticket.identity[0]
+            else:
+                keys = self._lookup_client.backend.renew_key_snapshot(seq, start, end)
+            state = self._renew_gate.request(seq, sid, keys, identity)
+            if state is RenewalState.PENDING:
+                return LookupPinStatus.PENDING
+            return True
         held = self._lookup_client.renew(seq, start, end)
         logger.debug(
             "[OFFLOAD-LOOKUP] seq=%s renewed the leases of tokens [%d, %d): the "
@@ -488,8 +529,30 @@ class MooncakeStoreOffloadScheduler(KVStoreOffloadScheduler):
         return True
 
     def _clear_pending_load(self, sid: str) -> None:
+        if self._renew_gate is not None:
+            self._renew_gate.cancel(sid)
         super()._clear_pending_load(sid)
         self._looked_up_at.pop(sid, None)
+
+    def cancel_undispatched_load(self, seq: Any) -> bool:
+        sid = str(seq.id)
+        if (
+            not self._async_renew
+            or self._load_lifecycles.get(sid) is not seq
+            or self._reqs_need_recv.get(sid) is not seq
+            or sid in self._active_load_operations
+        ):
+            return False
+        # The exact generation is installed when metadata hands a load to
+        # workers. A queued renewal has not done that, so cancelling it cannot
+        # race DMA. A running renewal retains immutable keys, not these blocks.
+        self.cancel_pending_load(seq)
+        return True
+
+    def close(self) -> None:
+        if self._renew_gate is not None:
+            self._renew_gate.close()
+        super().close()
 
 
 __all__ = [

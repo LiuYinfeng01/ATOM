@@ -24,7 +24,7 @@ from atom.kv_transfer.offload._offload_common import (
     validated_kv_role,
 )
 from atom.kv_transfer.offload.load_math import chunk_floor, tier_load_tokens
-from atom.kv_transfer.offload.lookup_client import as_lookup_client
+from atom.kv_transfer.offload.lookup_client import LookupPinStatus, as_lookup_client
 from atom.kv_transfer.offload.metadata import (
     LMCacheOffloadMetadata,
     LMCacheReqMeta,
@@ -928,6 +928,7 @@ class ChunkedOffloadSchedulerBase(OffloadSchedulerMixin, KVConnectorSchedulerBas
         # Loads
         logger.debug("[OFFLOAD-BUILD] reqs_need_recv=%d", len(self._reqs_need_recv))
         loading_sids: set[str] = set()
+        pending_loads = None
         load_items = list(self._reqs_need_recv.items()) if self._do_load else []
         for sid, seq in load_items:
             ls = self._load_specs.pop(sid, None)
@@ -959,6 +960,12 @@ class ChunkedOffloadSchedulerBase(OffloadSchedulerMixin, KVConnectorSchedulerBas
             # is where the load's lookup pin has to be live -- a spec derived
             # from a remembered hit has none yet.
             pinned = self._ensure_lookup_pin(seq, sid, ls)
+            if pinned is LookupPinStatus.PENDING:
+                self._load_specs[sid] = ls
+                if pending_loads is None:
+                    pending_loads = {}
+                pending_loads[sid] = seq
+                continue
             if not pinned:
                 self._mark_load_skip(seq, "tier_lost_prefix", hbm, lmc, need, chunk)
                 if pinned is False:
@@ -1105,6 +1112,8 @@ class ChunkedOffloadSchedulerBase(OffloadSchedulerMixin, KVConnectorSchedulerBas
             sid for sid in self._lookup_in_step if sid not in dispatched
         ]
         self._reqs_need_recv.clear()
+        if pending_loads is not None:
+            self._reqs_need_recv.update(pending_loads)
         self._perf_bump("build_meta_us", int((time.perf_counter() - _perf_t0) * 1e6))
         self._perf_bump("build_meta_n")
         self._perf_maybe_log()
@@ -1255,7 +1264,11 @@ class ChunkedOffloadSchedulerBase(OffloadSchedulerMixin, KVConnectorSchedulerBas
 
         Feeds ``EngineCore.has_pending_kv_work()``, so it reads only state
         that clears itself: ``_reqs_need_recv`` is emptied by every
-        ``build_connector_meta`` and ``_save_inflight`` by ``save_finished``
+        ``build_connector_meta`` except for loads still ``PENDING`` (an async
+        Mooncake lease renewal not finished), which are re-inserted and keep
+        reporting work -- so the shutdown drain and held work can still
+        dispatch their GET once the renewal completes or times out -- and
+        ``_save_inflight`` by ``save_finished``
         (or ``abandon_save`` when the scheduler reclaims a stalled save).
         With early release, a finished request's final not-yet-emitted save is
         no longer represented by ``deferred_free_blocks``; its frozen tracker

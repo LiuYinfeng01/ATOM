@@ -3302,6 +3302,15 @@ class Scheduler:
         self._inflight_prefix_wait.pop(seq.id, None)
         self._lookup_detach_declined.discard(seq.id)
         has_inflight_load = bool(getattr(seq, "_counted_as_inflight_load", False))
+        # Parking counts a reservation before metadata reaches workers. A
+        # pending renewal can be cancelled now; an actual worker-owned load
+        # must keep its blocks until its exact terminal report.
+        if (
+            has_inflight_load
+            and self._connector_flag("is_offload")
+            and self.kv_connector.cancel_undispatched_load(seq)
+        ):
+            has_inflight_load = False
         seq.status = SequenceStatus.FINISHED
         seq.leave_reason = reason
         seq.multimodal_data = None

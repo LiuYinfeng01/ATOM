@@ -129,6 +129,13 @@ class KVConnectorSchedulerBase(ABC):
     def cancel_pending_load(self, seq: Any) -> None:
         """Forget the load armed for `seq`."""
 
+    def cancel_undispatched_load(self, seq: Any) -> bool:
+        """Cancel a parked load only if no worker owns its destination.
+
+        False preserves the existing terminal-report cleanup contract.
+        """
+        return False
+
     def cancel_preadmission(self, seq: Any) -> None:
         """Take back an admission the scheduler withdraws before any dispatch;
         by default that is cancelling the pending load."""
