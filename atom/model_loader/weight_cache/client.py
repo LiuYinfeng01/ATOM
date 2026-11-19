@@ -281,18 +281,11 @@ def _stop_and_reclaim(path: str, device: torch.device, held: bool) -> None:
 
 
 def _stop_together(me: _Rank, why, held: bool, pid=None, started=None) -> None:
-    """Stop the daemon on every rank's GPU, or on none: fail if any rank's
-    is in use, or (``started``: this launch's own) is another launch's.
-    Returns once the memory is free."""
-    holder = (
-        (daemon_state(me.path) or {}).get("daemon_pid")
-        if daemon_alive(me.path)
-        else None
-    )
-    if started is not None and holder not in (None, started["pid"]):
-        err = f"another launch's daemon (pid {holder}) holds this GPU"
-    else:
-        err = _in_use_by_others(me.path)
+    """Stop the daemon on every rank's GPU, or on none: fail if servers use
+    any rank's. With ``started``, this launch's own, that one goes too,
+    whichever holds the GPUs (an aborted launch may have left one starting,
+    which then took them first). Returns once the memory is free."""
+    err = _in_use_by_others(me.path)
     if not group_agree(err is None, me.group):
         raise _fail(me.label, ([err] if err else []) + why, pid)
     err = None
@@ -487,12 +480,14 @@ def load_drafter_from_cache(config, device, runner, target, *, rank: int):
         _agree(error, me.group)
         mapped += _apply_process(me, draft["process"])
         _run_prepare_finalize(drafter.model)
-        # Replaces what the daemon left out with the target's modules.
-        drafter.attach_to_target(target, set(draft["loaded"]))
-        _agree(
-            _on_meta([m for m in vars(drafter).values() if isinstance(m, nn.Module)]),
-            me.group,
-        )
+        try:
+            # Replaces what the daemon left out with the target's modules.
+            drafter.attach_to_target(target, set(draft["loaded"]))
+            error = []
+        except Exception as e:  # noqa: BLE001 - every rank must reach the agreement
+            error = [f"attaching it to the target failed: {e!r}"]
+        own = [m for m in vars(drafter).values() if isinstance(m, nn.Module)]
+        _agree(error or _on_meta(own), me.group)
     except _Unfit as e:
         if built is not None:
             built.drop()

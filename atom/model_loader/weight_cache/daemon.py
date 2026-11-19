@@ -126,10 +126,11 @@ def run_daemon(engine_args) -> None:
                 )
         failed = [p.name for p in procs if p.exitcode is not None]
         if failed:
-            logger.error(
-                f"{_TAG} daemon process(es) {failed} exited; stopping the daemon"
-            )
             break
+    # A Ctrl-C reaches the ranks too: their exit is then no failure.
+    failed = [] if signaled else failed
+    if failed:
+        logger.error(f"{_TAG} daemon process(es) {failed} exited; stopping the daemon")
     for p in procs:
         if p.is_alive():
             p.terminate()  # each stops serving and exits
@@ -178,8 +179,13 @@ def _serve_rank(rank: int, config, ready, index: int, all_serving) -> None:
     server, pool = _load_and_serve(config, rank, device, recorder, path, lock, t0)
     # Flags: a handler that takes a lock could land inside its holder.
     signaled, idle = [], []
-    signal.signal(signal.SIGTERM, lambda *_: signaled.append(1))
-    signal.signal(signal.SIGINT, lambda *_: signaled.append(1))
+
+    def on_signal(*_):
+        signaled.append(1)
+        server.stopping = True  # no server gets weights that are about to go
+
+    signal.signal(signal.SIGTERM, on_signal)
+    signal.signal(signal.SIGINT, on_signal)
     server.watch_idle(
         _IDLE_TIMEOUT_S, functools.partial(_stop_launch, lock, idle), all_serving
     )
@@ -261,7 +267,11 @@ def _record(recorder: InputRecorder, config, build, load) -> SimpleNamespace:
     rec = SimpleNamespace(tracer=_CodeTracer(), kernels={})
     recorder.enter_construct(config)
     try:
-        rec.model = build()
+        # Constructing writes what loading leaves as it is (padding, default
+        # scales), and clients take those bytes too: its code is keyed as well.
+        with _CodeTracer() as constructing:
+            rec.model = build()
+        rec.constructed = constructing.codes
         rec.built, before = structure(rec.model), snapshot(rec.model, config)
         rec.classes = {type(e["obj"]) for e in before["walk"].values()}
         with rec.tracer, _record_jit(rec.kernels):
@@ -340,10 +350,11 @@ def _load_draft(config, device, target, rank: int) -> SimpleNamespace | None:
 
 
 def _code(rec) -> dict:
-    """What ran during the recorded load (raises _SourceChanged)."""
+    """What ran to build and load the recorded model (raises _SourceChanged)."""
     # The classes of the model as built and as loaded (loading may swap some).
     classes = rec.classes | {type(obj) for _, obj, _ in _walk_objects(rec.model)}
-    return code_fingerprint(rec.tracer.codes, rec.kernels.values(), classes)
+    codes = rec.constructed | rec.tracer.codes
+    return code_fingerprint(codes, rec.kernels.values(), classes)
 
 
 def _draft_payload(d, target, label: str) -> dict | None:
@@ -382,8 +393,11 @@ def _leave_out_shared(d, target) -> list[str]:
     except Exception as e:  # noqa: BLE001 - only the drafter goes uncached
         return [f"attach_to_target failed: {e!r}"]
     after = dict(d.model.named_modules(remove_duplicate=False))
-    leave_out(d.export, {p for p, m in before.items() if after.get(p) is not m})
-    return []
+    lost = leave_out(d.export, {p for p, m in before.items() if after.get(p) is not m})
+    # An object below a replaced module may be one a kept module holds too.
+    return [
+        f"{p}: changed by the load, below a module attaching replaces" for p in lost
+    ]
 
 
 def _load_and_serve(config, rank, device, recorder, path, lock, t0):

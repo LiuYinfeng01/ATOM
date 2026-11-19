@@ -30,10 +30,13 @@ from atom.utils import envs
 # Starts the daemon in a new session and exits at once, so the daemon is no
 # server's descendant: a server's shutdown kills its whole process tree, and a
 # terminal's Ctrl-C signals its whole process group.
+# It runs on the CPUs the API server had: a runner that starts it is bound to
+# its own GPU's NUMA node.
 _DETACH = (
-    "import subprocess, sys\n"
+    "import os, subprocess, sys\n"
+    "os.sched_setaffinity(0, [int(c) for c in sys.argv[2].split(',')])\n"
     "with open(sys.argv[1], 'ab') as log:\n"
-    "    p = subprocess.Popen(sys.argv[2:], stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)\n"
+    "    p = subprocess.Popen(sys.argv[3:], stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)\n"
     "print(p.pid)\n"
 )
 
@@ -122,6 +125,7 @@ def record_launch() -> None:
         "argv": [sys.executable, *sys.orig_argv[1:]],
         "cwd": os.getcwd(),
         "env": _initial_environ(),
+        "cpus": sorted(os.sched_getaffinity(0)),
     }
     # 0600: it holds the environment.
     fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -185,6 +189,7 @@ def _spawn_daemon() -> dict:
                 return info
             time.sleep(0.2)
         raise _Miss("the rank that starts the daemon did not report it")
+    pid = None
     try:
         with open(launch_path) as f:
             launch = json.load(f)
@@ -195,8 +200,9 @@ def _spawn_daemon() -> dict:
         log = os.path.join(
             socket_dir(), f"daemon_{time.strftime('%Y%m%d-%H%M%S')}_{os.getpid()}.log"
         )
+        cpus = ",".join(map(str, launch["cpus"]))
         out = subprocess.run(
-            [sys.executable, "-c", _DETACH, log, *launch["argv"]],
+            [sys.executable, "-c", _DETACH, log, cpus, *launch["argv"]],
             cwd=launch["cwd"],
             env=env,
             stdin=subprocess.DEVNULL,
@@ -210,11 +216,14 @@ def _spawn_daemon() -> dict:
             raise RuntimeError(
                 f"launcher exited with {out.returncode}: {out.stderr.strip()[-2000:]}"
             )
-        pid = int(out.stdout.strip())
+        pid = int(out.stdout.split()[-1])  # last: a startup hook may print too
         # With when it started: its pid alone may come to name another process.
         info = {"pid": pid, "log": log, "created": psutil.Process(pid).create_time()}
     except Exception as e:  # noqa: BLE001 - the other ranks wait for the marker
         info = {"error": f"could not start a weight cache daemon: {e!r}"}
+        if pid is not None:  # started all the same: not next to the disk load
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(pid, signal.SIGTERM)
     with os.fdopen(fd, "w") as f:
         json.dump(info, f)
     if "error" in info:
@@ -231,9 +240,11 @@ def stop_daemon(path: str, timeout_s: float = 180) -> int | None:
         if not daemon_alive(path):
             return None
         state = daemon_state(path) or {}
-        if state.get("pid") or time.monotonic() > deadline:
+        if _pid_running(state.get("pid")) or time.monotonic() > deadline:
             break
-        time.sleep(0.2)  # the lock is taken just before the state is written
+        # The lock is taken just before the state is written (over that of a
+        # daemon that died here).
+        time.sleep(0.2)
     proc, main = state.get("pid"), state.get("daemon_pid")
     if not _pid_running(proc):
         raise RuntimeError(
@@ -243,6 +254,12 @@ def stop_daemon(path: str, timeout_s: float = 180) -> int | None:
     if not main or main not in _ancestors(proc):
         raise RuntimeError(
             f"cannot find the main process of the daemon holding {path}.lock (process {proc})"
+        )
+    if main == 1:
+        raise RuntimeError(
+            "the daemon's main process is this container's PID 1: stopping it would "
+            "stop the container. Stop the container, or run the daemon under an init "
+            "process"
         )
     with contextlib.suppress(ProcessLookupError):
         os.kill(main, signal.SIGTERM)

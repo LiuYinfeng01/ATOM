@@ -481,6 +481,8 @@ def code_fingerprint(codes, kernels, classes=()) -> dict:
         where = _code_location(file, hasher.roots) if file else None
         if where is not None and "<" not in cls.__qualname__:
             fns.add((*where, cls.__qualname__))
+    # And the outline of their modules: constants and tables the code goes by.
+    fns |= {(pkg, rel, "<module>") for pkg, rel, _ in fns}
     entries = [
         ("fn", pkg, rel, qual, hasher.digest(pkg, rel, qual)) for pkg, rel, qual in fns
     ]

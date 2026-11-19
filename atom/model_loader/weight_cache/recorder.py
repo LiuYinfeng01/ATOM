@@ -72,7 +72,7 @@ def _roots() -> list[str]:
 def _shown(filename: str) -> str:
     """A source file's path below the directory its package is installed in."""
     path = os.path.realpath(filename)
-    for root in _roots():
+    for root in sorted(_roots(), key=len, reverse=True):  # the nearest one
         if path.startswith(root + os.sep):
             return os.path.relpath(path, root)
     return path
@@ -143,7 +143,7 @@ class InputRecorder:
         self.configs: dict[str, Any] = {}  # path -> config object
         self.pre_load_fps: dict[tuple[str, str], Any] = {}
         self.pre_load_globals: dict[str, dict] = {}  # module -> name -> fingerprint
-        self.files: dict[str, set] = {}
+        self.files: dict[str, str] = {}  # path -> identity when loading opened it
         self.globals: dict[tuple, Any] = {}
         self.on = False
         self._patched: list[tuple[type, Any, bool]] = []
@@ -258,9 +258,20 @@ class InputRecorder:
             self._local.busy = False
 
     def _file_read(self, path: str) -> None:
-        if path.endswith((".py", ".pyc")) or path.startswith(("/proc", "/sys", "/dev")):
+        if (
+            self.phase != "load"
+            or path.endswith((".py", ".pyc"))
+            or path.startswith(("/proc/", "/sys/", "/dev/"))
+        ):
             return
-        self.files.setdefault(os.path.realpath(path), set()).add(self.phase)
+        path = os.path.realpath(path)
+        if path in self.files or not os.path.isfile(path):
+            return
+        self._local.busy = True  # reading it here is not the load's read
+        try:
+            self.files[path] = file_identity(path)  # as the load finds it
+        finally:
+            self._local.busy = False
 
     # -- class patching --------------------------------------------------------
 
@@ -417,14 +428,11 @@ class InputRecorder:
         for path, name in self.absent - set(self.pre_load_fps):
             attrs.setdefault(f"{path}\t{name}", _MISSING)
         ckpt = os.path.realpath(checkpoint_dir) + os.sep if checkpoint_dir else None
-        files = {}
-        for p, phases in self.files.items():
-            if (
-                "load" in phases
-                and not (ckpt and p.startswith(ckpt))
-                and os.path.isfile(p)
-            ):
-                files[p] = file_identity(p)
+        files = {
+            p: identity
+            for p, identity in self.files.items()
+            if not (ckpt and p.startswith(ckpt))  # the checkpoint is keyed whole
+        }
         return {
             "env": env,
             "config": config,

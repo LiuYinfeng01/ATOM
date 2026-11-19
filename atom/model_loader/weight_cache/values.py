@@ -10,8 +10,10 @@ import dataclasses
 import enum
 import hashlib
 import importlib
+import itertools
 import json
 import logging
+import os
 import sys
 import types
 from typing import Any
@@ -148,6 +150,8 @@ def _norm(v: Any, depth: int = 0) -> Any:
         return f"{type(v).__name__}.{v.name}"
     if v is None or isinstance(v, (bool, int, float, str)):
         return v
+    if isinstance(v, complex):
+        return repr(v)
     if isinstance(v, (torch.dtype, torch.device)):
         return str(v)
     if isinstance(v, torch.Size):
@@ -418,13 +422,17 @@ def _fp(v: Any, depth: int = 0, *, content: bool = True):
     return ("O", id(v), t)
 
 
+_ERRORS = itertools.count()
+
+
 def safe_fp(fp, v: Any):
-    """``fp(v)``, never raising: one odd value must not stop the daemon, and
-    an error never matches the other side's."""
+    """``fp(v)``, never raising: one odd value must not stop the daemon. An
+    error matches nothing, neither the other side's nor an earlier one here
+    (a value that cannot be fingerprinted counts as changed)."""
     try:
         return fp(v)
     except Exception as e:  # noqa: BLE001
-        return ("<error>", type(e).__name__)
+        return ("<error>", type(e).__name__, os.getpid(), next(_ERRORS))
 
 
 def key_fp(v: Any):

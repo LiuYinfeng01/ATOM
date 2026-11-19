@@ -326,10 +326,12 @@ def build_export(model: nn.Module, before: dict, after: dict) -> dict:
         if is_module:
             for k, p in obj._parameters.items():
                 if p is None:
-                    if prev["params"].get(k) is not None:
-                        item["params"][k] = None  # loading set it to None
+                    # Loading set it to None, or registered it empty.
+                    if k not in prev["params"] or prev["params"][k] is not None:
+                        item["params"][k] = None
                     continue
                 meta = ex.tensor(p)
+                meta["grad"] = p.requires_grad
                 was = prev["params"].get(k)  # None: registered empty, or new
                 meta["replaced"] = was is None or was[1] != id(p)
                 meta["pattrs"] = {}
@@ -368,11 +370,14 @@ def build_export(model: nn.Module, before: dict, after: dict) -> dict:
     }
 
 
-def leave_out(export: dict, paths: set[str]) -> None:
+def leave_out(export: dict, paths: set[str]) -> list[str]:
     """Drop the modules at ``paths`` from ``export``, with the storages
-    nothing left in it uses."""
+    nothing left in it uses. Returns the objects below them whose changes
+    went with them."""
     plan = export["plan"]
-    for p in [p for p in plan if p.partition("::")[0] in paths]:
+    dropped = [p for p in plan if p.partition("::")[0] in paths]
+    lost = [p for p in dropped if "::" in p]
+    for p in dropped:
         del plan[p]
     used = set()
     for item in plan.values():
@@ -384,6 +389,7 @@ def leave_out(export: dict, paths: set[str]) -> None:
         used.update(m.get("storage") for p in packed for m in _metas(p))
     export["views"] = {k: v for k, v in export["views"].items() if k in used}
     export["host"] = {k: v for k, v in export["host"].items() if k in used}
+    return lost
 
 
 def process_snapshot(config=None) -> dict:
@@ -449,8 +455,10 @@ def process_export(states: list[dict]) -> dict:
             continue
         try:
             changes.append((kind, module, rest, _pack(vars(owner)[rest[-1]], ex)))
-        except _Unshippable as e:
-            unshippable.append(f"{where}: {e}")
+        except Exception as e:  # noqa: BLE001 - what cannot be sent refuses the cache
+            unshippable.append(
+                f"{where}: {e if isinstance(e, _Unshippable) else repr(e)}"
+            )
     return {
         "changes": changes,
         "env": {k: os.environ.get(k) for k in sorted(env)},
@@ -519,7 +527,7 @@ def _install_param(obj, k: str, t: torch.Tensor, meta: dict, unpack, filled: dic
     # A Parameter loading replaced has only the attributes it was given.
     keep = {} if built is None or meta["replaced"] else vars(built)
     attrs = {**keep, **pattrs}
-    new = nn.Parameter(t, requires_grad=False)
+    new = nn.Parameter(t, requires_grad=meta["grad"])
     if not tied and _swap_param(built, new, attrs):
         filled[id(built)] = where
         return

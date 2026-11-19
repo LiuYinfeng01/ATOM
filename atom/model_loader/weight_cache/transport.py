@@ -227,12 +227,15 @@ class _Server:
             all_serving.wait()
             with self._lock:
                 self.idle_since = time.monotonic()
-            while not self.stopping:
+            while True:
                 time.sleep(min(30.0, timeout_s / 4))
                 with self._lock:
+                    if self.stopping:
+                        return  # being stopped already
                     idle_for = self._idle_for()
-                    # No request is answered from here on.
-                    self.stopping = idle_for >= timeout_s
+                    if idle_for >= timeout_s:
+                        self.stopping = True  # no request is answered from here on
+                        break
             logger.info(
                 f"{_TAG} {self.label}: no server connected for {idle_for:.0f}s; "
                 "stopping the daemon"

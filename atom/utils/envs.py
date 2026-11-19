@@ -56,9 +56,11 @@ def _flag_env(name: str, default: str = "0") -> bool:
 def _preload_mode() -> str:
     """ATOM_PRELOAD: "off", "server" (1: take the weights from a weight cache
     daemon) or "daemon" (be one)."""
-    if os.getenv("ATOM_PRELOAD", "").strip().lower() == "daemon":
-        return "daemon"
-    return "server" if _flag_env("ATOM_PRELOAD") else "off"
+    raw = os.getenv("ATOM_PRELOAD", "").strip().lower()
+    modes = {"": "off", "0": "off", "1": "server", "daemon": "daemon"}
+    if raw not in modes:
+        raise ValueError(f"ATOM_PRELOAD must be 1 or daemon, not {raw!r}")
+    return modes[raw]
 
 
 def _profiler_detail_env(name: str) -> bool:
