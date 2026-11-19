@@ -1717,12 +1717,12 @@ def _triton_decode_score(
     index_kv_cache,
     block_table,
     seq_lens,
+    batch,
     max_block,
     max_query_len,
     sm_scale,
 ):
     total_q, num_idx_heads, head_dim = idx_q.shape
-    batch = seq_lens.shape[0]
     score = torch.empty(
         (num_idx_heads, total_q, max_block),
         dtype=torch.float32,
@@ -1818,7 +1818,10 @@ def minimax_m3_index_topk_decode(
         "carries no draft tokens) has to be routed to the prefill path by the "
         "attention metadata builder."
     )
-    batch = seq_lens.shape[0]
+    # The requests that have rows. On a DP step a peer prefills, the per-sequence
+    # arrays are the group's batch wide and the rows are this rank's own
+    # (`ForwardMode`): a pad request's programs would write past the outputs below.
+    batch = min(seq_lens.shape[0], total_q // max_query_len)
     max_block = triton.cdiv(max_seq_len, SPARSE_BLOCK_SIZE)
     _require_packable(max_block)
     topk_idx = torch.empty(
@@ -1872,6 +1875,7 @@ def minimax_m3_index_topk_decode(
             index_kv_cache,
             block_table,
             seq_lens,
+            batch,
             max_block,
             max_query_len,
             sm_scale,
