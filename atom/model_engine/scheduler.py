@@ -4690,6 +4690,10 @@ class Scheduler:
         seq.num_placeholder_tokens = 0
         seq.spec_token_ids = np.array([], dtype=np.int32)
         seq.is_first_decode = False
+        # A recompute is not a restore: `_finish_rejected_waiting` reads these
+        # flags, and a stale `offload_loaded` would free the blocks a second
+        # Store load is still writing into if the request is aborted.
+        seq.offload_loaded = seq.offload_load_failed = False
         if seq.is_partial_prefill:
             seq.is_partial_prefill = False
             self._partial_prefill_count -= 1
