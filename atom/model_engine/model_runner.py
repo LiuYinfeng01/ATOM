@@ -130,6 +130,14 @@ from atom.utils.tbo import (
 
 logger = logging.getLogger("atom")
 
+# ATOM_HOSTFAST_PRESENCE_EARLY: build the step's presence-penalty rows
+# (`_begin_presence_step`) right after the token ids are staged, BEFORE
+# `prepare_input_ids` waits for the previous verify's status, instead of after
+# the attention metadata. They read only the batch and the input-id buffer, never
+# that status, so the rows are the same; the work moves out of the window between
+# the GPU's verify hand-off and the next verify launch.
+_HOSTFAST_PRESENCE_EARLY = os.environ.get("ATOM_HOSTFAST_PRESENCE_EARLY", "0") == "1"
+
 support_model_arch_dict = {
     "Qwen3ForCausalLM": "atom.models.qwen3.Qwen3ForCausalLM",
     "Qwen3MoeForCausalLM": "atom.models.qwen3_moe.Qwen3MoeForCausalLM",
@@ -615,6 +623,13 @@ class tokenIDProcessor:
             (bs, batch.total_tokens_num, bs * self.draft_tokens_per_seq),
         )
         input_ids, locs = self._stage_input_ids(batch, max_seqlen_q, publication_group)
+        runner = self.runner
+        if _HOSTFAST_PRESENCE_EARLY and runner.__dict__.pop("_presence_early_armed", False):
+            runner._presence_early = (
+                batch,
+                input_ids,
+                runner._begin_presence_step(batch, input_ids),
+            )
         # The speculative status queue is filled in postprocess but drained here, so a
         # step whose postprocess is skipped must not drain it: `forward()` bails
         # before postprocess when the batch produces no output (every prefill in
@@ -2870,6 +2885,8 @@ class ModelRunner:
 
         token_group = self.h2d_groups.get("token_inputs")
         spec_decode_indices = None
+        self.__dict__.pop("_presence_early", None)
+        self._presence_early_armed = _HOSTFAST_PRESENCE_EARLY
         temperatures, top_ks, top_ps, all_greedy, needs_independent_noise = (
             self.prepare_sample(batch, publication_group=token_group)
         )
@@ -2916,7 +2933,12 @@ class ModelRunner:
                 forward_context.context.draft_anchor_overrides = (
                     self.drafter.anchors_to_gpu(batch.next_token_ids)
                 )
-        self._presence_step = self._begin_presence_step(batch, input_ids)
+        self._presence_early_armed = False
+        early = self.__dict__.pop("_presence_early", None)
+        if early is not None and early[0] is batch and early[1] is input_ids:
+            self._presence_step = early[2]
+        else:
+            self._presence_step = self._begin_presence_step(batch, input_ids)
         return (
             input_ids,
             temperatures,
