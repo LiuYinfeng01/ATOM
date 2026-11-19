@@ -16,10 +16,8 @@ import time
 
 import psutil
 
-from atom.model_loader.weight_cache.key import _LAUNCH_T0_ENV
+from atom.model_loader.weight_cache.key import _LAUNCH_ENV
 from atom.model_loader.weight_cache.transport import (
-    _DAEMON_LOG_ENV,
-    _DAEMON_PID_ENV,
     _ping,
     daemon_alive,
     daemon_state,
@@ -29,7 +27,6 @@ from atom.model_loader.weight_cache.transport import (
 from atom.model_loader.weight_cache.values import _TAG, _Miss, logger
 from atom.utils import envs
 
-_LAUNCH_ENV = "ATOM_PRELOAD_LAUNCH"  # set by the API server: its saved launch
 # Starts the daemon in a new session and exits at once, so the daemon is no
 # server's descendant: a server's shutdown kills its whole process tree, and a
 # terminal's Ctrl-C signals its whole process group.
@@ -94,16 +91,20 @@ def _prune_logs(d: str, keep: int = 9) -> None:
     _remove(*[p for _, p in sorted(logs)[:-keep]])
 
 
+def _launch_file() -> str | None:
+    """Where this launch's API server saved its command line, if it did."""
+    launch = os.environ.get(_LAUNCH_ENV)
+    return os.path.join(socket_dir(), f"launch_{launch}.json") if launch else None
+
+
 def record_launch() -> None:
-    """Called by the API server before it starts any process (weight cache
-    on). The time it runs tells the processes that load which sources may
-    have changed under them. A daemon tells its processes its main process
-    (stopping that stops the daemon). An ATOM_PRELOAD server saves its
-    command line and environment, to start a daemon with them."""
+    """Called by the API server before it starts any process (ATOM_PRELOAD
+    set). It names the launch for them: the time in the name tells the
+    processes that load which sources may have changed under them. A server
+    also saves its command line and environment, to start a daemon with."""
     # The processes that load start, and import their code, after this moment.
-    os.environ[_LAUNCH_T0_ENV] = repr(time.time())
-    if envs.ATOM_WEIGHT_CACHE == "daemon":
-        os.environ[_DAEMON_PID_ENV] = str(os.getpid())
+    os.environ[_LAUNCH_ENV] = f"{os.getpid()}_{time.time()!r}"
+    if envs.ATOM_PRELOAD == "daemon":
         return
     if os.getpid() == 1:
         logger.warning(
@@ -116,7 +117,7 @@ def record_launch() -> None:
         with contextlib.suppress(ValueError, IndexError):
             if not _pid_running(int(os.path.basename(old).split("_")[1])):
                 _remove(old, old + ".daemon")
-    path = os.path.join(d, f"launch_{os.getpid()}_{time.time_ns()}.json")
+    path = _launch_file()
     launch = {
         "argv": [sys.executable, *sys.orig_argv[1:]],
         "cwd": os.getcwd(),
@@ -126,7 +127,6 @@ def record_launch() -> None:
     fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     with os.fdopen(fd, "w") as f:
         json.dump(launch, f)
-    os.environ[_LAUNCH_ENV] = path
     atexit.register(_remove, path, path + ".daemon")
 
 
@@ -150,13 +150,14 @@ def start_early() -> None:
 def launch_recorded() -> bool:
     """Whether this process may start daemons: its API server saved the
     launch to start them with (record_launch)."""
-    return bool(os.environ.get(_LAUNCH_ENV))
+    path = _launch_file()
+    return path is not None and os.path.exists(path)
 
 
 def _started_by_launch() -> dict | None:
     """The daemon this launch has started already (start_early), if any."""
-    launch = os.environ.get(_LAUNCH_ENV)
-    if not launch:
+    launch = _launch_file()
+    if launch is None:
         return None
     try:
         with open(launch + ".daemon") as f:
@@ -169,7 +170,7 @@ def _started_by_launch() -> dict | None:
 def _spawn_daemon() -> dict:
     """Start a daemon with this server's command line and environment. Every
     rank calls this; the first one starts it, the others get its pid and log."""
-    launch_path = os.environ[_LAUNCH_ENV]  # callers check launch_recorded()
+    launch_path = _launch_file()  # callers check launch_recorded()
     marker = launch_path + ".daemon"
     try:
         fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -187,16 +188,13 @@ def _spawn_daemon() -> dict:
     try:
         with open(launch_path) as f:
             launch = json.load(f)
-        env = {
-            k: v
-            for k, v in launch["env"].items()
-            if k not in ("ATOM_PRELOAD", _LAUNCH_ENV)
-        }
+        # The same launch, as a daemon (it names itself anew).
+        env = {k: v for k, v in launch["env"].items() if k != _LAUNCH_ENV}
+        env["ATOM_PRELOAD"] = "daemon"
         _prune_logs(socket_dir())
         log = os.path.join(
             socket_dir(), f"daemon_{time.strftime('%Y%m%d-%H%M%S')}_{os.getpid()}.log"
         )
-        env.update({"ATOM_WEIGHT_CACHE": "daemon", _DAEMON_LOG_ENV: log})
         out = subprocess.run(
             [sys.executable, "-c", _DETACH, log, *launch["argv"]],
             cwd=launch["cwd"],

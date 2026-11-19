@@ -27,21 +27,16 @@ from atom.model_loader.weight_cache.values import (
     logger,
     release_digest_buffers,
 )
-from atom.utils import envs
 
-# Set by a daemon's API server for its runners (preload.record_launch).
-_DAEMON_PID_ENV = "ATOM_WEIGHT_CACHE_DAEMON_PID"  # its main process
-_DAEMON_LOG_ENV = "ATOM_WEIGHT_CACHE_DAEMON_LOG"  # a daemon ATOM_PRELOAD started
 _MAX_MESSAGE = 1 << 30
+# Sockets, locks and daemon logs. Not /dev/shm: containers started with
+# --ipc=host share it (and are all root), and IPC handles do not cross
+# containers anyway.
+_DIR = f"/tmp/atom_weight_cache_{os.getuid()}"
 
 
 def socket_dir() -> str:
-    # Not /dev/shm: containers started with --ipc=host share it (and are all
-    # root), and IPC handles do not cross containers anyway.
-    d = envs.ATOM_WEIGHT_CACHE_DIR or f"/tmp/atom_weight_cache_{os.getuid()}"
-    # A socket path holds at most 107 bytes; the longest here adds 38.
-    if len(d.encode()) > 69:
-        raise ValueError(f"weight cache directory {d!r} is too long for a socket path")
+    d = _DIR
     os.makedirs(d, mode=0o700, exist_ok=True)
     st = os.lstat(d)
     if stat.S_ISLNK(st.st_mode) or st.st_uid != os.getuid() or st.st_mode & 0o077:
@@ -159,14 +154,7 @@ class _DaemonLock:
         with contextlib.suppress(FileNotFoundError):
             os.unlink(path)  # stale socket from a dead daemon
         # Read by `status` and by servers that stop this daemon.
-        self.info = {
-            "pid": os.getpid(),
-            # The launch's main process: SIGTERM there stops the whole daemon.
-            "daemon_pid": int(os.environ.get(_DAEMON_PID_ENV) or 0) or None,
-            "log": os.environ.get(_DAEMON_LOG_ENV),
-            "started": time.time(),
-            **info,
-        }
+        self.info = {"pid": os.getpid(), "started": time.time(), **info}
         self.set_state("loading")
 
     def set_state(self, state: str, **info) -> None:
@@ -246,8 +234,8 @@ class _Server:
                     # No request is answered from here on.
                     self.stopping = idle_for >= timeout_s
             logger.info(
-                f"{_TAG} {self.label}: no server connected for {idle_for:.0f}s "
-                f"(ATOM_PRELOAD_IDLE_TIMEOUT_S={timeout_s}); stopping the daemon"
+                f"{_TAG} {self.label}: no server connected for {idle_for:.0f}s; "
+                "stopping the daemon"
             )
             on_idle()
 

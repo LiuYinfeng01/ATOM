@@ -3787,17 +3787,17 @@ def main():
     args = parser.parse_args()
     if args.api_server_count < 1:
         parser.error("--api-server-count must be at least 1")
-    if envs.ATOM_WEIGHT_CACHE != "off":
+    if envs.ATOM_PRELOAD != "off":
         from atom.model_loader.weight_cache.preload import record_launch, start_early
 
         record_launch()
-        if envs.ATOM_WEIGHT_CACHE == "daemon":
+        if envs.ATOM_PRELOAD == "daemon":
             # A weight cache daemon serves weights, not requests.
             from atom.model_loader.weight_cache.daemon import run_daemon
 
             run_daemon(EngineArgs.from_cli_args(args))
             return
-        start_early()  # ATOM_PRELOAD: the daemon loads while this starts up
+        start_early()  # the daemon loads while this server starts up
 
     _setup_frontend(args)
 

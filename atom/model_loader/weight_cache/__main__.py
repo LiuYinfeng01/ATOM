@@ -38,11 +38,10 @@ def _status(launches: dict) -> None:
     now = time.time()
     for main_pid, gpus in launches.items():
         st0 = gpus[0][1]
-        timeout = st0.get("idle_timeout_s")
         print(f"daemon pid {main_pid}: {st0.get('model', '?')}")
         print(
             f"  up {_age(now - st0.get('started', now))}, exits after "
-            f"{f'{timeout}s idle' if timeout else 'no idle timeout'}; log {st0.get('log') or '-'}"
+            f"{st0.get('idle_timeout_s', '?')}s idle; log {st0.get('log') or '-'}"
         )
         for path, st in sorted(gpus, key=lambda g: str(g[1].get("name"))):
             line = f"  {st.get('name', '?')}: {st.get('state', '?')}"

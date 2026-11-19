@@ -53,14 +53,12 @@ def _flag_env(name: str, default: str = "0") -> bool:
     return bool(raw) and raw not in ("0", "false", "no", "off")
 
 
-def _weight_cache_mode() -> str:
-    """off, daemon, or client: a server under ATOM_PRELOAD."""
-    mode = os.getenv("ATOM_WEIGHT_CACHE", "off").strip().lower() or "off"
-    if mode not in ("off", "daemon"):
-        raise ValueError(f"ATOM_WEIGHT_CACHE must be off or daemon, not {mode!r}")
-    if mode == "off" and _flag_env("ATOM_PRELOAD"):
-        return "client"
-    return mode
+def _preload_mode() -> str:
+    """ATOM_PRELOAD: "off", "server" (1: take the weights from a weight cache
+    daemon) or "daemon" (be one)."""
+    if os.getenv("ATOM_PRELOAD", "").strip().lower() == "daemon":
+        return "daemon"
+    return "server" if _flag_env("ATOM_PRELOAD") else "off"
 
 
 def _profiler_detail_env(name: str) -> bool:
@@ -931,17 +929,8 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # like the other directory knobs.
     "ATOM_RTL_TRACE_DIR": lambda: _optional_path_env("ATOM_RTL_TRACE_DIR"),
     # --- Model Loading ---
-    # Weight cache (docs/environment_variables.md).
-    # off, daemon, or client (ATOM_PRELOAD=1): see _weight_cache_mode.
-    "ATOM_WEIGHT_CACHE": _weight_cache_mode,
-    # 0: never. An idle daemon still holds the weights on every GPU.
-    "ATOM_PRELOAD_IDLE_TIMEOUT_S": lambda: _nonnegative_int_env(
-        "ATOM_PRELOAD_IDLE_TIMEOUT_S", 3600
-    ),
-    "ATOM_WEIGHT_CACHE_DIR": lambda: os.getenv("ATOM_WEIGHT_CACHE_DIR", ""),
-    "ATOM_WEIGHT_CACHE_WAIT_S": lambda: _positive_float_env(
-        "ATOM_WEIGHT_CACHE_WAIT_S", "1800"
-    ),
+    # Weight cache (docs/environment_variables.md): off, server or daemon.
+    "ATOM_PRELOAD": _preload_mode,
     "ATOM_DISABLE_MMAP": lambda: (
         os.getenv("ATOM_DISABLE_MMAP", "false").lower() == "true"
     ),

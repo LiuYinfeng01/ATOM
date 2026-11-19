@@ -189,15 +189,16 @@ def _diff_key(daemon: dict, client: dict, prefix: str = "") -> list[str]:
 # ---------------------------------------------------------------------------
 
 _OWN_DIR = os.path.dirname(os.path.realpath(__file__))
-# Set by the API server for its engine's processes (preload.record_launch).
-_LAUNCH_T0_ENV = "ATOM_WEIGHT_CACHE_LAUNCH_T0"
+# Set by the API server for its processes (preload.record_launch): its pid
+# and when it started, "<pid>_<time>".
+_LAUNCH_ENV = "ATOM_PRELOAD_LAUNCH"
 
 
 def _launch_start() -> float:
     """A time before this process imported its code: when its API server
     started (preload.record_launch), else when this process started."""
-    with contextlib.suppress(TypeError, ValueError):
-        return float(os.environ.get(_LAUNCH_T0_ENV))
+    with contextlib.suppress(IndexError, ValueError):
+        return float(os.environ.get(_LAUNCH_ENV, "").split("_")[1])
     return _process_start()
 
 

@@ -53,8 +53,9 @@ from atom.model_loader.weight_cache.transport import (
     socket_path,
 )
 from atom.model_loader.weight_cache.values import _TAG, _Miss, logger
-from atom.utils import envs, worker_process_name
+from atom.utils import worker_process_name
 
+_WAIT_S = 1800  # for a daemon that is still loading
 # What a rank finds (the launch acts on the most severe): no daemon, one it
 # can use, one it cannot, or sources changed under this server.
 _NONE, _USABLE, _UNUSABLE, _STALE = range(4)
@@ -136,7 +137,7 @@ def _wait_together(me: _Rank, started: dict | None) -> bool:
     so none sits in a collective while another waits out a load. Returns
     whether a daemon held this GPU meanwhile."""
     t0 = last = time.monotonic()
-    held, patience = False, envs.ATOM_WEIGHT_CACHE_WAIT_S
+    held = False
     while True:
         alive = daemon_alive(me.path)
         held = held or alive
@@ -147,7 +148,7 @@ def _wait_together(me: _Rank, started: dict | None) -> bool:
             and _is_running(started)
         )
         waited = time.monotonic() - t0
-        if not group_max(int(waiting and waited < patience), me.group):
+        if not group_max(int(waiting and waited < _WAIT_S), me.group):
             return held
         if time.monotonic() - last > 30:
             logger.info(
@@ -221,9 +222,7 @@ def _probe(me: _Rank, started: dict | None, held: bool, own_key):
                 f"see {started['log']}"
             )
         if not os.path.exists(me.path):
-            raise _Miss(
-                f"the daemon is still not serving after {envs.ATOM_WEIGHT_CACHE_WAIT_S:.0f}s"
-            )
+            raise _Miss(f"the daemon is still not serving after {_WAIT_S}s")
         sock, payload = _fetch(me)
         reasons = _check_payload(payload, own_key)
     except _SourceChanged as e:

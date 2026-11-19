@@ -82,7 +82,7 @@ def _write(path, text):
 @pytest.fixture
 def no_source_stats(monkeypatch):
     # The launch "starts" after every file the test writes.
-    monkeypatch.setenv(key._LAUNCH_T0_ENV, str(time.time() + 3600))
+    monkeypatch.setenv(key._LAUNCH_ENV, f"0_{time.time() + 3600}")
 
 
 def test_function_hash_follows_its_body_only(tmp_path, no_source_stats):
@@ -131,7 +131,7 @@ def test_source_edited_after_start_is_refused(tmp_path, monkeypatch):
     f = tmp_path / "mod.py"
     _write(f, SRC)
     time.sleep(0.05)
-    monkeypatch.setenv(key._LAUNCH_T0_ENV, str(time.time()))
+    monkeypatch.setenv(key._LAUNCH_ENV, f"0_{time.time()!r}")
     assert _hasher(tmp_path).digest("pkg", "mod.py", "load")
     time.sleep(0.05)
     _write(f, SRC + "\nEXTRA = 1\n")
@@ -921,15 +921,8 @@ def test_daemon_leaves_out_what_attaching_replaces():
 def cache_dir(monkeypatch):
     # Under /tmp: a socket path holds 107 bytes.
     d = pathlib.Path(tempfile.mkdtemp(prefix="wc", dir="/tmp")) / "wc"
-    monkeypatch.setenv("ATOM_WEIGHT_CACHE_DIR", str(d))
-    for k in (
-        "ATOM_WEIGHT_CACHE",
-        "ATOM_PRELOAD",
-        preload._LAUNCH_ENV,
-        key._LAUNCH_T0_ENV,
-        transport._DAEMON_PID_ENV,
-        transport._DAEMON_LOG_ENV,
-    ):
+    monkeypatch.setattr(transport, "_DIR", str(d))
+    for k in ("ATOM_PRELOAD", preload._LAUNCH_ENV):
         monkeypatch.setenv(k, "")  # so what a test leaves there is undone too
         monkeypatch.delenv(k)
     yield d
@@ -956,7 +949,7 @@ def test_record_launch_saves_the_environment_from_exec(cache_dir, monkeypatch):
     monkeypatch.setenv("ATOM_PRELOAD", "1")
     monkeypatch.setenv("WC_TEST_SET_AT_RUNTIME", "1")  # like an import setting a var
     preload.record_launch()
-    path = os.environ[preload._LAUNCH_ENV]
+    path = preload._launch_file()
     assert stat.S_IMODE(os.stat(path).st_mode) == 0o600  # holds the environment
     with open(path) as f:
         launch = json.load(f)
@@ -964,15 +957,15 @@ def test_record_launch_saves_the_environment_from_exec(cache_dir, monkeypatch):
     assert "PATH" in launch["env"] and "WC_TEST_SET_AT_RUNTIME" not in launch["env"]
 
 
-def test_record_launch_in_a_daemon_names_its_main_process(cache_dir, monkeypatch):
-    monkeypatch.setenv("ATOM_WEIGHT_CACHE", "daemon")
+def test_record_launch_in_a_daemon_only_times_the_launch(cache_dir, monkeypatch):
+    monkeypatch.setenv("ATOM_PRELOAD", "daemon")
     before = time.time()
     preload.record_launch()
-    assert os.environ[transport._DAEMON_PID_ENV] == str(os.getpid())
+    assert not preload.launch_recorded()  # nothing saved: a daemon starts no daemon
     # The launch time is taken now, not from the process start (psutil's can
     # be a second early, so a file edited just before the launch would count
     # as edited after it).
-    assert before <= float(os.environ[key._LAUNCH_T0_ENV]) <= time.time()
+    assert before <= key._launch_start() <= time.time()
 
 
 def test_process_start_is_to_the_tick():
@@ -985,7 +978,7 @@ def test_spawned_daemon_is_detached_and_started_once(cache_dir, tmp_path, monkey
     out = tmp_path / "out"
     code = (
         "import os, time\n"
-        "open(os.environ['WC_OUT'], 'w').write(os.environ['ATOM_WEIGHT_CACHE'] + ' ' + os.environ.get('ATOM_PRELOAD', '-'))\n"
+        "open(os.environ['WC_OUT'], 'w').write(os.environ['ATOM_PRELOAD'])\n"
         "time.sleep(60)\n"
     )
     os.makedirs(cache_dir, mode=0o700)
@@ -996,12 +989,12 @@ def test_spawned_daemon_is_detached_and_started_once(cache_dir, tmp_path, monkey
             {"argv": [sys.executable, "-c", code], "cwd": str(tmp_path), "env": env}
         )
     )
-    monkeypatch.setenv(preload._LAUNCH_ENV, str(launch))
+    monkeypatch.setenv(preload._LAUNCH_ENV, "1_1")
     first = preload._spawn_daemon()
     try:
         assert preload._spawn_daemon() == first  # the other ranks get the same daemon
         _wait_for(lambda: out.exists() and out.read_text())
-        assert out.read_text() == "daemon -"  # daemon mode, ATOM_PRELOAD dropped
+        assert out.read_text() == "daemon"  # the same launch, as a daemon
         assert preload._pid_running(first["pid"])
         assert os.getpid() not in preload._ancestors(
             first["pid"]
@@ -1013,7 +1006,6 @@ def test_spawned_daemon_is_detached_and_started_once(cache_dir, tmp_path, monkey
 
 _FAKE_MAIN = """
 import os, signal, subprocess, sys, time
-os.environ["ATOM_WEIGHT_CACHE_DAEMON_PID"] = str(os.getpid())
 child = subprocess.Popen([sys.executable, sys.argv[1], sys.argv[2]])
 def stop(*_):
     child.terminate()
@@ -1025,9 +1017,11 @@ while True:
 """
 
 _FAKE_RUNNER = """
-import signal, sys, time
+import os, signal, sys, time
 from atom.model_loader.weight_cache.transport import _DaemonLock
-lock = _DaemonLock(sys.argv[1], name="TP0", model="toy-model", idle_timeout_s=0)
+lock = _DaemonLock(
+    sys.argv[1], name="TP0", model="toy-model", daemon_pid=os.getppid(), idle_timeout_s=3600
+)
 def stop(*_):
     lock.release()  # like a runner: the lock goes early in the shutdown
     time.sleep(2)
@@ -1147,7 +1141,7 @@ def test_start_early_only_without_any_daemon(cache_dir, monkeypatch):
     os.makedirs(cache_dir, mode=0o700)
     launch = cache_dir / "launch_1_1.json"
     launch.write_text("{}")
-    monkeypatch.setenv(preload._LAUNCH_ENV, str(launch))
+    monkeypatch.setenv(preload._LAUNCH_ENV, "1_1")
     calls = []
 
     def spawn():
@@ -1419,7 +1413,7 @@ def test_socket_dir_must_be_private(monkeypatch):
     d = tempfile.mkdtemp(dir="/tmp")
     try:
         os.chmod(d, 0o755)
-        monkeypatch.setenv("ATOM_WEIGHT_CACHE_DIR", d)
+        monkeypatch.setattr(transport, "_DIR", d)
         with pytest.raises(PermissionError):
             transport.socket_dir()
         assert stat.S_IMODE(os.stat(d).st_mode) == 0o755  # left as it was

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026, Advanced Micro Devices, Inc. All rights reserved.
-"""The daemon (``ATOM_WEIGHT_CACHE=daemon``): one process per GPU that builds
+"""The daemon (``ATOM_PRELOAD=daemon``): one process per GPU that builds
 and loads its shard as a server does (``init_model_env``, ``get_model``, and
 the drafter's own weights), then serves it.
 
@@ -61,7 +61,10 @@ from atom.model_loader.weight_cache.values import (
     release_digest_buffers,
 )
 from atom.model_loader.weight_utils import local_model_dir
-from atom.utils import envs, get_hf_text_config, worker_process_name
+from atom.utils import get_hf_text_config, worker_process_name
+
+# Without a connected server: an idle daemon still holds every GPU's weights.
+_IDLE_TIMEOUT_S = 3600
 
 
 def run_daemon(engine_args) -> None:
@@ -165,7 +168,10 @@ def _serve_rank(rank: int, config, ready, index: int, all_serving) -> None:
         name=worker_process_name(config, rank),
         model=config.model,
         gpu=gpu_identity(gpu),
-        idle_timeout_s=envs.ATOM_PRELOAD_IDLE_TIMEOUT_S,
+        # The launch's main process: SIGTERM there stops the whole daemon.
+        daemon_pid=os.getppid(),
+        log=_log_file(),
+        idle_timeout_s=_IDLE_TIMEOUT_S,
     )
     recorder = InputRecorder.start()
     device = init_model_env(config, rank, dist_env=_groups_without_communicators)
@@ -174,12 +180,9 @@ def _serve_rank(rank: int, config, ready, index: int, all_serving) -> None:
     signaled, idle = [], []
     signal.signal(signal.SIGTERM, lambda *_: signaled.append(1))
     signal.signal(signal.SIGINT, lambda *_: signaled.append(1))
-    if lock.info["idle_timeout_s"] > 0:
-        server.watch_idle(
-            lock.info["idle_timeout_s"],
-            functools.partial(_stop_launch, lock, idle),
-            all_serving,
-        )
+    server.watch_idle(
+        _IDLE_TIMEOUT_S, functools.partial(_stop_launch, lock, idle), all_serving
+    )
     ready.put(index)
     while not (signaled or idle):
         time.sleep(1.0)
@@ -188,6 +191,16 @@ def _serve_rank(rank: int, config, ready, index: int, all_serving) -> None:
     lock.release()
     del pool  # held while the weights in it are served
     logger.info(f"{_TAG} {worker_process_name(config, rank)}: stopped serving")
+
+
+def _log_file() -> str | None:
+    """The file this process writes its output to (a daemon ATOM_PRELOAD
+    started has one), for `status`."""
+    with contextlib.suppress(OSError):
+        out = os.readlink("/proc/self/fd/1")
+        if os.path.isfile(out):
+            return out
+    return None
 
 
 def _groups_without_communicators(

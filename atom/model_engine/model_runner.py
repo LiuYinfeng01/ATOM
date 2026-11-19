@@ -1071,8 +1071,8 @@ class ModelRunner:
         Override point: subclasses (e.g. the rapidserve decode process) may
         construct on the meta device and import weights via IPC instead.
         """
-        if envs.ATOM_WEIGHT_CACHE == "client":
-            # ATOM_PRELOAD: a weight cache daemon's weights, if it can give them.
+        if envs.ATOM_PRELOAD == "server":
+            # A weight cache daemon's weights, if it can give them.
             from atom.model_loader.weight_cache.client import load_from_cache
 
             model = load_from_cache(config, model_class, device, rank=self.rank)
@@ -1093,7 +1093,7 @@ class ModelRunner:
     def _build_and_load_drafter(self) -> Drafter:
         """Construct the drafter and load its weights, sharing with the loaded
         model what the draft does not hold itself."""
-        if envs.ATOM_WEIGHT_CACHE == "client":
+        if envs.ATOM_PRELOAD == "server":
             from atom.model_loader.weight_cache.client import load_drafter_from_cache
 
             drafter = load_drafter_from_cache(

@@ -2836,7 +2836,7 @@ class Config:
         # Weight cache servers map the daemon's weights: nothing may write them
         # in place (EPLB, RLHF updates, RapidServe's own sharing), and a daemon
         # serves the GPUs of its own node.
-        if envs.ATOM_WEIGHT_CACHE != "off":
+        if envs.ATOM_PRELOAD != "off":
             default_runner = "atom.model_engine.model_runner.ModelRunner"
             unsupported = [
                 name
