@@ -9,6 +9,7 @@
 | 放大看单张图 | [① 全模型](operators/dsv41-flash-tp4/figures/01-overview.png) · [② Attention](operators/dsv41-flash-tp4/figures/02-attention.png) · [③ mHC 与 MoE](operators/dsv41-flash-tp4/figures/03-mhc-moe.png) · [④ Prefill 与 Decode](operators/dsv41-flash-tp4/figures/04-prefill.png) · [⑤ Engram](operators/dsv41-flash-tp4/figures/05-engram.png) |
 | 查某一层的输入、输出、dtype | [逐节点算子表（TSV）](operators/dsv41-flash-tp4/operators.tsv) |
 | Decode 热点：把 Triton mHC 换成 HIP 会怎样？ | [rank 0 的 24 步 kernel 清单、MI308X 单卡 A/B 与端到端预算](operators/dsv41-flash-tp4/decode-kernels-mhc.md) |
+| MI308X 与 MI355X 的 kernel 有何不同？ | [ATOM base 对照 vLLM + DSpark：target/draft、次数、实现语言与前后发射](operators/dsv41-flash-tp4/mi308x-mi355x-traces.md) |
 | 用静态图查看器逐节点浏览 | [Decode：完整 40 层 ONNX](operators/dsv41-flash-tp4/decode-g00-rank0.onnx) · [Prefill：两段固定形状 ONNX](operators/dsv41-flash-tp4/prefill-shapes.onnx) |
 
 ## ① 从一个 ID 走完 40 层

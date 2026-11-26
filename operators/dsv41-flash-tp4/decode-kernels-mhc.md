@@ -2,7 +2,9 @@
 
 [返回全模型图册](../../README.md) · [40 层 shape / dtype 讲解](README.md)
 
-**结论（2026-11-26）：MI308X 上保留 Triton。** 本机 rank 0 trace 中，准备替换的 80 次 delayed mHC + RMSNorm 合计 **1.480769 ms/decode 步**，不是能直接减掉的延迟。在同服务镜像、同型号单卡、80 套真实权重的 A/B 中，最快实测的 AITER generic HIP 比 Triton **慢 1.257–1.268 ms/80 次**，尽管发射数从 160 变为 80。原 TP4 卡组未通过空闲检查，**没有测出 HIP 服务的 E2E**；第 5 节单列条件估算和零成本上限。
+跨引擎对照另见：[gfx942 ATOM vs gfx950 vLLM 的实际 kernel、调用数与前后顺序](mi308x-mi355x-traces.md)。
+
+**结论（2026-11-26）：MI308X 上保留 Triton。** 本机 rank 0 trace 中，准备替换的 80 次 delayed mHC + RMSNorm 合计 **1.480769 ms/decode 步**，不是能直接减掉的延迟。在同服务镜像、同型号单卡、80 套真实权重的 A/B 中，最快实测的 AITER generic HIP 比 Triton **慢 1.257–1.268 ms/80 次**，尽管发射数从 160 变为 80。原 TP4 卡组未通过空闲检查，**没有测出 HIP 服务的 E2E**；第 7 节单列条件估算和零成本上限。
 
 ### 1. Decode：实际调用了哪些 AITER kernel？
 
@@ -35,7 +37,34 @@
 
 **与原始 trace 对账**：模型 `DeepSeek-V4.1-Flash-1017-FP4PTPC`，ATOM `5f6bdb75` / AITER `ad0d5e20`，4×MI308X，TP4、BS1、无推测解码。分析的是 2026-11-24 16:25 UTC 的 **100000 输入、24 输出**诊断请求，命中 89984；原文件时间戳为 `20261124_162528_990`。同一 trace 另有 8192、1952 行的两个 prefill 标记，已排除。取全部 24 个 `decode[bs=1 …]` 标记；只认同线程、位于标记内且 correlation 唯一的 HIP launch，再归属其 GPU events，不按设备时间戳硬截 CPU 窗。每一步的 19 项调用次数都逐项相等；**未舍入的 AITER 行和 5.037664 ms/步**，与表中 5.038 一致。不是之前图册的 32 步中段平均。
 
-### 2. 瓶颈在 mHC 的哪一半？
+### 2. 剩下的 424 次是什么？
+
+| rank 0 decode 的其余调用 | 次/步 | GPU ms/步 | 归属依据与边界 |
+|---|---:|---:|---|
+| `kernel_gemm_0` | 130 | 0.908 | 通用符号。在 8192 行的 eager prefill，65 次的直接 CPU 父算子都是 `aiter::gemm_a8w8_bpreshuffle`。decode 是 graph replay，无法据此为这 130 次逐次指定投影或 CPU 父算子。 |
+| `Cijk_*` GEMM（5 个不同符号） | 85 | 1.045 | ROCm BLAS / Tensile 风格的设备符号；在 eager 路径见 `aten::mm` / `aten::bmm`。不按 AITER 自有 kernel 计。 |
+| ATOM 自有 Triton | 203 | 1.327 | 其中 sparse attention 的 split、combine 和普通双源 kernel 共 **78 次、0.706 ms**；`_rope_window_kernel`、`_inverse_rope_gptj_kernel` 各 40 次。 |
+| PyTorch/ATen 与 ROCm runtime | 6 | 0.031 | 张量操作与 `__amd_rocclr_copyBuffer`。 |
+| **其余小计** | **424** | **3.311** | 按未舍入值计算。 |
+| **加上第 1 节后的总计** | **967** | **8.349** | profiler 内可归属的 GPU 事件时长之和，不是客户端 TPOT。 |
+
+同配置、不开 profiler 的 **7.490 ms 是每个后续输出 token 的中位 TPOT**，整条 100K→1500 请求的中位 E2E 是 **11.886 s**。不要把 `8.349 − 7.490` 解释为 profiling 开销，也不要把跨 stream 的 duration 相加当成一条关键路径。
+
+### 3. Prefill：同名算子，耗时分布不同
+
+同一份 trace 还有两个 prefill forward。每格是 **rank 0 的调用次数 / 该 chunk 累计 GPU ms**，各只有一个 forward，不是每 token 的均值。
+
+| 模块 | 8192 行 chunk | 尾块 1952 有效行（缓冲 2048） |
+|---|---:|---:|
+| FP8 paged MQA logits | 3 / 36.415 | 8 / 10.232 |
+| Indexer Top-K 选择 | 3 / 11.789 | 9 / 3.379 |
+| mHC main + reduce + 独立 post | 84 / 51.084 | 163 / 14.411 |
+| MoE gate/up + down | 40 / 67.471 | 80 / 34.228 |
+| ATOM sparse attention | 20 / 134.035 | 41 / 37.543 |
+
+为什么不能笼统说“FP8 logits 不贵”？decode 只有一行查询，8 次打分合计 **0.046 ms/步**；首个 prefill chunk 成批处理查询，3 次就花 **36.415 ms/chunk**。这是两种不同规模的工作。优化稳态 TPOT 看 decode 的每步成本；优化长输入 TTFT 要看 prefill 的分块工作及调度，而不是把 36.415 ms 乘到每个输出 token 上。
+
+### 4. 瓶颈在 mHC 的哪一半？
 
 | Rank 0，每 decode 步 | 调用次数 | GPU ms/步 | 单次均值 |
 |---|---:|---:|---:|
@@ -49,7 +78,7 @@
 
 分母也值得记：每步有 **967** 个可归属的 GPU kernel 事件，duration 和为 **8.349122 ms**。mHC 两部分占其中 **17.7%**，占表中明确归属 AITER 那部分的 **29.4%**；不是“用户 29.4% 的等待时间”。每步 Triton 核心在 rank 0 的范围为 **1.477763–1.483685 ms**。四个 rank 单独复算的均值为 **1.480769 / 1.481370 / 1.485467 / 1.495254 ms**，不相加。其余可见大项还有专家 GateUp + Down **1.154 ms**、通用符号 `kernel_gemm_0` **0.908 ms**（不能仅凭名字断言属于唯一投影）、Lamport all-reduce **0.708 ms**。所以 mHC 值得优化，但不是整步中唯一的等待源。
 
-### 3. 单测到底替换了什么？
+### 5. 单测到底替换了什么？
 
 实跑 ATOM 使用 `ATOM_DSV41_MHC_BACKEND=auto`。在原镜像、真实 MI308X 上检查了两条路径：`auto` 不给 `hc_fn` 打 HIP 包，回落 Triton；强制 `hip` 时，ATOM 的 `pack_mhc_fn` 抛出只支持 `gfx950/gfx1250` 的错误。**这不等于 AITER 没有 gfx942 HIP kernel。** 直接调用原镜像的 `aiter.ops.mega_mhc.mega_mhc`，在 BF16 输出、提前 pack、显式 workspace 下可运行 **generic HIP**；gfx950 的 tuned stream kernels 不是这个候选。不改服务开关、不拿另一种不带 delayed pre/RMSNorm 的 `mhc_pre` 冒充。
 
@@ -63,7 +92,7 @@
 | 子层 RMSNorm 权重 | `[5120]` | BF16；norm 和 RMS 的 epsilon `1e-20`，mHC epsilon `1e-6`，post 系数 2，Sinkhorn 20 轮；输出 BF16，不额外做 MXFP8 输出融合。 |
 | 五个输出：新残差、post、comb、normed、下一 pre | `[1,4,5120]` / `[1,4,1]` / `[1,4,4]` / `[1,5120]` / `[1,4]` | BF16 / FP32 / FP32 / BF16 / FP32。no-post 保留输入残差。 |
 
-### 4. MI308X 单卡实测：一发 HIP 是否胜过两发 Triton？
+### 6. MI308X 单卡实测：一发 HIP 是否胜过两发 Triton？
 
 **方法。** 物理 GPU4，MI308X / gfx942 / 80 CU；容器只映射这一张卡，两次独立进程均重新锁卡并检查显存、空闲和 KFD 所有权。使用与原服务相同的镜像（ID 前缀 `cfd987217fc4`），Torch `2.10.0+rocm7.2.4.git3d3aa833`。两种后端使用同一 stream、同一实际权重、同一输入。单步 proxy 按真实层序执行 **80 组不同参数：77 次 post、3 次 no-post**。仅 FP32 `fn` 的轮转工作集就有 **150 MiB**。这里测试的是 80 个 mHC 调用，不运行中间的 attention/MoE，不宣称重现了整模型缓存或真实数据依赖。
 
@@ -80,7 +109,7 @@
 
 **数值。** 同 checkpoint 40 层 × 两种子层 × 两套 seed，共 **160 组**。独立 FP64 参考显式保留模型的 BF16 写回/舍入；逐项检查全部五个输出，另将 HIP 直接与 Triton 比。BF16 residual/norm 用 `atol=0.02, rtol=0.01`；FP32 gates 用 `atol=5e-4, rtol=1e-3`。默认与最快 split 在两轮均无非有限值、无元素超阈；第二轮还核对连续 graph replay 后的 80 组输出。split=10 对参考：新残差最大绝对差 **0.015625**、normed **0.00390625**、三个 gate 输出均不超过 **4.92e-5**。不是逐 bit 等同，也不是整模型精度验收。
 
-### 5. 理论上能省多少？整条请求呢？
+### 7. 理论上能省多少？整条请求呢？
 
 使用**与 24 步 trace 同轮的另一趟、不开 profiler 的 C1**：TP4，100000→1500，并发 1，4 条有效 measured 请求，均命中 89984。中位 TPOT **7.489738 ms**、TTFT **627.613 ms**、请求 E2E **11.886007 s**。不是 24 输出的诊断时长，也不是其他轮次的 7.509 ms。TPOT 和 E2E 的中位数分别来自各请求，不能用两组分别取出的中位 TTFT/TPOT 强拼一个新基线。
 
@@ -96,7 +125,7 @@
 
 **如何决策。** 不给 `gfx942` 简单放开 stock HIP 开关。若目标是只靠这段省 **0.5 ms/token**，服务里的 80 个边界平均应降到 **12.26 µs/次以下**（现为 18.51）；想让整步 TPOT 降 10%，理想门槛约 **9.15 µs/次**。这比“能否合成一发”更适合作为新移植的验收指标。应先对 split-K 与占比 54.1% 的 reduce 分开测，再让正确且过门槛的候选跑同卡组 fresh-server A/B。此次原 GPU0–3 卡组有其他 GPU 作业、未通过准入；没有抢卡、没有对外发布服务补丁，也**没有 HIP 整模型 TPOT、E2E 或质量实测**。若连 prefill 也换，TTFT 必须另测，本表不适用。
 
-### 6. 复核与复跑
+### 8. 复核与复跑
 
 | 资料 | 内容 |
 |---|---|

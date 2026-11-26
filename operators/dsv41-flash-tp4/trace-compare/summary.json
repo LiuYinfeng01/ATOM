@@ -1,0 +1,2310 @@
+{
+  "atom942": [
+    {
+      "sha256": "7ba879743867601e202504a3627cfc27be9811a7720e6fbc9406b4a6779bccad",
+      "device": "AMD Instinct MI308X",
+      "CU": 80,
+      "marker": "decode[bs=1 tok=1 d=1]",
+      "steps": 24,
+      "kernel_events_file": 25197,
+      "selected_events": 23208,
+      "unique_symbols_selected": 53,
+      "scopes": {
+        "decode": {
+          "events": 23208,
+          "calls_per_step": 967.0,
+          "ms_per_step": 8.349122,
+          "per_step_counts": [
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967
+          ]
+        }
+      },
+      "all_selected_ms_per_step": 8.349122,
+      "graph_parent_counts": {},
+      "backend": {
+        "decode": {
+          "ATOM/Triton": [
+            203.0,
+            1.326898
+          ],
+          "AITER/HIP": [
+            290.0,
+            2.233345
+          ],
+          "PyTorch/ATen": [
+            3.0,
+            0.014992
+          ],
+          "ROCm runtime": [
+            3.0,
+            0.016124
+          ],
+          "AITER/Triton": [
+            160.0,
+            1.480769
+          ],
+          "Unresolved": [
+            130.0,
+            0.908284
+          ],
+          "ROCm BLAS": [
+            85.0,
+            1.045159
+          ],
+          "AITER/FlyDSL": [
+            85.0,
+            1.27733
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.04622
+          ]
+        },
+        "window": {
+          "ATOM/Triton": [
+            203.0,
+            1.326898
+          ],
+          "AITER/HIP": [
+            290.0,
+            2.233345
+          ],
+          "PyTorch/ATen": [
+            3.0,
+            0.014992
+          ],
+          "ROCm runtime": [
+            3.0,
+            0.016124
+          ],
+          "AITER/Triton": [
+            160.0,
+            1.480769
+          ],
+          "Unresolved": [
+            130.0,
+            0.908284
+          ],
+          "ROCm BLAS": [
+            85.0,
+            1.045159
+          ],
+          "AITER/FlyDSL": [
+            85.0,
+            1.27733
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.04622
+          ]
+        }
+      },
+      "families": {
+        "decode": {
+          "_masked_embedding_kernel": [
+            1.0,
+            0.003134
+          ],
+          "TP/Lamport sum": [
+            81.0,
+            0.708432
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004966
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003794
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002917
+          ],
+          "PyTorch/ATen": [
+            3.0,
+            0.014992
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.00921
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.011843
+          ],
+          "__amd_rocclr_copyBuffer": [
+            3.0,
+            0.016124
+          ],
+          "mHC/Triton main": [
+            80.0,
+            0.679346
+          ],
+          "TP/allgather": [
+            3.0,
+            0.117401
+          ],
+          "mHC/Triton reduce": [
+            80.0,
+            0.801423
+          ],
+          "quant/per-token": [
+            82.0,
+            0.388848
+          ],
+          "kernel_gemm_0": [
+            130.0,
+            0.908284
+          ],
+          "QK/RMSNorm quant": [
+            40.0,
+            0.189961
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.202926
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.004996
+          ],
+          "_window_rows": [
+            1.0,
+            0.005731
+          ],
+          "attention/unsplit": [
+            2.0,
+            0.077345
+          ],
+          "output/inverse RoPE": [
+            40.0,
+            0.200492
+          ],
+          "linear/BLAS": [
+            85.0,
+            1.045159
+          ],
+          "MoE/router": [
+            40.0,
+            0.312179
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.741091
+          ],
+          "MoE/Down": [
+            40.0,
+            0.412665
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012736
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.009995
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.019016
+          ],
+          "AITER/HIP": [
+            24.0,
+            0.172522
+          ],
+          "RMSNorm/template": [
+            5.0,
+            0.024863
+          ],
+          "_write_index_kernel": [
+            4.0,
+            0.019443
+          ],
+          "_unit_table_kernel": [
+            2.0,
+            0.009691
+          ],
+          "quant/per-group": [
+            8.0,
+            0.040277
+          ],
+          "_scale_indexer_weights_kernel": [
+            8.0,
+            0.040005
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.04622
+          ],
+          "index/radix": [
+            4.0,
+            0.266125
+          ],
+          "_indices": [
+            8.0,
+            0.040042
+          ],
+          "attention/partial": [
+            38.0,
+            0.423855
+          ],
+          "attention/reduce": [
+            38.0,
+            0.204499
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004682
+          ],
+          "index/block2048": [
+            1.0,
+            0.022461
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.005039
+          ],
+          "index/compact512": [
+            4.0,
+            0.101113
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.019434
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.003842
+          ]
+        },
+        "window": {
+          "_masked_embedding_kernel": [
+            1.0,
+            0.003134
+          ],
+          "TP/Lamport sum": [
+            81.0,
+            0.708432
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004966
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003794
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002917
+          ],
+          "PyTorch/ATen": [
+            3.0,
+            0.014992
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.00921
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.011843
+          ],
+          "__amd_rocclr_copyBuffer": [
+            3.0,
+            0.016124
+          ],
+          "mHC/Triton main": [
+            80.0,
+            0.679346
+          ],
+          "TP/allgather": [
+            3.0,
+            0.117401
+          ],
+          "mHC/Triton reduce": [
+            80.0,
+            0.801423
+          ],
+          "quant/per-token": [
+            82.0,
+            0.388848
+          ],
+          "kernel_gemm_0": [
+            130.0,
+            0.908284
+          ],
+          "QK/RMSNorm quant": [
+            40.0,
+            0.189961
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.202926
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.004996
+          ],
+          "_window_rows": [
+            1.0,
+            0.005731
+          ],
+          "attention/unsplit": [
+            2.0,
+            0.077345
+          ],
+          "output/inverse RoPE": [
+            40.0,
+            0.200492
+          ],
+          "linear/BLAS": [
+            85.0,
+            1.045159
+          ],
+          "MoE/router": [
+            40.0,
+            0.312179
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.741091
+          ],
+          "MoE/Down": [
+            40.0,
+            0.412665
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012736
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.009995
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.019016
+          ],
+          "AITER/HIP": [
+            24.0,
+            0.172522
+          ],
+          "RMSNorm/template": [
+            5.0,
+            0.024863
+          ],
+          "_write_index_kernel": [
+            4.0,
+            0.019443
+          ],
+          "_unit_table_kernel": [
+            2.0,
+            0.009691
+          ],
+          "quant/per-group": [
+            8.0,
+            0.040277
+          ],
+          "_scale_indexer_weights_kernel": [
+            8.0,
+            0.040005
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.04622
+          ],
+          "index/radix": [
+            4.0,
+            0.266125
+          ],
+          "_indices": [
+            8.0,
+            0.040042
+          ],
+          "attention/partial": [
+            38.0,
+            0.423855
+          ],
+          "attention/reduce": [
+            38.0,
+            0.204499
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004682
+          ],
+          "index/block2048": [
+            1.0,
+            0.022461
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.005039
+          ],
+          "index/compact512": [
+            4.0,
+            0.101113
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.019434
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.003842
+          ]
+        }
+      }
+    },
+    {
+      "sha256": "5b01e09309d87e70523a3b7922b007de08c96153f543cbdc0abd4a8775f88292",
+      "device": "AMD Instinct MI308X",
+      "CU": 80,
+      "marker": "decode[bs=1 tok=1 d=1]",
+      "steps": 24,
+      "kernel_events_file": 25197,
+      "selected_events": 23208,
+      "unique_symbols_selected": 53,
+      "scopes": {
+        "decode": {
+          "events": 23208,
+          "calls_per_step": 967.0,
+          "ms_per_step": 8.355919,
+          "per_step_counts": [
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967
+          ]
+        }
+      },
+      "all_selected_ms_per_step": 8.355919,
+      "graph_parent_counts": {}
+    },
+    {
+      "sha256": "aab84d7c6dad5867d91d4c1cf40f9f50e3eb0eebd401ce5d504f4dc598fc4211",
+      "device": "AMD Instinct MI308X",
+      "CU": 80,
+      "marker": "decode[bs=1 tok=1 d=1]",
+      "steps": 24,
+      "kernel_events_file": 25197,
+      "selected_events": 23208,
+      "unique_symbols_selected": 53,
+      "scopes": {
+        "decode": {
+          "events": 23208,
+          "calls_per_step": 967.0,
+          "ms_per_step": 8.123171,
+          "per_step_counts": [
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967
+          ]
+        }
+      },
+      "all_selected_ms_per_step": 8.123171,
+      "graph_parent_counts": {}
+    },
+    {
+      "sha256": "3a57f7a8653666e2e1efb1c881e49b215f541a1c07d0da4c1d94dea1cbdcce1f",
+      "device": "AMD Instinct MI308X",
+      "CU": 80,
+      "marker": "decode[bs=1 tok=1 d=1]",
+      "steps": 24,
+      "kernel_events_file": 25197,
+      "selected_events": 23208,
+      "unique_symbols_selected": 53,
+      "scopes": {
+        "decode": {
+          "events": 23208,
+          "calls_per_step": 967.0,
+          "ms_per_step": 7.990414,
+          "per_step_counts": [
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967,
+            967
+          ]
+        }
+      },
+      "all_selected_ms_per_step": 7.990414,
+      "graph_parent_counts": {}
+    }
+  ],
+  "vllm950": [
+    {
+      "sha256": "6ad59015046d9e5bb386ee6f01013f17336ee4d0db98ee23d72cfc3c883a5e21",
+      "device": "AMD Instinct MI355X",
+      "CU": 256,
+      "marker": "execute_context_0(0)_generation_1(6)",
+      "steps": 20,
+      "kernel_events_file": 52368,
+      "selected_events": 52368,
+      "unique_symbols_selected": 123,
+      "scopes": {
+        "target_aux": {
+          "events": 2328,
+          "calls_per_step": 116.4,
+          "ms_per_step": 0.296629,
+          "per_step_counts": [
+            116,
+            116,
+            116,
+            116,
+            120,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            120,
+            116,
+            116,
+            116,
+            116,
+            116
+          ]
+        },
+        "target_graph": {
+          "events": 44500,
+          "calls_per_step": 2225.0,
+          "ms_per_step": 13.655109,
+          "per_step_counts": [
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225
+          ]
+        },
+        "outside_aux": {
+          "events": 1460,
+          "calls_per_step": 73.0,
+          "ms_per_step": 0.499848,
+          "per_step_counts": [
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73
+          ]
+        },
+        "draft_graph": {
+          "events": 4080,
+          "calls_per_step": 204.0,
+          "ms_per_step": 1.352908,
+          "per_step_counts": [
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204
+          ]
+        }
+      },
+      "all_selected_ms_per_step": 15.804495,
+      "graph_parent_counts": {
+        "execute": 20,
+        "propose": 20
+      },
+      "backend": {
+        "target_aux": {
+          "PyTorch/ATen": [
+            42.0,
+            0.093271
+          ],
+          "ROCm runtime": [
+            29.2,
+            0.060279
+          ],
+          "vLLM/Triton": [
+            37.2,
+            0.124202
+          ],
+          "rocPRIM": [
+            8.0,
+            0.018878
+          ]
+        },
+        "window": {
+          "PyTorch/ATen": [
+            786.0,
+            3.687626
+          ],
+          "ROCm runtime": [
+            52.2,
+            0.127902
+          ],
+          "vLLM/Triton": [
+            653.2,
+            3.919782
+          ],
+          "rocPRIM": [
+            49.0,
+            0.203208
+          ],
+          "Inductor/Triton": [
+            2.0,
+            0.00561
+          ],
+          "AITER/HIP": [
+            497.0,
+            2.928527
+          ],
+          "TileLang": [
+            2.0,
+            0.021964
+          ],
+          "Unresolved": [
+            233.0,
+            0.940502
+          ],
+          "vLLM/HIP": [
+            111.0,
+            1.343542
+          ],
+          "ROCm BLAS": [
+            135.0,
+            1.170694
+          ],
+          "AITER/FlyDSL": [
+            86.0,
+            1.040752
+          ],
+          "RCCL": [
+            4.0,
+            0.072612
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.341774
+          ]
+        },
+        "target": {
+          "PyTorch/ATen": [
+            682.0,
+            3.231966
+          ],
+          "ROCm runtime": [
+            35.2,
+            0.085565
+          ],
+          "vLLM/Triton": [
+            589.2,
+            3.417765
+          ],
+          "rocPRIM": [
+            46.0,
+            0.195111
+          ],
+          "Inductor/Triton": [
+            1.0,
+            0.002901
+          ],
+          "AITER/HIP": [
+            458.0,
+            2.725755
+          ],
+          "TileLang": [
+            2.0,
+            0.021964
+          ],
+          "Unresolved": [
+            218.0,
+            0.875481
+          ],
+          "vLLM/HIP": [
+            96.0,
+            1.015787
+          ],
+          "ROCm BLAS": [
+            124.0,
+            1.033702
+          ],
+          "AITER/FlyDSL": [
+            80.0,
+            0.978282
+          ],
+          "RCCL": [
+            2.0,
+            0.025686
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.341774
+          ]
+        },
+        "target_graph": {
+          "Inductor/Triton": [
+            1.0,
+            0.002901
+          ],
+          "PyTorch/ATen": [
+            640.0,
+            3.138695
+          ],
+          "AITER/HIP": [
+            458.0,
+            2.725755
+          ],
+          "vLLM/Triton": [
+            552.0,
+            3.293563
+          ],
+          "TileLang": [
+            2.0,
+            0.021964
+          ],
+          "Unresolved": [
+            218.0,
+            0.875481
+          ],
+          "vLLM/HIP": [
+            96.0,
+            1.015787
+          ],
+          "ROCm BLAS": [
+            124.0,
+            1.033702
+          ],
+          "AITER/FlyDSL": [
+            80.0,
+            0.978282
+          ],
+          "RCCL": [
+            2.0,
+            0.025686
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.341774
+          ],
+          "rocPRIM": [
+            38.0,
+            0.176233
+          ],
+          "ROCm runtime": [
+            6.0,
+            0.025286
+          ]
+        },
+        "outside_aux": {
+          "PyTorch/ATen": [
+            23.0,
+            0.067582
+          ],
+          "ROCm BLAS": [
+            1.0,
+            0.054578
+          ],
+          "RCCL": [
+            1.0,
+            0.023597
+          ],
+          "vLLM/Triton": [
+            26.0,
+            0.296984
+          ],
+          "ROCm runtime": [
+            12.0,
+            0.021726
+          ],
+          "AITER/HIP": [
+            4.0,
+            0.0122
+          ],
+          "vLLM/HIP": [
+            3.0,
+            0.015085
+          ],
+          "rocPRIM": [
+            3.0,
+            0.008097
+          ]
+        },
+        "draft_graph": {
+          "Inductor/Triton": [
+            1.0,
+            0.002709
+          ],
+          "PyTorch/ATen": [
+            81.0,
+            0.388078
+          ],
+          "AITER/HIP": [
+            35.0,
+            0.190572
+          ],
+          "vLLM/Triton": [
+            38.0,
+            0.205033
+          ],
+          "Unresolved": [
+            15.0,
+            0.065021
+          ],
+          "vLLM/HIP": [
+            12.0,
+            0.31267
+          ],
+          "ROCm BLAS": [
+            10.0,
+            0.082415
+          ],
+          "AITER/FlyDSL": [
+            6.0,
+            0.06247
+          ],
+          "RCCL": [
+            1.0,
+            0.023329
+          ],
+          "ROCm runtime": [
+            5.0,
+            0.020611
+          ]
+        }
+      },
+      "families": {
+        "target_aux": {
+          "PyTorch/ATen": [
+            42.0,
+            0.093271
+          ],
+          "__amd_rocclr_copyBuffer": [
+            29.2,
+            0.060279
+          ],
+          "_expand_idx_mapping_kernel": [
+            1.0,
+            0.001863
+          ],
+          "_prepare_pos_seq_lens_kernel": [
+            1.0,
+            0.002465
+          ],
+          "_combine_sampled_and_draft_tokens_kernel": [
+            1.0,
+            0.003323
+          ],
+          "_gather_block_tables_kernel": [
+            1.0,
+            0.014023
+          ],
+          "_compute_slot_mappings_kernel": [
+            1.0,
+            0.005281
+          ],
+          "_token_request_mapping_kernel": [
+            10.0,
+            0.0193
+          ],
+          "_compute_swa_indices_and_lens_kernel": [
+            8.0,
+            0.030518
+          ],
+          "rocPRIM": [
+            8.0,
+            0.018878
+          ],
+          "_pack_dense_prefix_to_ragged_kernel": [
+            8.0,
+            0.02547
+          ],
+          "kernel": [
+            4.0,
+            0.015208
+          ],
+          "_ring_slot_mapping_kernel": [
+            1.0,
+            0.002585
+          ],
+          "_gather_lookback_kernel": [
+            1.0,
+            0.003327
+          ],
+          "_zero_kv_blocks_kernel": [
+            0.1,
+            0.000296
+          ],
+          "_apply_write_kernel": [
+            0.1,
+            0.000542
+          ]
+        },
+        "window": {
+          "PyTorch/ATen": [
+            786.0,
+            3.687626
+          ],
+          "__amd_rocclr_copyBuffer": [
+            51.2,
+            0.123897
+          ],
+          "_expand_idx_mapping_kernel": [
+            1.0,
+            0.001863
+          ],
+          "_prepare_pos_seq_lens_kernel": [
+            1.0,
+            0.002465
+          ],
+          "_combine_sampled_and_draft_tokens_kernel": [
+            1.0,
+            0.003323
+          ],
+          "_gather_block_tables_kernel": [
+            1.0,
+            0.014023
+          ],
+          "_compute_slot_mappings_kernel": [
+            1.0,
+            0.005281
+          ],
+          "_token_request_mapping_kernel": [
+            13.0,
+            0.024951
+          ],
+          "_compute_swa_indices_and_lens_kernel": [
+            8.0,
+            0.030518
+          ],
+          "rocPRIM": [
+            49.0,
+            0.203208
+          ],
+          "_pack_dense_prefix_to_ragged_kernel": [
+            11.0,
+            0.033935
+          ],
+          "kernel": [
+            58.0,
+            0.244392
+          ],
+          "_ring_slot_mapping_kernel": [
+            1.0,
+            0.002585
+          ],
+          "_gather_lookback_kernel": [
+            1.0,
+            0.003327
+          ],
+          "_zero_kv_blocks_kernel": [
+            0.1,
+            0.000296
+          ],
+          "_apply_write_kernel": [
+            0.1,
+            0.000542
+          ],
+          "Inductor/Triton": [
+            2.0,
+            0.00561
+          ],
+          "TP/one-stage sum": [
+            88.0,
+            0.750924
+          ],
+          "_hash_ids_kernel": [
+            1.0,
+            0.006389
+          ],
+          "_engram_lookup_kernel": [
+            2.0,
+            0.009526
+          ],
+          "mHC/TileLang prenorm GEMM": [
+            1.0,
+            0.004875
+          ],
+          "mHC/TileLang gates": [
+            1.0,
+            0.017089
+          ],
+          "RMSNorm/template": [
+            92.0,
+            0.371382
+          ],
+          "_kernel": [
+            186.0,
+            0.739112
+          ],
+          "linear/MXFP8": [
+            186.0,
+            1.323187
+          ],
+          "QK/fused norm RoPE KV": [
+            46.0,
+            0.220642
+          ],
+          "attention/partial": [
+            43.0,
+            0.440109
+          ],
+          "attention/reduce": [
+            43.0,
+            0.220728
+          ],
+          "output/inverse RoPE": [
+            43.0,
+            0.210384
+          ],
+          "linear/BLAS": [
+            135.0,
+            1.170694
+          ],
+          "mHC/HIP fused GEMM+sqrsum": [
+            82.0,
+            0.411373
+          ],
+          "mHC/HIP gates": [
+            85.0,
+            0.430045
+          ],
+          "mHC/Triton pre mix": [
+            85.0,
+            0.394503
+          ],
+          "mHC/Triton head reduce": [
+            86.0,
+            0.419291
+          ],
+          "MoE/router": [
+            43.0,
+            0.483966
+          ],
+          "MoE/sort": [
+            43.0,
+            0.452985
+          ],
+          "MoE/quant sort": [
+            86.0,
+            0.402446
+          ],
+          "MoE/GateUp": [
+            43.0,
+            0.689323
+          ],
+          "MoE/Down": [
+            43.0,
+            0.351429
+          ],
+          "mHC/separate post": [
+            6.0,
+            0.028086
+          ],
+          "TP/RCCL": [
+            4.0,
+            0.072612
+          ],
+          "_fused_engram_post_wkv_kernel": [
+            2.0,
+            0.0097
+          ],
+          "mHC/HIP pre GEMM+sqrsum": [
+            3.0,
+            0.014585
+          ],
+          "AITER/HIP": [
+            12.0,
+            0.0667
+          ],
+          "_fused_save_compress_norm_kernel": [
+            4.0,
+            0.02395
+          ],
+          "_rope_quant_insert_kernel": [
+            4.0,
+            0.009268
+          ],
+          "_indexer_k_norm_rope_quant_store_kernel": [
+            4.0,
+            0.018356
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.341774
+          ],
+          "index/Top512 split": [
+            8.0,
+            0.246751
+          ],
+          "index/Top512 merge": [
+            8.0,
+            0.115717
+          ],
+          "_compute_topk_lens_kernel": [
+            38.0,
+            0.169709
+          ],
+          "_pack_global_topk_ragged_kernel": [
+            38.0,
+            0.183161
+          ],
+          "_block_scores_kernel": [
+            1.0,
+            0.005719
+          ],
+          "__amd_rocclr_fillBufferUnAligned": [
+            1.0,
+            0.004005
+          ],
+          "_store_candidates_kernel": [
+            1.0,
+            0.004505
+          ],
+          "_candidate_flags_kernel": [
+            4.0,
+            0.052858
+          ],
+          "_mask_candidates_strided_kernel": [
+            4.0,
+            0.024136
+          ],
+          "_compute_local_logits_stats_kernel": [
+            1.0,
+            0.006003
+          ],
+          "_rejection_kernel": [
+            1.0,
+            0.007793
+          ],
+          "_resample_kernel": [
+            1.0,
+            0.004117
+          ],
+          "_insert_resampled_kernel": [
+            1.0,
+            0.002969
+          ],
+          "_get_num_sampled_and_rejected_kernel": [
+            1.0,
+            0.003111
+          ],
+          "_post_update_kernel": [
+            1.0,
+            0.004985
+          ],
+          "_prepare_dflash_inputs_kernel": [
+            3.0,
+            0.178316
+          ],
+          "vLLM/HIP": [
+            6.0,
+            0.276466
+          ],
+          "_gumbel_sample_kernel": [
+            5.0,
+            0.020897
+          ]
+        },
+        "target": {
+          "PyTorch/ATen": [
+            682.0,
+            3.231966
+          ],
+          "__amd_rocclr_copyBuffer": [
+            34.2,
+            0.08156
+          ],
+          "_expand_idx_mapping_kernel": [
+            1.0,
+            0.001863
+          ],
+          "_prepare_pos_seq_lens_kernel": [
+            1.0,
+            0.002465
+          ],
+          "_combine_sampled_and_draft_tokens_kernel": [
+            1.0,
+            0.003323
+          ],
+          "_gather_block_tables_kernel": [
+            1.0,
+            0.014023
+          ],
+          "_compute_slot_mappings_kernel": [
+            1.0,
+            0.005281
+          ],
+          "_token_request_mapping_kernel": [
+            10.0,
+            0.0193
+          ],
+          "_compute_swa_indices_and_lens_kernel": [
+            8.0,
+            0.030518
+          ],
+          "rocPRIM": [
+            46.0,
+            0.195111
+          ],
+          "_pack_dense_prefix_to_ragged_kernel": [
+            8.0,
+            0.02547
+          ],
+          "kernel": [
+            52.0,
+            0.218598
+          ],
+          "_ring_slot_mapping_kernel": [
+            1.0,
+            0.002585
+          ],
+          "_gather_lookback_kernel": [
+            1.0,
+            0.003327
+          ],
+          "_zero_kv_blocks_kernel": [
+            0.1,
+            0.000296
+          ],
+          "_apply_write_kernel": [
+            0.1,
+            0.000542
+          ],
+          "Inductor/Triton": [
+            1.0,
+            0.002901
+          ],
+          "TP/one-stage sum": [
+            81.0,
+            0.696647
+          ],
+          "_hash_ids_kernel": [
+            1.0,
+            0.006389
+          ],
+          "_engram_lookup_kernel": [
+            2.0,
+            0.009526
+          ],
+          "mHC/TileLang prenorm GEMM": [
+            1.0,
+            0.004875
+          ],
+          "mHC/TileLang gates": [
+            1.0,
+            0.017089
+          ],
+          "RMSNorm/template": [
+            81.0,
+            0.330183
+          ],
+          "_kernel": [
+            170.0,
+            0.672092
+          ],
+          "linear/MXFP8": [
+            170.0,
+            1.199532
+          ],
+          "QK/fused norm RoPE KV": [
+            40.0,
+            0.19154
+          ],
+          "attention/partial": [
+            40.0,
+            0.418222
+          ],
+          "attention/reduce": [
+            40.0,
+            0.205101
+          ],
+          "output/inverse RoPE": [
+            40.0,
+            0.195673
+          ],
+          "linear/BLAS": [
+            124.0,
+            1.033702
+          ],
+          "mHC/HIP fused GEMM+sqrsum": [
+            77.0,
+            0.385985
+          ],
+          "mHC/HIP gates": [
+            79.0,
+            0.399693
+          ],
+          "mHC/Triton pre mix": [
+            79.0,
+            0.367403
+          ],
+          "mHC/Triton head reduce": [
+            80.0,
+            0.390354
+          ],
+          "MoE/router": [
+            40.0,
+            0.461779
+          ],
+          "MoE/sort": [
+            40.0,
+            0.434568
+          ],
+          "MoE/quant sort": [
+            80.0,
+            0.374274
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.646096
+          ],
+          "MoE/Down": [
+            40.0,
+            0.332186
+          ],
+          "mHC/separate post": [
+            6.0,
+            0.028086
+          ],
+          "TP/RCCL": [
+            2.0,
+            0.025686
+          ],
+          "_fused_engram_post_wkv_kernel": [
+            2.0,
+            0.0097
+          ],
+          "mHC/HIP pre GEMM+sqrsum": [
+            2.0,
+            0.009618
+          ],
+          "AITER/HIP": [
+            12.0,
+            0.0667
+          ],
+          "_fused_save_compress_norm_kernel": [
+            4.0,
+            0.02395
+          ],
+          "_rope_quant_insert_kernel": [
+            4.0,
+            0.009268
+          ],
+          "_indexer_k_norm_rope_quant_store_kernel": [
+            4.0,
+            0.018356
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.341774
+          ],
+          "index/Top512 split": [
+            8.0,
+            0.246751
+          ],
+          "index/Top512 merge": [
+            8.0,
+            0.115717
+          ],
+          "_compute_topk_lens_kernel": [
+            38.0,
+            0.169709
+          ],
+          "_pack_global_topk_ragged_kernel": [
+            38.0,
+            0.183161
+          ],
+          "_block_scores_kernel": [
+            1.0,
+            0.005719
+          ],
+          "__amd_rocclr_fillBufferUnAligned": [
+            1.0,
+            0.004005
+          ],
+          "_store_candidates_kernel": [
+            1.0,
+            0.004505
+          ],
+          "_candidate_flags_kernel": [
+            4.0,
+            0.052858
+          ],
+          "_mask_candidates_strided_kernel": [
+            4.0,
+            0.024136
+          ]
+        },
+        "target_graph": {
+          "Inductor/Triton": [
+            1.0,
+            0.002901
+          ],
+          "PyTorch/ATen": [
+            640.0,
+            3.138695
+          ],
+          "TP/one-stage sum": [
+            81.0,
+            0.696647
+          ],
+          "_hash_ids_kernel": [
+            1.0,
+            0.006389
+          ],
+          "_engram_lookup_kernel": [
+            2.0,
+            0.009526
+          ],
+          "mHC/TileLang prenorm GEMM": [
+            1.0,
+            0.004875
+          ],
+          "mHC/TileLang gates": [
+            1.0,
+            0.017089
+          ],
+          "RMSNorm/template": [
+            81.0,
+            0.330183
+          ],
+          "_kernel": [
+            170.0,
+            0.672092
+          ],
+          "linear/MXFP8": [
+            170.0,
+            1.199532
+          ],
+          "kernel": [
+            48.0,
+            0.203389
+          ],
+          "QK/fused norm RoPE KV": [
+            40.0,
+            0.19154
+          ],
+          "attention/partial": [
+            40.0,
+            0.418222
+          ],
+          "attention/reduce": [
+            40.0,
+            0.205101
+          ],
+          "output/inverse RoPE": [
+            40.0,
+            0.195673
+          ],
+          "linear/BLAS": [
+            124.0,
+            1.033702
+          ],
+          "mHC/HIP fused GEMM+sqrsum": [
+            77.0,
+            0.385985
+          ],
+          "mHC/HIP gates": [
+            79.0,
+            0.399693
+          ],
+          "mHC/Triton pre mix": [
+            79.0,
+            0.367403
+          ],
+          "mHC/Triton head reduce": [
+            80.0,
+            0.390354
+          ],
+          "MoE/router": [
+            40.0,
+            0.461779
+          ],
+          "MoE/sort": [
+            40.0,
+            0.434568
+          ],
+          "MoE/quant sort": [
+            80.0,
+            0.374274
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.646096
+          ],
+          "MoE/Down": [
+            40.0,
+            0.332186
+          ],
+          "mHC/separate post": [
+            6.0,
+            0.028086
+          ],
+          "TP/RCCL": [
+            2.0,
+            0.025686
+          ],
+          "_fused_engram_post_wkv_kernel": [
+            2.0,
+            0.0097
+          ],
+          "mHC/HIP pre GEMM+sqrsum": [
+            2.0,
+            0.009618
+          ],
+          "AITER/HIP": [
+            12.0,
+            0.0667
+          ],
+          "_fused_save_compress_norm_kernel": [
+            4.0,
+            0.02395
+          ],
+          "_rope_quant_insert_kernel": [
+            4.0,
+            0.009268
+          ],
+          "_indexer_k_norm_rope_quant_store_kernel": [
+            4.0,
+            0.018356
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.341774
+          ],
+          "index/Top512 split": [
+            8.0,
+            0.246751
+          ],
+          "index/Top512 merge": [
+            8.0,
+            0.115717
+          ],
+          "_compute_topk_lens_kernel": [
+            38.0,
+            0.169709
+          ],
+          "rocPRIM": [
+            38.0,
+            0.176233
+          ],
+          "_pack_global_topk_ragged_kernel": [
+            38.0,
+            0.183161
+          ],
+          "_block_scores_kernel": [
+            1.0,
+            0.005719
+          ],
+          "__amd_rocclr_fillBufferUnAligned": [
+            1.0,
+            0.004005
+          ],
+          "_store_candidates_kernel": [
+            1.0,
+            0.004505
+          ],
+          "_candidate_flags_kernel": [
+            4.0,
+            0.052858
+          ],
+          "_mask_candidates_strided_kernel": [
+            4.0,
+            0.024136
+          ],
+          "__amd_rocclr_copyBuffer": [
+            5.0,
+            0.021281
+          ]
+        },
+        "outside_aux": {
+          "PyTorch/ATen": [
+            23.0,
+            0.067582
+          ],
+          "linear/BLAS": [
+            1.0,
+            0.054578
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.023597
+          ],
+          "_compute_local_logits_stats_kernel": [
+            1.0,
+            0.006003
+          ],
+          "_rejection_kernel": [
+            1.0,
+            0.007793
+          ],
+          "_resample_kernel": [
+            1.0,
+            0.004117
+          ],
+          "_insert_resampled_kernel": [
+            1.0,
+            0.002969
+          ],
+          "_get_num_sampled_and_rejected_kernel": [
+            1.0,
+            0.003111
+          ],
+          "__amd_rocclr_copyBuffer": [
+            12.0,
+            0.021726
+          ],
+          "_post_update_kernel": [
+            1.0,
+            0.004985
+          ],
+          "_kernel": [
+            4.0,
+            0.01657
+          ],
+          "linear/MXFP8": [
+            4.0,
+            0.04778
+          ],
+          "RMSNorm/template": [
+            4.0,
+            0.0122
+          ],
+          "_prepare_dflash_inputs_kernel": [
+            3.0,
+            0.178316
+          ],
+          "QK/fused norm RoPE KV": [
+            3.0,
+            0.015085
+          ],
+          "_token_request_mapping_kernel": [
+            3.0,
+            0.005651
+          ],
+          "kernel": [
+            3.0,
+            0.011223
+          ],
+          "rocPRIM": [
+            3.0,
+            0.008097
+          ],
+          "_pack_dense_prefix_to_ragged_kernel": [
+            3.0,
+            0.008465
+          ]
+        },
+        "draft_graph": {
+          "Inductor/Triton": [
+            1.0,
+            0.002709
+          ],
+          "PyTorch/ATen": [
+            81.0,
+            0.388078
+          ],
+          "TP/one-stage sum": [
+            7.0,
+            0.054277
+          ],
+          "mHC/HIP pre GEMM+sqrsum": [
+            1.0,
+            0.004967
+          ],
+          "mHC/HIP gates": [
+            6.0,
+            0.030352
+          ],
+          "mHC/Triton pre mix": [
+            6.0,
+            0.0271
+          ],
+          "RMSNorm/template": [
+            7.0,
+            0.028999
+          ],
+          "_kernel": [
+            12.0,
+            0.05045
+          ],
+          "linear/MXFP8": [
+            12.0,
+            0.075875
+          ],
+          "kernel": [
+            3.0,
+            0.014571
+          ],
+          "QK/fused norm RoPE KV": [
+            3.0,
+            0.014017
+          ],
+          "attention/partial": [
+            3.0,
+            0.021887
+          ],
+          "attention/reduce": [
+            3.0,
+            0.015627
+          ],
+          "output/inverse RoPE": [
+            3.0,
+            0.014711
+          ],
+          "linear/BLAS": [
+            10.0,
+            0.082415
+          ],
+          "mHC/HIP fused GEMM+sqrsum": [
+            5.0,
+            0.025387
+          ],
+          "mHC/Triton head reduce": [
+            6.0,
+            0.028936
+          ],
+          "MoE/router": [
+            3.0,
+            0.022187
+          ],
+          "MoE/sort": [
+            3.0,
+            0.018417
+          ],
+          "MoE/quant sort": [
+            6.0,
+            0.028172
+          ],
+          "MoE/GateUp": [
+            3.0,
+            0.043227
+          ],
+          "MoE/Down": [
+            3.0,
+            0.019243
+          ],
+          "vLLM/HIP": [
+            6.0,
+            0.276466
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.023329
+          ],
+          "_gumbel_sample_kernel": [
+            5.0,
+            0.020897
+          ],
+          "__amd_rocclr_copyBuffer": [
+            5.0,
+            0.020611
+          ]
+        }
+      }
+    },
+    {
+      "sha256": "2bcfc3b167ed1f7b8df2677841abc561a11307ddd7c0ad2ebc2ba945e5f84162",
+      "device": "AMD Instinct MI355X",
+      "CU": 256,
+      "marker": "execute_context_0(0)_generation_1(6)",
+      "steps": 20,
+      "kernel_events_file": 52368,
+      "selected_events": 52368,
+      "unique_symbols_selected": 123,
+      "scopes": {
+        "target_aux": {
+          "events": 2328,
+          "calls_per_step": 116.4,
+          "ms_per_step": 0.507379,
+          "per_step_counts": [
+            116,
+            116,
+            116,
+            116,
+            120,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            120,
+            116,
+            116,
+            116,
+            116,
+            116
+          ]
+        },
+        "target_graph": {
+          "events": 44500,
+          "calls_per_step": 2225.0,
+          "ms_per_step": 23.512994,
+          "per_step_counts": [
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225
+          ]
+        },
+        "outside_aux": {
+          "events": 1460,
+          "calls_per_step": 73.0,
+          "ms_per_step": 1.310549,
+          "per_step_counts": [
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73
+          ]
+        },
+        "draft_graph": {
+          "events": 4080,
+          "calls_per_step": 204.0,
+          "ms_per_step": 6.91435,
+          "per_step_counts": [
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204
+          ]
+        }
+      },
+      "all_selected_ms_per_step": 32.245271,
+      "graph_parent_counts": {
+        "execute": 20,
+        "propose": 20
+      }
+    },
+    {
+      "sha256": "64a515eec43a05eeba058015741c98caa190e8622a02c7bf7271e176ca235dea",
+      "device": "AMD Instinct MI355X",
+      "CU": 256,
+      "marker": "execute_context_0(0)_generation_1(6)",
+      "steps": 20,
+      "kernel_events_file": 52368,
+      "selected_events": 52368,
+      "unique_symbols_selected": 123,
+      "scopes": {
+        "target_aux": {
+          "events": 2328,
+          "calls_per_step": 116.4,
+          "ms_per_step": 0.505259,
+          "per_step_counts": [
+            116,
+            116,
+            116,
+            116,
+            120,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            120,
+            116,
+            116,
+            116,
+            116,
+            116
+          ]
+        },
+        "target_graph": {
+          "events": 44500,
+          "calls_per_step": 2225.0,
+          "ms_per_step": 23.27374,
+          "per_step_counts": [
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225
+          ]
+        },
+        "outside_aux": {
+          "events": 1460,
+          "calls_per_step": 73.0,
+          "ms_per_step": 1.307834,
+          "per_step_counts": [
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73
+          ]
+        },
+        "draft_graph": {
+          "events": 4080,
+          "calls_per_step": 204.0,
+          "ms_per_step": 6.741046,
+          "per_step_counts": [
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204
+          ]
+        }
+      },
+      "all_selected_ms_per_step": 31.827879,
+      "graph_parent_counts": {
+        "execute": 20,
+        "propose": 20
+      }
+    },
+    {
+      "sha256": "a0f0fc5adb3eab722fa931600acaa8897d0fd80a3c35a20c158564e2a93268d2",
+      "device": "AMD Instinct MI355X",
+      "CU": 256,
+      "marker": "execute_context_0(0)_generation_1(6)",
+      "steps": 20,
+      "kernel_events_file": 52368,
+      "selected_events": 52368,
+      "unique_symbols_selected": 123,
+      "scopes": {
+        "target_aux": {
+          "events": 2328,
+          "calls_per_step": 116.4,
+          "ms_per_step": 0.496858,
+          "per_step_counts": [
+            116,
+            116,
+            116,
+            116,
+            120,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            116,
+            120,
+            116,
+            116,
+            116,
+            116,
+            116
+          ]
+        },
+        "target_graph": {
+          "events": 44500,
+          "calls_per_step": 2225.0,
+          "ms_per_step": 24.054784,
+          "per_step_counts": [
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225,
+            2225
+          ]
+        },
+        "outside_aux": {
+          "events": 1460,
+          "calls_per_step": 73.0,
+          "ms_per_step": 1.303013,
+          "per_step_counts": [
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73,
+            73
+          ]
+        },
+        "draft_graph": {
+          "events": 4080,
+          "calls_per_step": 204.0,
+          "ms_per_step": 7.146724,
+          "per_step_counts": [
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204,
+            204
+          ]
+        }
+      },
+      "all_selected_ms_per_step": 33.001379,
+      "graph_parent_counts": {
+        "execute": 20,
+        "propose": 20
+      }
+    }
+  ]
+}
