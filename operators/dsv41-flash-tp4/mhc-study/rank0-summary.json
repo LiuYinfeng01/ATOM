@@ -1,0 +1,334 @@
+{
+  "file": "DeepSeek-V4.1-Flash-1017-FP4PTPC_ts_20261124_162528_990.pt.trace.json.gz",
+  "sha256": "7ba879743867601e202504a3627cfc27be9811a7720e6fbc9406b4a6779bccad",
+  "step_count": 24,
+  "rows": {
+    "mhc_main_post": {
+      "calls_per_step": 77,
+      "ms_per_step": 0.6606103333333333,
+      "symbols": [
+        "_mhc_fused_post_pre_delayed_rmsnorm_main_kernel_H_5120_BLOCK_M_16_TILE_K_32_NUM_KSPLIT_160_HAS_POST_1"
+      ]
+    },
+    "mhc_main_no_post": {
+      "calls_per_step": 3,
+      "ms_per_step": 0.018735375,
+      "symbols": [
+        "_mhc_fused_post_pre_delayed_rmsnorm_main_kernel_H_5120_BLOCK_M_16_TILE_K_32_NUM_KSPLIT_160_HAS_POST_0"
+      ]
+    },
+    "mhc_reduce": {
+      "calls_per_step": 80,
+      "ms_per_step": 0.8014232083333335,
+      "symbols": [
+        "_mhc_fused_post_pre_delayed_rmsnorm_reduce_kernel_H_5120_NUM_KSPLIT_160_NUM_SINKHORN_ITERS_20_BLOCK_C_1024"
+      ]
+    },
+    "mhc_standalone_post": {
+      "calls_per_step": 3,
+      "ms_per_step": 0.0127355,
+      "symbols": [
+        "void aiter::mhc_post_kernel<std::bfloat16_t, 4, 4, 512, false>(std::bfloat16_t*, std::bfloat16_t*, std::bfloat16_t*, float*, float*, int, int, int, int, int)"
+      ]
+    },
+    "expert_gateup": {
+      "calls_per_step": 40,
+      "ms_per_step": 0.7410913333333333,
+      "symbols": [
+        "moe_2stage_gateup_batch1_0"
+      ]
+    },
+    "expert_down": {
+      "calls_per_step": 40,
+      "ms_per_step": 0.4126650416666667,
+      "symbols": [
+        "moe_2stage_down_batch1_0"
+      ]
+    },
+    "expert_router": {
+      "calls_per_step": 40,
+      "ms_per_step": 0.31217941666666665,
+      "symbols": [
+        "void aiter::topk_gating_kernel_opt<hip_bfloat16, float, 384, true, 0>(hip_bfloat16 const*, float const*, float*, int*, unsigned long, int, int, float, int, int, int const*)"
+      ]
+    },
+    "tp_reduce": {
+      "calls_per_step": 81,
+      "ms_per_step": 0.7084319999999998,
+      "symbols": [
+        "void aiter::lamportAllReduceWaveSplit<std::bfloat16_t, 4>(std::bfloat16_t const*, std::bfloat16_t*, aiter::LamportPeers, unsigned int*, int, int)"
+      ]
+    },
+    "tp_gather": {
+      "calls_per_step": 3,
+      "ms_per_step": 0.11740079166666667,
+      "symbols": [
+        "void aiter::allgather_lastdim<std::bfloat16_t, 4>(aiter::RankData*, aiter::RankSignals, aiter::Signal*, std::bfloat16_t*, int, int, int)"
+      ]
+    },
+    "token_quant": {
+      "calls_per_step": 82,
+      "ms_per_step": 0.38884787499999995,
+      "symbols": [
+        "_ZN5aiter37dynamic_per_token_scaled_quant_kernelIDF16bDB8_Li32EEEvPT0_PfPT_PKfiPKii",
+        "_ZN5aiter37dynamic_per_token_scaled_quant_kernelIDF16bDB8_Li8EEEvPT0_PfPT_PKfiPKii"
+      ]
+    },
+    "group_quant": {
+      "calls_per_step": 8,
+      "ms_per_step": 0.040277208333333335,
+      "symbols": [
+        "_ZN5aiter37dynamic_per_group_scaled_quant_kernelIDF16bDB8_Li32ELi128ELb0ELi64ELb0ELb0ELi0ELb0ELb0ELb0ELb0ELi2ELi1ELb0EEEvPT0_PfPKT_PKfliilPKiill"
+      ]
+    },
+    "qk_norm": {
+      "calls_per_step": 40,
+      "ms_per_step": 0.18996141666666672,
+      "symbols": [
+        "_ZN5aiter35fused_qk_rmsnorm_group_quant_kernelIDF16bDB8_Li256ELi8ELi1ELb0ELb0ELb0ELb0ELb1ELb1EEEvPT0_PvPT_S6_S6_PKS5_S8_S8_S8_S8_ffiiiiiiiiiiiii"
+      ]
+    },
+    "rmsnorm": {
+      "calls_per_step": 5,
+      "ms_per_step": 0.024863375,
+      "symbols": [
+        "void aiter::add_rmsnorm_quant_kernel<std::bfloat16_t, std::bfloat16_t, 256, 24, false, false, true, 1, false>(std::bfloat16_t*, std::bfloat16_t*, float*, std::bfloat16_t*, std::bfloat16_t*, std::bfloat16_t*, double, bool, int, int, int, int, int, int, int, bool, bool)",
+        "void aiter::add_rmsnorm_quant_kernel<std::bfloat16_t, std::bfloat16_t, 64, 8, false, false, true, 1, false>(std::bfloat16_t*, std::bfloat16_t*, float*, std::bfloat16_t*, std::bfloat16_t*, std::bfloat16_t*, double, bool, int, int, int, int, int, int, int, bool, bool)"
+      ]
+    },
+    "rope": {
+      "calls_per_step": 12,
+      "ms_per_step": 0.11491854166666667,
+      "symbols": [
+        "void aiter::kn_entry_1c_sbhd_cached_indirect_inplace<aiter::OpCachedFwd, 1, true, false, true, 1, hip_bfloat16, hip_bfloat16, long>(hip_bfloat16*, hip_bfloat16 const*, hip_bfloat16 const*, long const*, int, int, int, int, int, int, int, int, int, int, int)"
+      ]
+    },
+    "bf16_gemv": {
+      "calls_per_step": 12,
+      "ms_per_step": 0.05760333333333333,
+      "symbols": [
+        "void aiter::wv_splitk_small_fp16_bf16_kernel<__hip_bfloat16, 64, 1, 1, 8, 4, 1>(int, int, __hip_bfloat16 const*, __hip_bfloat16 const*, __hip_bfloat16*, int, int)"
+      ]
+    },
+    "index_score": {
+      "calls_per_step": 8,
+      "ms_per_step": 0.04622041666666667,
+      "symbols": [
+        "_gluon_deepgemm_fp8_paged_mqa_logits_preshuffle"
+      ]
+    },
+    "index_long": {
+      "calls_per_step": 4,
+      "ms_per_step": 0.26612541666666667,
+      "symbols": [
+        "void aiter::ob::radix_topk_one_block_kernel<float, int, 11, 1024, false, false, (aiter::ob::Phase)1, true, false, false>(float const*, int const*, long, int const*, int const*, int, float*, int*, bool, char*, int)"
+      ]
+    },
+    "index_compact": {
+      "calls_per_step": 4,
+      "ms_per_step": 0.10111283333333333,
+      "symbols": [
+        "topk_per_row_decode_1wg_k512_wave64_wv0"
+      ]
+    },
+    "index_blocks": {
+      "calls_per_step": 1,
+      "ms_per_step": 0.02246075,
+      "symbols": [
+        "topk_per_row_decode_1wg_k2048_wave64_wv0"
+      ]
+    }
+  },
+  "per_step": [
+    {
+      "step": 1,
+      "triton_ms": 1.4829610000000002,
+      "classified_ms": 4.655955000000001,
+      "all_attributed_ms": 7.985345000000004,
+      "total_calls": 967
+    },
+    {
+      "step": 2,
+      "triton_ms": 1.483685,
+      "classified_ms": 4.6381939999999995,
+      "all_attributed_ms": 7.951625000000001,
+      "total_calls": 967
+    },
+    {
+      "step": 3,
+      "triton_ms": 1.4782860000000002,
+      "classified_ms": 4.655391,
+      "all_attributed_ms": 7.968587000000001,
+      "total_calls": 967
+    },
+    {
+      "step": 4,
+      "triton_ms": 1.4795320000000003,
+      "classified_ms": 4.644681000000001,
+      "all_attributed_ms": 7.955865000000002,
+      "total_calls": 967
+    },
+    {
+      "step": 5,
+      "triton_ms": 1.4788139999999999,
+      "classified_ms": 4.66096,
+      "all_attributed_ms": 7.967104000000003,
+      "total_calls": 967
+    },
+    {
+      "step": 6,
+      "triton_ms": 1.479841,
+      "classified_ms": 4.656636,
+      "all_attributed_ms": 7.966624999999998,
+      "total_calls": 967
+    },
+    {
+      "step": 7,
+      "triton_ms": 1.479565,
+      "classified_ms": 4.644312,
+      "all_attributed_ms": 7.950227000000001,
+      "total_calls": 967
+    },
+    {
+      "step": 8,
+      "triton_ms": 1.4831670000000001,
+      "classified_ms": 4.646633,
+      "all_attributed_ms": 7.959063999999999,
+      "total_calls": 967
+    },
+    {
+      "step": 9,
+      "triton_ms": 1.4816029999999996,
+      "classified_ms": 4.6496369999999985,
+      "all_attributed_ms": 7.962825999999998,
+      "total_calls": 967
+    },
+    {
+      "step": 10,
+      "triton_ms": 1.479924,
+      "classified_ms": 4.6696339999999985,
+      "all_attributed_ms": 7.982146000000001,
+      "total_calls": 967
+    },
+    {
+      "step": 11,
+      "triton_ms": 1.477763,
+      "classified_ms": 4.679952,
+      "all_attributed_ms": 7.991025000000004,
+      "total_calls": 967
+    },
+    {
+      "step": 12,
+      "triton_ms": 1.4814430000000005,
+      "classified_ms": 4.674676000000001,
+      "all_attributed_ms": 7.979465000000001,
+      "total_calls": 967
+    },
+    {
+      "step": 13,
+      "triton_ms": 1.4812870000000005,
+      "classified_ms": 4.680716000000001,
+      "all_attributed_ms": 7.991944999999998,
+      "total_calls": 967
+    },
+    {
+      "step": 14,
+      "triton_ms": 1.4788820000000005,
+      "classified_ms": 4.656273,
+      "all_attributed_ms": 7.969984000000004,
+      "total_calls": 967
+    },
+    {
+      "step": 15,
+      "triton_ms": 1.482409,
+      "classified_ms": 4.6792,
+      "all_attributed_ms": 7.987225999999998,
+      "total_calls": 967
+    },
+    {
+      "step": 16,
+      "triton_ms": 1.4787600000000003,
+      "classified_ms": 4.674912,
+      "all_attributed_ms": 7.982663999999999,
+      "total_calls": 967
+    },
+    {
+      "step": 17,
+      "triton_ms": 1.47965,
+      "classified_ms": 4.661760999999999,
+      "all_attributed_ms": 7.962665999999999,
+      "total_calls": 967
+    },
+    {
+      "step": 18,
+      "triton_ms": 1.4810440000000002,
+      "classified_ms": 4.666596,
+      "all_attributed_ms": 7.976865000000002,
+      "total_calls": 967
+    },
+    {
+      "step": 19,
+      "triton_ms": 1.4815729999999996,
+      "classified_ms": 4.656121999999999,
+      "all_attributed_ms": 7.973026000000001,
+      "total_calls": 967
+    },
+    {
+      "step": 20,
+      "triton_ms": 1.482965,
+      "classified_ms": 4.655632999999999,
+      "all_attributed_ms": 7.959345999999996,
+      "total_calls": 967
+    },
+    {
+      "step": 21,
+      "triton_ms": 1.481246,
+      "classified_ms": 7.516283999999999,
+      "all_attributed_ms": 10.830636999999998,
+      "total_calls": 967
+    },
+    {
+      "step": 22,
+      "triton_ms": 1.481602,
+      "classified_ms": 4.667879,
+      "all_attributed_ms": 7.986544999999994,
+      "total_calls": 967
+    },
+    {
+      "step": 23,
+      "triton_ms": 1.4817680000000002,
+      "classified_ms": 4.659518000000001,
+      "all_attributed_ms": 7.965664000000003,
+      "total_calls": 967
+    },
+    {
+      "step": 24,
+      "triton_ms": 1.4806840000000001,
+      "classified_ms": 10.852385,
+      "all_attributed_ms": 14.172451,
+      "total_calls": 967
+    }
+  ],
+  "triton_ms": {
+    "mean": 1.4807689166666667,
+    "median": 1.4811450000000002,
+    "min": 1.477763,
+    "max": 1.483685
+  },
+  "classified_ms": 5.037664166666667,
+  "all_attributed_ms": 8.349121791666667,
+  "largest_other_ms_per_step": {
+    "kernel_gemm_0": 0.9082840416666638,
+    "Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT32x16x512_MI16x16x1_SN_LDSB1_AFC1_AFEM1_AFEM1_ASEM1_CLR1_CADS0_DTLA0_DTLB0_DTVA0_DTVB0_EPS0_FDSI0_GRPM1_GRVWA8_GRVWB8_GSUAMBSK_GLS0_ISA942_IU1_K1_LDSTI0_LBSPPA1024_LBSPPB1024_LBSPPM0_LPA16_LPB16_LPM0_LRVW8_LWPMn1_MIAV0_MIWT1_1_MO40_NTn1_NTA0_NTB0_NTC0_NTD4_NTM0_NEPBS8_NLCA1_NLCB1_ONLL1_PGR2_PLR1_PKA1_SIA3_SS1_SPO0_SRVW0_SSO0_SVW1_SK0_SKFTR0_SKXCCM0_TLDS1_ULSGRO0_USL1_UIOFGRO0_USFGROn1_VSn1_VWA1_VWB1_WSGRA0_WSGRB0_WS64_WG32_4_1": 0.47721524999999865,
+    "_sparse_attn_v4_paged_2src_csa_split_kernel": 0.4238554166666658,
+    "Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT64x16x256_MI16x16x1_SN_LDSB1_AFC1_AFEM1_AFEM1_ASEM1_CLR1_CADS0_DTLA0_DTLB0_DTVA0_DTVB0_EPS0_FDSI0_GRPM1_GRVWA8_GRVWB8_GSUAMBSK_GLS0_ISA942_IU1_K1_LDSTI0_LBSPPA512_LBSPPB512_LBSPPM0_LPA16_LPB16_LPM0_LRVW8_LWPMn1_MIAV0_MIWT1_1_MO40_NTn1_NTA0_NTB0_NTC0_NTD4_NTM0_NEPBS8_NLCA1_NLCB1_ONLL1_PGR2_PLR1_PKA1_SIA3_SS1_SPO0_SRVW0_SSO0_SVW1_SK0_SKFTR0_SKXCCM0_TLDS1_ULSGRO0_USL1_UIOFGRO0_USFGROn1_VSn1_VWA1_VWB1_WSGRA0_WSGRB0_WS64_WG64_4_1": 0.3947650833333346,
+    "_sparse_attn_v4_split_combine_kernel": 0.20449937499999932,
+    "_rope_window_kernel": 0.20292554166666607,
+    "_inverse_rope_gptj_kernel": 0.20049249999999927,
+    "Cijk_Alik_Bljk_BBS_BH_Bias_HA_S_SAV_UserArgs_MT32x16x256_MI16x16x1_SN_LDSB1_AFC1_AFEM1_AFEM1_ASEM1_CLR1_CADS0_DTLA0_DTLB0_DTVA0_DTVB0_EPS0_FDSI0_GRPM1_GRVWA8_GRVWB8_GSUAMBSK_GLS0_ISA942_IU1_K1_LDSTI0_LBSPPA512_LBSPPB512_LBSPPM0_LPA16_LPB16_LPM0_LRVW8_LWPMn1_MIAV0_MIWT2_1_MO40_NTn1_NTA0_NTB0_NTC0_NTD4_NTM0_NEPBS8_NLCA1_NLCB1_ONLL1_PGR2_PLR1_PKA1_SIA3_SS1_SPO0_SRVW0_SSO0_SVW2_SK0_SKFTR0_SKXCCM0_TLDS1_ULSGRO0_USL1_UIOFGRO0_USFGROn1_VSn1_VWA2_VWB1_WSGRA0_WSGRB0_WS64_WG16_4_4": 0.12298933333333334,
+    "_sparse_attn_v4_paged_2src_kernel": 0.07734479166666668,
+    "_indices": 0.040042124999999984,
+    "_scale_indexer_weights_kernel": 0.04000545833333336,
+    "Cijk_Alik_Bljk_BSS_BH_Bias_HA_S_SAV_UserArgs_MT32x16x256_MI16x16x1_SN_LDSB1_AFC1_AFEM1_AFEM1_ASEM1_CLR1_CADS0_DTLA0_DTLB0_DTVA0_DTVB0_EPS0_FDSI0_GRPM1_GRVWA8_GRVWB8_GSUAMBSK_GLS0_ISA942_IU1_K1_LDSTI0_LBSPPA512_LBSPPB512_LBSPPM0_LPA16_LPB16_LPM0_LRVW8_LWPMn1_MIAV0_MIWT1_1_MO40_NTn1_NTA0_NTB0_NTC0_NTD4_NTM0_NEPBS8_NLCA1_NLCB1_ONLL1_PGR2_PLR1_PKA1_SIA3_SS1_SPO0_SRVW0_SSO0_SVW1_SK0_SKFTR0_SKXCCM0_TLDS1_ULSGRO0_USL1_UIOFGRO0_USFGROn1_VSn1_VWA1_VWB1_WSGRA0_WSGRB0_WS64_WG32_4_1": 0.03906224999999999
+  }
+}

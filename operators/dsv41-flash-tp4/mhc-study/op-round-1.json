@@ -1,0 +1,662 @@
+{
+  "scope": "one MI308X; M=1; real checkpoint mHC weights; fixed synthetic activations, not a trace tensor dump or server run",
+  "torch": "2.10.0+rocm7.2.4.git3d3aa833",
+  "hip": "7.2.53211",
+  "gpu": "AMD Instinct MI308X",
+  "cu": 80,
+  "seeds": [
+    41000,
+    42000
+  ],
+  "weights": 80,
+  "correctness": {
+    "triton_vs_ref": {
+      "residual": {
+        "calls": 160,
+        "elements": 3276800,
+        "outside_tolerance": 0,
+        "max_abs": 0.015625,
+        "max_rel_l2": 0.00011148045007363896
+      },
+      "post": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 4.929304122924805e-05,
+        "max_rel_l2": 5.149954466935484e-05
+      },
+      "comb": {
+        "calls": 160,
+        "elements": 2560,
+        "outside_tolerance": 0,
+        "max_abs": 2.8170645236968994e-05,
+        "max_rel_l2": 2.8884648461011423e-05
+      },
+      "normed": {
+        "calls": 160,
+        "elements": 819200,
+        "outside_tolerance": 0,
+        "max_abs": 0.000244140625,
+        "max_rel_l2": 0.0001727631272723141
+      },
+      "next_pre": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 9.626150131225586e-06,
+        "max_rel_l2": 1.1035689286664769e-05
+      }
+    },
+    "hip10_vs_ref": {
+      "residual": {
+        "calls": 160,
+        "elements": 3276800,
+        "outside_tolerance": 0,
+        "max_abs": 0.015625,
+        "max_rel_l2": 0.00011148045007363896
+      },
+      "post": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 4.9173831939697266e-05,
+        "max_rel_l2": 5.140611710562734e-05
+      },
+      "comb": {
+        "calls": 160,
+        "elements": 2560,
+        "outside_tolerance": 0,
+        "max_abs": 2.8178095817565918e-05,
+        "max_rel_l2": 2.8914812509908318e-05
+      },
+      "normed": {
+        "calls": 160,
+        "elements": 819200,
+        "outside_tolerance": 0,
+        "max_abs": 0.00390625,
+        "max_rel_l2": 0.0001727631272723141
+      },
+      "next_pre": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 9.655952453613281e-06,
+        "max_rel_l2": 1.1057011095978073e-05
+      }
+    },
+    "hip10_vs_triton": {
+      "residual": {
+        "calls": 160,
+        "elements": 3276800,
+        "outside_tolerance": 0,
+        "max_abs": 0.0,
+        "max_rel_l2": 0.0
+      },
+      "post": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 3.5762786865234375e-07,
+        "max_rel_l2": 2.5677802290551684e-07
+      },
+      "comb": {
+        "calls": 160,
+        "elements": 2560,
+        "outside_tolerance": 0,
+        "max_abs": 2.384185791015625e-07,
+        "max_rel_l2": 1.9065394088001686e-07
+      },
+      "normed": {
+        "calls": 160,
+        "elements": 819200,
+        "outside_tolerance": 0,
+        "max_abs": 0.00390625,
+        "max_rel_l2": 0.00011222172782148782
+      },
+      "next_pre": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 1.7881393432617188e-07,
+        "max_rel_l2": 3.2035085396430313e-07
+      }
+    },
+    "hip20_vs_ref": {
+      "residual": {
+        "calls": 160,
+        "elements": 3276800,
+        "outside_tolerance": 0,
+        "max_abs": 0.015625,
+        "max_rel_l2": 0.00011148045007363896
+      },
+      "post": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 4.9173831939697266e-05,
+        "max_rel_l2": 5.14332031476494e-05
+      },
+      "comb": {
+        "calls": 160,
+        "elements": 2560,
+        "outside_tolerance": 0,
+        "max_abs": 2.81408429145813e-05,
+        "max_rel_l2": 2.8879384464628074e-05
+      },
+      "normed": {
+        "calls": 160,
+        "elements": 819200,
+        "outside_tolerance": 0,
+        "max_abs": 0.000244140625,
+        "max_rel_l2": 0.0001727631272723141
+      },
+      "next_pre": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 9.655952453613281e-06,
+        "max_rel_l2": 1.1058835708655572e-05
+      }
+    },
+    "hip20_vs_triton": {
+      "residual": {
+        "calls": 160,
+        "elements": 3276800,
+        "outside_tolerance": 0,
+        "max_abs": 0.0,
+        "max_rel_l2": 0.0
+      },
+      "post": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 2.384185791015625e-07,
+        "max_rel_l2": 1.7804842580145896e-07
+      },
+      "comb": {
+        "calls": 160,
+        "elements": 2560,
+        "outside_tolerance": 0,
+        "max_abs": 1.7881393432617188e-07,
+        "max_rel_l2": 1.48523683687089e-07
+      },
+      "normed": {
+        "calls": 160,
+        "elements": 819200,
+        "outside_tolerance": 0,
+        "max_abs": 0.000244140625,
+        "max_rel_l2": 0.0001617594264844791
+      },
+      "next_pre": {
+        "calls": 160,
+        "elements": 640,
+        "outside_tolerance": 0,
+        "max_abs": 1.7881393432617188e-07,
+        "max_rel_l2": 2.1171263263246092e-07
+      }
+    }
+  },
+  "image_src_sha256": {
+    "aiter/ops/mega_mhc.py": "76343a7c1e11236de52532bf2524163e5aa61165e7be3bf44447e57827a957a6",
+    "csrc/kernels/mega_mhc.cu": "90a51fa0358d21301b3a4735e47e74c1cbc622a8ae30d9c895ccf0a932c911dd"
+  },
+  "stock_atom_forced_hip": "HIP Mega-MHC requires gfx950 or gfx1250, contiguous FP32 fn, hc_mult=4 and H in {4096, 5120, 6144, 7168}",
+  "measured_inputs": {
+    "residual": {
+      "shape": [
+        1,
+        4,
+        5120
+      ],
+      "dtype": "torch.bfloat16"
+    },
+    "incoming_pre": {
+      "shape": [
+        1,
+        4
+      ],
+      "dtype": "torch.float32"
+    },
+    "fn": {
+      "shape": [
+        24,
+        20480
+      ],
+      "dtype": "torch.float32"
+    },
+    "scale": {
+      "shape": [
+        3
+      ],
+      "dtype": "torch.float32"
+    },
+    "base": {
+      "shape": [
+        24
+      ],
+      "dtype": "torch.float32"
+    },
+    "norm_weight": {
+      "shape": [
+        5120
+      ],
+      "dtype": "torch.bfloat16"
+    },
+    "packed": {
+      "shape": [
+        160,
+        4,
+        3,
+        4,
+        16,
+        4
+      ],
+      "dtype": "torch.int32"
+    },
+    "sublayer_out": {
+      "shape": [
+        1,
+        5120
+      ],
+      "dtype": "torch.bfloat16"
+    },
+    "post_layer_mix": {
+      "shape": [
+        1,
+        4
+      ],
+      "dtype": "torch.float32"
+    },
+    "comb_res_mix": {
+      "shape": [
+        1,
+        4,
+        4
+      ],
+      "dtype": "torch.float32"
+    }
+  },
+  "auto_split": 20,
+  "dispatch": {
+    "triton_no_post": [
+      "_mhc_fused_post_pre_delayed_rmsnorm_main_kernel_H_5120_BLOCK_M_16_TILE_K_32_NUM_KSPLIT_160_HAS_POST_0",
+      "_mhc_fused_post_pre_delayed_rmsnorm_reduce_kernel_H_5120_NUM_KSPLIT_160_NUM_SINKHORN_ITERS_20_BLOCK_C_1024"
+    ],
+    "hip_no_post": [
+      "void aiter::(anonymous namespace)::mega_mhc_kernel<5120, 13, false, false, false, 16, 0, 2>(std::bfloat16_t const*, std::bfloat16_t const*, float const*, float const*, float const*, std::bfloat16_t const*, int, int, std::bfloat16_t*, float*, float*, std::bfloat16_t*, unsigned char*, unsigned char*, float*, float const*, float const*, std::bfloat16_t const*, float*, unsigned int*, int, float, float, float, float, float, int)"
+    ],
+    "triton_post": [
+      "_mhc_fused_post_pre_delayed_rmsnorm_main_kernel_H_5120_BLOCK_M_16_TILE_K_32_NUM_KSPLIT_160_HAS_POST_1",
+      "_mhc_fused_post_pre_delayed_rmsnorm_reduce_kernel_H_5120_NUM_KSPLIT_160_NUM_SINKHORN_ITERS_20_BLOCK_C_1024"
+    ],
+    "hip_post": [
+      "void aiter::(anonymous namespace)::mega_mhc_kernel<5120, 13, false, true, false, 16, 0, 2>(std::bfloat16_t const*, std::bfloat16_t const*, float const*, float const*, float const*, std::bfloat16_t const*, int, int, std::bfloat16_t*, float*, float*, std::bfloat16_t*, unsigned char*, unsigned char*, float*, float const*, float const*, std::bfloat16_t const*, float*, unsigned int*, int, float, float, float, float, float, int)"
+    ]
+  },
+  "measured_outputs": {
+    "residual": {
+      "shape": [
+        1,
+        4,
+        5120
+      ],
+      "dtype": "torch.bfloat16"
+    },
+    "post": {
+      "shape": [
+        1,
+        4,
+        1
+      ],
+      "dtype": "torch.float32"
+    },
+    "comb": {
+      "shape": [
+        1,
+        4,
+        4
+      ],
+      "dtype": "torch.float32"
+    },
+    "normed": {
+      "shape": [
+        1,
+        5120
+      ],
+      "dtype": "torch.bfloat16"
+    },
+    "next_pre": {
+      "shape": [
+        1,
+        4
+      ],
+      "dtype": "torch.float32"
+    }
+  },
+  "screening_ms_per_graph": {
+    "20": [
+      3.056664148966471,
+      2.9174633026123047,
+      2.7548294067382812,
+      3.05704402923584,
+      2.7574761708577475
+    ],
+    "1": [
+      12.639244079589844,
+      12.643210093180338,
+      12.640850067138672,
+      12.64126459757487,
+      12.951485951741537
+    ],
+    "2": [
+      6.872917175292969,
+      6.872716903686523,
+      6.873217264811198,
+      9.48701286315918,
+      6.868090947469075
+    ],
+    "4": [
+      4.9795074462890625,
+      4.096020698547363,
+      3.961780230204264,
+      3.961526870727539,
+      4.014834086100261
+    ],
+    "5": [
+      3.4136788050333657,
+      3.4083582560221353,
+      3.4090248743693032,
+      3.4095516204833984,
+      3.4111719131469727
+    ],
+    "8": [
+      2.694509506225586,
+      2.695315678914388,
+      2.6952025095621743,
+      2.700449307759603,
+      2.693216323852539
+    ],
+    "10": [
+      2.54704221089681,
+      2.546388785044352,
+      2.547468821207682,
+      2.548382123311361,
+      2.5473621686299643
+    ],
+    "16": [
+      2.6675825119018555,
+      2.6671358744303384,
+      2.6671422322591147,
+      2.668742815653483,
+      2.6672159830729165
+    ],
+    "32": [
+      4.612949371337891,
+      4.639869372049968,
+      4.589749336242676,
+      4.562755902608235,
+      4.570982615152995
+    ]
+  },
+  "best_split": 10,
+  "all_within_tolerance": true,
+  "rotate_split10": {
+    "pairs_ms_per_graph": [
+      [
+        1.2917896509170532,
+        2.5568289756774902
+      ],
+      [
+        1.2816095352172852,
+        2.562319040298462
+      ],
+      [
+        1.286001980304718,
+        2.553631544113159
+      ],
+      [
+        1.2819119691848755,
+        2.9182703495025635
+      ],
+      [
+        1.2891294956207275,
+        2.5538790225982666
+      ],
+      [
+        1.282396912574768,
+        2.5609740018844604
+      ],
+      [
+        1.2856270670890808,
+        2.553541421890259
+      ],
+      [
+        1.2817369103431702,
+        2.5607564449310303
+      ],
+      [
+        1.3935898542404175,
+        2.5530314445495605
+      ]
+    ],
+    "A_triton_ms": 1.2856270670890808,
+    "B_hip_ms": 2.5568289756774902,
+    "paired_A_minus_B_ms": -1.267914354801178
+  },
+  "hot32_no_post_split10": {
+    "pairs_ms_per_graph": [
+      [
+        0.4329065680503845,
+        0.7595801949501038
+      ],
+      [
+        0.4182890057563782,
+        0.8608380258083344
+      ],
+      [
+        0.4185889959335327,
+        0.7613277435302734
+      ],
+      [
+        0.41840650141239166,
+        0.75897017121315
+      ],
+      [
+        0.4184715002775192,
+        0.7601501047611237
+      ],
+      [
+        0.41841650009155273,
+        0.7594976425170898
+      ],
+      [
+        0.41861899197101593,
+        0.7581301927566528
+      ],
+      [
+        0.418551504611969,
+        0.7602375745773315
+      ],
+      [
+        0.41836899518966675,
+        0.757637619972229
+      ]
+    ],
+    "A_triton_ms": 0.4184715002775192,
+    "B_hip_ms": 0.7595801949501038,
+    "paired_A_minus_B_ms": -0.3410811424255371
+  },
+  "hot32_post_split10": {
+    "pairs_ms_per_graph": [
+      [
+        0.46847163140773773,
+        0.9861885011196136
+      ],
+      [
+        0.46752411127090454,
+        0.9846633672714233
+      ],
+      [
+        0.46830911934375763,
+        0.9849385023117065
+      ],
+      [
+        0.4682866334915161,
+        0.9855884313583374
+      ],
+      [
+        0.46802662312984467,
+        0.9839859902858734
+      ],
+      [
+        0.46818168461322784,
+        0.9849185049533844
+      ],
+      [
+        0.4680141806602478,
+        0.9846408665180206
+      ],
+      [
+        0.4684416353702545,
+        0.9851260185241699
+      ],
+      [
+        0.468249186873436,
+        0.9850309491157532
+      ]
+    ],
+    "A_triton_ms": 0.468249186873436,
+    "B_hip_ms": 0.9849385023117065,
+    "paired_A_minus_B_ms": -0.5167368203401566
+  },
+  "rotate_split20": {
+    "pairs_ms_per_graph": [
+      [
+        1.2847545742988586,
+        2.988072991371155
+      ],
+      [
+        1.282056987285614,
+        3.2200756072998047
+      ],
+      [
+        1.2891244292259216,
+        2.8743176460266113
+      ],
+      [
+        1.2816545367240906,
+        2.767424702644348
+      ],
+      [
+        1.2857195734977722,
+        2.8706475496292114
+      ],
+      [
+        1.3088570833206177,
+        2.9634804725646973
+      ],
+      [
+        1.388429880142212,
+        2.8753477334976196
+      ],
+      [
+        1.2820320129394531,
+        2.9909555912017822
+      ],
+      [
+        1.3312247395515442,
+        2.936182737350464
+      ]
+    ],
+    "A_triton_ms": 1.2857195734977722,
+    "B_hip_ms": 2.936182737350464,
+    "paired_A_minus_B_ms": -1.6049579977989197
+  },
+  "hot32_no_post_split20": {
+    "pairs_ms_per_graph": [
+      [
+        0.5241767466068268,
+        1.0619311928749084
+      ],
+      [
+        0.5307393968105316,
+        0.9398708641529083
+      ],
+      [
+        0.6123721301555634,
+        1.1242890357971191
+      ],
+      [
+        0.5106642991304398,
+        1.0910786986351013
+      ],
+      [
+        0.6262596845626831,
+        1.1227339506149292
+      ],
+      [
+        0.5310493111610413,
+        0.9403458833694458
+      ],
+      [
+        0.5106718242168427,
+        1.074913740158081
+      ],
+      [
+        0.5308868736028671,
+        0.9388108253479004
+      ],
+      [
+        0.5734669864177704,
+        1.1257464289665222
+      ]
+    ],
+    "A_triton_ms": 0.5308868736028671,
+    "B_hip_ms": 1.074913740158081,
+    "paired_A_minus_B_ms": -0.5119169056415558
+  },
+  "hot32_post_split20": {
+    "pairs_ms_per_graph": [
+      [
+        0.4681266248226166,
+        1.1822766065597534
+      ],
+      [
+        0.48915673792362213,
+        1.1860491633415222
+      ],
+      [
+        0.5601770579814911,
+        1.0805937051773071
+      ],
+      [
+        0.5504518747329712,
+        1.1027188897132874
+      ],
+      [
+        0.4683316797018051,
+        1.182599127292633
+      ],
+      [
+        0.46841418743133545,
+        1.080173671245575
+      ],
+      [
+        0.6372322738170624,
+        1.076386272907257
+      ],
+      [
+        0.6171121895313263,
+        1.1997267603874207
+      ],
+      [
+        0.46791163086891174,
+        1.183954119682312
+      ]
+    ],
+    "A_triton_ms": 0.48915673792362213,
+    "B_hip_ms": 1.1822766065597534,
+    "paired_A_minus_B_ms": -0.6117594838142395
+  },
+  "finished": true
+}

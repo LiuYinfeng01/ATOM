@@ -157,6 +157,8 @@ PTPC 在这里是 **per-token 激活 / per-channel 权重**。不能凭模型顶
 
 ## 10　从 L39 到输出，再打开 trace 对照
 
+另见独立子页：[rank 0 的 24 步 Decode kernel 清单，以及 Triton/HIP mHC 单卡对照](decode-kernels-mhc.md)。该子页用另一份 100K→24 诊断 trace 和它自己的无 profiler C1 基线；不要与本节的 32 步平均混用。
+
 L39 的 FFN 写回后，用它生成的最后一组 `pre` 合成单行，RMSNorm，再乘**独立**词表头：本卡 `[1,5120] @ [5120,32320] → [1,32320] BF16`，TP all-gather 拼成 `[1,129280]`。`temperature=0, top_p=1, ignore_eos=true`；greedy 只要 argmax，没必要先写出 softmax 概率。输出 INT32 ID 用于下一步，位置加 1。**这条 V4.1 路径不是再跑另一套 V4 `hc_head`，也没有启用视觉 encoder 或三个 draft 层。**
 
 | 你想在图上找什么 | rank 0 每个 decode 的 kernel 锚点 | 同输入 profiler：每步/四卡的单卡均值 |
