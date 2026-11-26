@@ -1,0 +1,4965 @@
+{
+  "atom942_outer": [
+    {
+      "rank": 0,
+      "sha256": "7ba879743867601e202504a3627cfc27be9811a7720e6fbc9406b4a6779bccad",
+      "steps": 24,
+      "outer_calls": 23376,
+      "outer_ms_per_step": 8.39187,
+      "outer_unique_symbols": 59,
+      "families": {
+        "decode": {
+          "scatter_packed_bytes": [
+            2.0,
+            0.009873
+          ],
+          "_fill_deferred_decode_ids_kernel": [
+            1.0,
+            0.005294
+          ],
+          "PyTorch/ATen": [
+            4.0,
+            0.019818
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.003134
+          ],
+          "TP/Lamport sum": [
+            81.0,
+            0.708432
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004966
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003794
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002917
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.00921
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.011843
+          ],
+          "__amd_rocclr_copyBuffer": [
+            3.0,
+            0.016124
+          ],
+          "mHC/Triton main": [
+            80.0,
+            0.679346
+          ],
+          "TP/allgather": [
+            3.0,
+            0.117401
+          ],
+          "mHC/Triton reduce": [
+            80.0,
+            0.801423
+          ],
+          "quant/per-token": [
+            82.0,
+            0.388848
+          ],
+          "kernel_gemm_0": [
+            130.0,
+            0.908284
+          ],
+          "QK/RMSNorm quant": [
+            40.0,
+            0.189961
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.202926
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.004996
+          ],
+          "_window_rows": [
+            1.0,
+            0.005731
+          ],
+          "attention/unsplit": [
+            2.0,
+            0.077345
+          ],
+          "output/inverse RoPE": [
+            40.0,
+            0.200492
+          ],
+          "linear/BLAS": [
+            85.0,
+            1.045159
+          ],
+          "MoE/router": [
+            40.0,
+            0.312179
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.741091
+          ],
+          "MoE/Down": [
+            40.0,
+            0.412665
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012736
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.009995
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.019016
+          ],
+          "AITER/HIP": [
+            24.0,
+            0.172522
+          ],
+          "RMSNorm/template": [
+            5.0,
+            0.024863
+          ],
+          "_write_index_kernel": [
+            4.0,
+            0.019443
+          ],
+          "_unit_table_kernel": [
+            2.0,
+            0.009691
+          ],
+          "quant/per-group": [
+            8.0,
+            0.040277
+          ],
+          "_scale_indexer_weights_kernel": [
+            8.0,
+            0.040005
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.04622
+          ],
+          "index/radix": [
+            4.0,
+            0.266125
+          ],
+          "_indices": [
+            8.0,
+            0.040042
+          ],
+          "attention/partial": [
+            38.0,
+            0.423855
+          ],
+          "attention/reduce": [
+            38.0,
+            0.204499
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004682
+          ],
+          "index/block2048": [
+            1.0,
+            0.022461
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.005039
+          ],
+          "index/compact512": [
+            4.0,
+            0.101113
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.019434
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.003842
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.010816
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.011939
+          ]
+        }
+      },
+      "backend": {
+        "decode": {
+          "ATOM/Triton": [
+            206.0,
+            1.342066
+          ],
+          "PyTorch/ATen": [
+            4.0,
+            0.019818
+          ],
+          "AITER/HIP": [
+            290.0,
+            2.233345
+          ],
+          "ROCm runtime": [
+            3.0,
+            0.016124
+          ],
+          "AITER/Triton": [
+            160.0,
+            1.480769
+          ],
+          "Unresolved": [
+            130.0,
+            0.908284
+          ],
+          "ROCm BLAS": [
+            85.0,
+            1.045159
+          ],
+          "AITER/FlyDSL": [
+            87.0,
+            1.288146
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.04622
+          ],
+          "RCCL": [
+            1.0,
+            0.011939
+          ]
+        }
+      }
+    },
+    {
+      "rank": 1,
+      "sha256": "5b01e09309d87e70523a3b7922b007de08c96153f543cbdc0abd4a8775f88292",
+      "steps": 24,
+      "outer_calls": 23376,
+      "outer_ms_per_step": 8.399928,
+      "outer_unique_symbols": 59,
+      "families": {
+        "decode": {
+          "scatter_packed_bytes": [
+            2.0,
+            0.009813
+          ],
+          "_fill_deferred_decode_ids_kernel": [
+            1.0,
+            0.005356
+          ],
+          "PyTorch/ATen": [
+            4.0,
+            0.019961
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.002939
+          ],
+          "TP/Lamport sum": [
+            81.0,
+            0.756463
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004856
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003776
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002817
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.009641
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.011923
+          ],
+          "__amd_rocclr_copyBuffer": [
+            3.0,
+            0.01523
+          ],
+          "mHC/Triton main": [
+            80.0,
+            0.674436
+          ],
+          "TP/allgather": [
+            3.0,
+            0.118722
+          ],
+          "mHC/Triton reduce": [
+            80.0,
+            0.806934
+          ],
+          "quant/per-token": [
+            82.0,
+            0.3801
+          ],
+          "kernel_gemm_0": [
+            130.0,
+            0.886745
+          ],
+          "QK/RMSNorm quant": [
+            40.0,
+            0.186239
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.201343
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.005397
+          ],
+          "_window_rows": [
+            1.0,
+            0.005494
+          ],
+          "attention/unsplit": [
+            2.0,
+            0.076855
+          ],
+          "output/inverse RoPE": [
+            40.0,
+            0.199311
+          ],
+          "linear/BLAS": [
+            85.0,
+            1.046755
+          ],
+          "MoE/router": [
+            40.0,
+            0.316556
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.739956
+          ],
+          "MoE/Down": [
+            40.0,
+            0.414461
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012727
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.009813
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.019113
+          ],
+          "AITER/HIP": [
+            24.0,
+            0.16819
+          ],
+          "RMSNorm/template": [
+            5.0,
+            0.024745
+          ],
+          "_write_index_kernel": [
+            4.0,
+            0.019403
+          ],
+          "_unit_table_kernel": [
+            2.0,
+            0.009928
+          ],
+          "quant/per-group": [
+            8.0,
+            0.040137
+          ],
+          "_scale_indexer_weights_kernel": [
+            8.0,
+            0.039084
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.045527
+          ],
+          "index/radix": [
+            4.0,
+            0.264701
+          ],
+          "_indices": [
+            8.0,
+            0.039959
+          ],
+          "attention/partial": [
+            38.0,
+            0.419501
+          ],
+          "attention/reduce": [
+            38.0,
+            0.204741
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004706
+          ],
+          "index/block2048": [
+            1.0,
+            0.022209
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.005157
+          ],
+          "index/compact512": [
+            4.0,
+            0.10095
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.019241
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.003889
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.01066
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.013467
+          ]
+        }
+      },
+      "backend": {
+        "decode": {
+          "ATOM/Triton": [
+            206.0,
+            1.334056
+          ],
+          "PyTorch/ATen": [
+            4.0,
+            0.019961
+          ],
+          "AITER/HIP": [
+            290.0,
+            2.268581
+          ],
+          "ROCm runtime": [
+            3.0,
+            0.01523
+          ],
+          "AITER/Triton": [
+            160.0,
+            1.48137
+          ],
+          "Unresolved": [
+            130.0,
+            0.886745
+          ],
+          "ROCm BLAS": [
+            85.0,
+            1.046755
+          ],
+          "AITER/FlyDSL": [
+            87.0,
+            1.288235
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.045527
+          ],
+          "RCCL": [
+            1.0,
+            0.013467
+          ]
+        }
+      }
+    },
+    {
+      "rank": 2,
+      "sha256": "aab84d7c6dad5867d91d4c1cf40f9f50e3eb0eebd401ce5d504f4dc598fc4211",
+      "steps": 24,
+      "outer_calls": 23376,
+      "outer_ms_per_step": 8.167751,
+      "outer_unique_symbols": 59,
+      "families": {
+        "decode": {
+          "scatter_packed_bytes": [
+            2.0,
+            0.00996
+          ],
+          "_fill_deferred_decode_ids_kernel": [
+            1.0,
+            0.005049
+          ],
+          "PyTorch/ATen": [
+            4.0,
+            0.019806
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.003209
+          ],
+          "TP/Lamport sum": [
+            81.0,
+            0.490801
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004887
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003819
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002704
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.009246
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.012198
+          ],
+          "__amd_rocclr_copyBuffer": [
+            3.0,
+            0.015184
+          ],
+          "mHC/Triton main": [
+            80.0,
+            0.682874
+          ],
+          "TP/allgather": [
+            3.0,
+            0.097622
+          ],
+          "mHC/Triton reduce": [
+            80.0,
+            0.802593
+          ],
+          "quant/per-token": [
+            82.0,
+            0.387619
+          ],
+          "kernel_gemm_0": [
+            130.0,
+            0.905049
+          ],
+          "QK/RMSNorm quant": [
+            40.0,
+            0.189258
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.202731
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.005281
+          ],
+          "_window_rows": [
+            1.0,
+            0.005591
+          ],
+          "attention/unsplit": [
+            2.0,
+            0.07757
+          ],
+          "output/inverse RoPE": [
+            40.0,
+            0.203034
+          ],
+          "linear/BLAS": [
+            85.0,
+            1.048095
+          ],
+          "MoE/router": [
+            40.0,
+            0.317181
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.740323
+          ],
+          "MoE/Down": [
+            40.0,
+            0.410279
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012632
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.010071
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.019411
+          ],
+          "AITER/HIP": [
+            24.0,
+            0.18009
+          ],
+          "RMSNorm/template": [
+            5.0,
+            0.025147
+          ],
+          "_write_index_kernel": [
+            4.0,
+            0.020279
+          ],
+          "_unit_table_kernel": [
+            2.0,
+            0.009723
+          ],
+          "quant/per-group": [
+            8.0,
+            0.039914
+          ],
+          "_scale_indexer_weights_kernel": [
+            8.0,
+            0.040042
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.045352
+          ],
+          "index/radix": [
+            4.0,
+            0.264961
+          ],
+          "_indices": [
+            8.0,
+            0.040874
+          ],
+          "attention/partial": [
+            38.0,
+            0.422435
+          ],
+          "attention/reduce": [
+            38.0,
+            0.204371
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004729
+          ],
+          "index/block2048": [
+            1.0,
+            0.022276
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.004921
+          ],
+          "index/compact512": [
+            4.0,
+            0.100786
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.019029
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.003871
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.010518
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.014356
+          ]
+        }
+      },
+      "backend": {
+        "decode": {
+          "ATOM/Triton": [
+            206.0,
+            1.345036
+          ],
+          "PyTorch/ATen": [
+            4.0,
+            0.019806
+          ],
+          "AITER/HIP": [
+            290.0,
+            2.005225
+          ],
+          "ROCm runtime": [
+            3.0,
+            0.015184
+          ],
+          "AITER/Triton": [
+            160.0,
+            1.485467
+          ],
+          "Unresolved": [
+            130.0,
+            0.905049
+          ],
+          "ROCm BLAS": [
+            85.0,
+            1.048095
+          ],
+          "AITER/FlyDSL": [
+            87.0,
+            1.284182
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.045352
+          ],
+          "RCCL": [
+            1.0,
+            0.014356
+          ]
+        }
+      }
+    },
+    {
+      "rank": 3,
+      "sha256": "3a57f7a8653666e2e1efb1c881e49b215f541a1c07d0da4c1d94dea1cbdcce1f",
+      "steps": 24,
+      "outer_calls": 23376,
+      "outer_ms_per_step": 8.035647,
+      "outer_unique_symbols": 59,
+      "families": {
+        "decode": {
+          "scatter_packed_bytes": [
+            2.0,
+            0.009803
+          ],
+          "_fill_deferred_decode_ids_kernel": [
+            1.0,
+            0.005422
+          ],
+          "PyTorch/ATen": [
+            4.0,
+            0.019401
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.003037
+          ],
+          "TP/Lamport sum": [
+            81.0,
+            0.440957
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004854
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003827
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002757
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.009028
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.01207
+          ],
+          "__amd_rocclr_copyBuffer": [
+            3.0,
+            0.014849
+          ],
+          "mHC/Triton main": [
+            80.0,
+            0.677215
+          ],
+          "TP/allgather": [
+            3.0,
+            0.035072
+          ],
+          "mHC/Triton reduce": [
+            80.0,
+            0.818038
+          ],
+          "quant/per-token": [
+            82.0,
+            0.382944
+          ],
+          "kernel_gemm_0": [
+            130.0,
+            0.894882
+          ],
+          "QK/RMSNorm quant": [
+            40.0,
+            0.186953
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.200014
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.004944
+          ],
+          "_window_rows": [
+            1.0,
+            0.005567
+          ],
+          "attention/unsplit": [
+            2.0,
+            0.077785
+          ],
+          "output/inverse RoPE": [
+            40.0,
+            0.201646
+          ],
+          "linear/BLAS": [
+            85.0,
+            1.046698
+          ],
+          "MoE/router": [
+            40.0,
+            0.320337
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.742587
+          ],
+          "MoE/Down": [
+            40.0,
+            0.407138
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012619
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.009985
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.019336
+          ],
+          "AITER/HIP": [
+            24.0,
+            0.174782
+          ],
+          "RMSNorm/template": [
+            5.0,
+            0.024572
+          ],
+          "_write_index_kernel": [
+            4.0,
+            0.019821
+          ],
+          "_unit_table_kernel": [
+            2.0,
+            0.009956
+          ],
+          "quant/per-group": [
+            8.0,
+            0.03972
+          ],
+          "_scale_indexer_weights_kernel": [
+            8.0,
+            0.039064
+          ],
+          "index/FP8 scores": [
+            8.0,
+            0.046101
+          ],
+          "index/radix": [
+            4.0,
+            0.265236
+          ],
+          "_indices": [
+            8.0,
+            0.039509
+          ],
+          "attention/partial": [
+            38.0,
+            0.42037
+          ],
+          "attention/reduce": [
+            38.0,
+            0.205618
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004731
+          ],
+          "index/block2048": [
+            1.0,
+            0.022351
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.005019
+          ],
+          "index/compact512": [
+            4.0,
+            0.100933
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.018863
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.003852
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.010653
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.014729
+          ]
+        }
+      },
+      "backend": {
+        "decode": {
+          "ATOM/Triton": [
+            206.0,
+            1.336879
+          ],
+          "PyTorch/ATen": [
+            4.0,
+            0.019401
+          ],
+          "AITER/HIP": [
+            290.0,
+            1.883193
+          ],
+          "ROCm runtime": [
+            3.0,
+            0.014849
+          ],
+          "AITER/Triton": [
+            160.0,
+            1.495254
+          ],
+          "Unresolved": [
+            130.0,
+            0.894882
+          ],
+          "ROCm BLAS": [
+            85.0,
+            1.046698
+          ],
+          "AITER/FlyDSL": [
+            87.0,
+            1.283662
+          ],
+          "AITER/Gluon": [
+            8.0,
+            0.046101
+          ],
+          "RCCL": [
+            1.0,
+            0.014729
+          ]
+        }
+      }
+    }
+  ],
+  "atom950": [
+    {
+      "rank": 0,
+      "scopes": {
+        "decode": {
+          "steps": 1500,
+          "events": 1738500,
+          "calls_min_max": [
+            1159,
+            1159
+          ],
+          "ms_per_forward": 11.525335317333333,
+          "device_span_ms_per_forward": 12.438613642,
+          "median_gpu_ms": 13.061157,
+          "unique_symbols": 64
+        },
+        "prefill_8192": {
+          "steps": 12,
+          "events": 17117,
+          "calls_min_max": [
+            1358,
+            1485
+          ],
+          "ms_per_forward": 188.93800116666668,
+          "device_span_ms_per_forward": 186.49268075,
+          "median_gpu_ms": 189.3080435,
+          "unique_symbols": 70
+        },
+        "prefill_1664": {
+          "steps": 1,
+          "events": 1423,
+          "calls_min_max": [
+            1423,
+            1423
+          ],
+          "ms_per_forward": 51.299458,
+          "device_span_ms_per_forward": 51.055727,
+          "median_gpu_ms": 51.299458,
+          "unique_symbols": 66
+        },
+        "prefill_32": {
+          "steps": 1,
+          "events": 1208,
+          "calls_min_max": [
+            1208,
+            1208
+          ],
+          "ms_per_forward": 14.665485,
+          "device_span_ms_per_forward": 15.087802,
+          "median_gpu_ms": 14.665485,
+          "unique_symbols": 72
+        }
+      },
+      "zero_ns_dispatches_kept": 0,
+      "duration_source": "rocprof debug.delta_ns == debug.end_ns - debug.begin_ns; not reconstructed slice.dur",
+      "display_time_audit": {
+        "different_durations": 296235,
+        "zero_display_ns": 52,
+        "min_device_ns": 960,
+        "max_abs_difference_ns": 584443
+      },
+      "memory_copy_separate": 25,
+      "zero_cross_id_flows": true,
+      "connected_marker_roots": 1514,
+      "health": [
+        {
+          "name": "track_descriptor_conflicting_reservation",
+          "value": 1
+        }
+      ],
+      "wall_clock_cut_audit": [
+        {
+          "phase": "decode",
+          "before": 0,
+          "after": 1738500
+        },
+        {
+          "phase": "prefill",
+          "before": 17893,
+          "after": 1855
+        }
+      ],
+      "decode_queues": [
+        {
+          "stream": 0,
+          "queue": 3,
+          "calls_per_step": 204.0
+        },
+        {
+          "stream": 0,
+          "queue": 5,
+          "calls_per_step": 950.0
+        },
+        {
+          "stream": 0,
+          "queue": 7,
+          "calls_per_step": 4.0
+        },
+        {
+          "stream": 10,
+          "queue": 1,
+          "calls_per_step": 1.0
+        }
+      ],
+      "sha256": "4f9cc01d791f704a11c033522d6d0d6e61a5e2e2fb0a98331422fb858db70926",
+      "families": {
+        "decode": {
+          "MoE/router GEMV": [
+            40.0,
+            0.495022
+          ],
+          "TP/low-latency sum": [
+            81.0,
+            4.219964
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            0.724751
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012497
+          ],
+          "TP/allgather": [
+            3.0,
+            0.591537
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.192487
+          ],
+          "RMSNorm/template": [
+            1.0,
+            0.004196
+          ],
+          "MoE/quant sort": [
+            40.0,
+            0.176999
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.182741
+          ],
+          "linear/BF16 prebuilt": [
+            3.0,
+            0.035284
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.038036
+          ],
+          "__amd_rocclr_copyBuffer": [
+            8.0,
+            0.032444
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004661
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.004391
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.004499
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004676
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002475
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.008375
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.009822
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003663
+          ],
+          "_fill_deferred_decode_ids_kernel": [
+            1.0,
+            0.004288
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.020938
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.175247
+          ],
+          "_indices": [
+            8.0,
+            0.035035
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.004889
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.017667
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.003128
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.176613
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.018871
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.014085
+          ],
+          "_window_rows": [
+            1.0,
+            0.004423
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.01633
+          ],
+          "linear/MXscale BMM": [
+            250.0,
+            1.347969
+          ],
+          "MoE/Down": [
+            40.0,
+            0.188881
+          ],
+          "linear/BF16 GEMM": [
+            2.0,
+            0.060913
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.418802
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.009673
+          ],
+          "index/FP4 scores": [
+            8.0,
+            0.038862
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.476047
+          ],
+          "index/radix": [
+            4.0,
+            0.107889
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00801
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.008875
+          ],
+          "index/block2048": [
+            1.0,
+            0.019763
+          ],
+          "index/compact512": [
+            4.0,
+            0.085007
+          ],
+          "MoE/sort": [
+            40.0,
+            0.41016
+          ],
+          "attention/reduce": [
+            40.0,
+            0.196872
+          ],
+          "MoE/router": [
+            40.0,
+            0.285109
+          ],
+          "AITER/HIP": [
+            12.0,
+            0.055038
+          ],
+          "PyTorch/ATen": [
+            44.0,
+            0.120755
+          ],
+          "attention/Opus main": [
+            40.0,
+            0.446674
+          ]
+        },
+        "prefill_32": {
+          "attention/Opus main": [
+            40.0,
+            1.072608
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            1.194118
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.01688
+          ],
+          "TP/allgather": [
+            3.0,
+            0.047802
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.195361
+          ],
+          "RMSNorm/template": [
+            1.0,
+            0.004201
+          ],
+          "AITER/HIP": [
+            81.0,
+            2.433322
+          ],
+          "MoE/quant sort": [
+            40.0,
+            0.345361
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.192121
+          ],
+          "linear/BF16 prebuilt": [
+            3.0,
+            0.04664
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.03948
+          ],
+          "__amd_rocclr_copyBuffer": [
+            12.0,
+            0.05528
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.0202
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.00504
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.00388
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00484
+          ],
+          "cache/copy tiles": [
+            1.0,
+            0.00532
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.00252
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.01128
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.01732
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.00352
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.01972
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.186681
+          ],
+          "_indices": [
+            9.0,
+            0.042853
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.00448
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.0186
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.00464
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.1646
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.216954
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.0194
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.02788
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.0172
+          ],
+          "linear/MXscale BMM": [
+            250.0,
+            2.38653
+          ],
+          "MoE/Down": [
+            40.0,
+            1.258651
+          ],
+          "linear/BF16 GEMM": [
+            54.0,
+            0.442201
+          ],
+          "MoE/GateUp": [
+            40.0,
+            2.34317
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.01016
+          ],
+          "index/FP4 scores": [
+            8.0,
+            0.109083
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.572881
+          ],
+          "index/radix": [
+            9.0,
+            0.19644
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00856
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.005781
+          ],
+          "MoE/sort": [
+            80.0,
+            0.376563
+          ],
+          "MoE/router": [
+            40.0,
+            0.266122
+          ],
+          "PyTorch/ATen": [
+            49.0,
+            0.249241
+          ]
+        },
+        "prefill_1664": {
+          "linear/Opus BF16": [
+            3.0,
+            0.145682
+          ],
+          "attention/Opus main": [
+            40.0,
+            4.219632
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            4.139006
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.08076
+          ],
+          "TP/allgather": [
+            2.0,
+            0.224641
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.195442
+          ],
+          "AITER/HIP": [
+            161.0,
+            13.757638
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.372246
+          ],
+          "quant/per-group": [
+            80.0,
+            0.454053
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.062416
+          ],
+          "__amd_rocclr_copyBuffer": [
+            86.0,
+            0.53261
+          ],
+          "_block_maxima_kernel": [
+            3.0,
+            0.20104
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.01164
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.012641
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00476
+          ],
+          "cache/copy tiles": [
+            1.0,
+            0.00516
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.0022
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.05052
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.08468
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.00356
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.02304
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.237845
+          ],
+          "_indices": [
+            9.0,
+            0.110267
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.0072
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.017574
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.00952
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.638453
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.176182
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.01892
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.273361
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.019
+          ],
+          "linear/MXscale BMM": [
+            208.0,
+            4.214486
+          ],
+          "linear/MXFP8 preshuffle": [
+            42.0,
+            1.437566
+          ],
+          "linear/BF16 GEMM": [
+            53.0,
+            0.805701
+          ],
+          "MoE/GateUp": [
+            40.0,
+            7.903468
+          ],
+          "MoE/Down": [
+            40.0,
+            5.461868
+          ],
+          "index/FP4 scores": [
+            13.0,
+            2.151048
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.716963
+          ],
+          "index/radix": [
+            16.0,
+            0.991535
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00784
+          ],
+          "MoE/sort": [
+            80.0,
+            0.608302
+          ],
+          "MoE/router": [
+            40.0,
+            0.2884
+          ],
+          "PyTorch/ATen": [
+            62.0,
+            0.620592
+          ]
+        },
+        "prefill_8192": {
+          "linear/Opus BF16": [
+            3.0,
+            0.244638
+          ],
+          "linear/Opus MXFP8": [
+            40.0,
+            2.589119
+          ],
+          "attention/Opus main": [
+            40.0,
+            17.606625
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            17.132414
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.355486
+          ],
+          "TP/allgather": [
+            2.0,
+            1.043569
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.378976
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            1.341418
+          ],
+          "quant/per-group": [
+            40.0,
+            0.833884
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.175125
+          ],
+          "__amd_rocclr_copyBuffer": [
+            4.0,
+            0.04453
+          ],
+          "_block_maxima_kernel": [
+            6.416667,
+            0.492579
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.023177
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.072287
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004733
+          ],
+          "cache/copy tiles": [
+            0.916667,
+            0.004667
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.00226
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.283918
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.400145
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003637
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.052894
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.569832
+          ],
+          "_indices": [
+            9.0,
+            0.422392
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.03338
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.065277
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.032774
+          ],
+          "KV/RoPE window": [
+            40.0,
+            3.211154
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.192721
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.018733
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            1.279763
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.03114
+          ],
+          "linear/MXscale BMM": [
+            40.0,
+            1.479945
+          ],
+          "linear/MXFP8 preshuffle": [
+            170.0,
+            14.789411
+          ],
+          "MoE/Down": [
+            40.0,
+            12.603961
+          ],
+          "linear/BF16 GEMM": [
+            53.0,
+            2.050405
+          ],
+          "MoE/GateUp": [
+            40.0,
+            23.620716
+          ],
+          "MoE/reduction": [
+            40.0,
+            4.244455
+          ],
+          "TP/RCCL": [
+            81.0,
+            64.626496
+          ],
+          "index/FP4 scores": [
+            24.916667,
+            6.808872
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            2.125173
+          ],
+          "index/radix": [
+            31.083333,
+            3.450745
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00895
+          ],
+          "index/block2048": [
+            0.25,
+            0.004003
+          ],
+          "AITER/HIP": [
+            40.0,
+            0.361031
+          ],
+          "MoE/sort": [
+            160.0,
+            1.18115
+          ],
+          "MoE/router": [
+            40.0,
+            0.465207
+          ],
+          "PyTorch/ATen": [
+            76.833333,
+            2.174232
+          ]
+        }
+      },
+      "backend": {
+        "decode": {
+          "ATOM/FlyDSL": [
+            40.0,
+            0.495022
+          ],
+          "AITER/HIP": [
+            468.0,
+            7.537062
+          ],
+          "AITER/prebuilt .co": [
+            3.0,
+            0.035284
+          ],
+          "ROCm runtime": [
+            8.0,
+            0.032444
+          ],
+          "ATOM/Triton": [
+            204.0,
+            0.842887
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.175247
+          ],
+          "AITER/FlyDSL": [
+            351.0,
+            2.276959
+          ],
+          "RCCL": [
+            1.0,
+            0.009673
+          ],
+          "PyTorch/ATen": [
+            44.0,
+            0.120755
+          ]
+        },
+        "prefill_32": {
+          "AITER/HIP": [
+            456.0,
+            6.183939
+          ],
+          "AITER/prebuilt .co": [
+            3.0,
+            0.04664
+          ],
+          "ROCm runtime": [
+            12.0,
+            0.05528
+          ],
+          "ATOM/Triton": [
+            244.0,
+            1.191688
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.186681
+          ],
+          "AITER/FlyDSL": [
+            403.0,
+            6.741856
+          ],
+          "RCCL": [
+            1.0,
+            0.01016
+          ],
+          "PyTorch/ATen": [
+            49.0,
+            0.249241
+          ]
+        },
+        "prefill_1664": {
+          "AITER/HIP": [
+            577.0,
+            24.548218
+          ],
+          "ROCm runtime": [
+            86.0,
+            0.53261
+          ],
+          "ATOM/Triton": [
+            246.0,
+            2.394521
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.237845
+          ],
+          "AITER/FlyDSL": [
+            412.0,
+            22.965672
+          ],
+          "PyTorch/ATen": [
+            62.0,
+            0.620592
+          ]
+        },
+        "prefill_8192": {
+          "AITER/HIP": [
+            536.0,
+            43.708643
+          ],
+          "ROCm runtime": [
+            4.0,
+            0.04453
+          ],
+          "ATOM/Triton": [
+            249.333333,
+            8.761755
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.569832
+          ],
+          "AITER/FlyDSL": [
+            439.25,
+            69.052514
+          ],
+          "RCCL": [
+            81.0,
+            64.626496
+          ],
+          "PyTorch/ATen": [
+            76.833333,
+            2.174232
+          ]
+        }
+      }
+    },
+    {
+      "rank": 1,
+      "scopes": {
+        "decode": {
+          "steps": 1500,
+          "events": 1738500,
+          "calls_min_max": [
+            1159,
+            1159
+          ],
+          "ms_per_forward": 9.313605550666667,
+          "device_span_ms_per_forward": 12.235019677333334,
+          "median_gpu_ms": 7.551301,
+          "unique_symbols": 64
+        },
+        "prefill_8192": {
+          "steps": 12,
+          "events": 17117,
+          "calls_min_max": [
+            1358,
+            1485
+          ],
+          "ms_per_forward": 188.89410341666667,
+          "device_span_ms_per_forward": 186.46963766666667,
+          "median_gpu_ms": 189.2812015,
+          "unique_symbols": 70
+        },
+        "prefill_1664": {
+          "steps": 1,
+          "events": 1423,
+          "calls_min_max": [
+            1423,
+            1423
+          ],
+          "ms_per_forward": 50.845838,
+          "device_span_ms_per_forward": 51.043018,
+          "median_gpu_ms": 50.845838,
+          "unique_symbols": 66
+        },
+        "prefill_32": {
+          "steps": 1,
+          "events": 1208,
+          "calls_min_max": [
+            1208,
+            1208
+          ],
+          "ms_per_forward": 14.692321,
+          "device_span_ms_per_forward": 15.091402,
+          "median_gpu_ms": 14.692321,
+          "unique_symbols": 72
+        }
+      },
+      "zero_ns_dispatches_kept": 0,
+      "duration_source": "rocprof debug.delta_ns == debug.end_ns - debug.begin_ns; not reconstructed slice.dur",
+      "display_time_audit": {
+        "different_durations": 276309,
+        "zero_display_ns": 98,
+        "min_device_ns": 600,
+        "max_abs_difference_ns": 584362
+      },
+      "memory_copy_separate": 25,
+      "zero_cross_id_flows": true,
+      "connected_marker_roots": 1514,
+      "health": [
+        {
+          "name": "track_descriptor_conflicting_reservation",
+          "value": 1
+        }
+      ],
+      "wall_clock_cut_audit": [
+        {
+          "phase": "decode",
+          "before": 0,
+          "after": 1738500
+        },
+        {
+          "phase": "prefill",
+          "before": 17892,
+          "after": 1856
+        }
+      ],
+      "decode_queues": [
+        {
+          "stream": 0,
+          "queue": 3,
+          "calls_per_step": 204.0
+        },
+        {
+          "stream": 0,
+          "queue": 5,
+          "calls_per_step": 950.0
+        },
+        {
+          "stream": 0,
+          "queue": 7,
+          "calls_per_step": 4.0
+        },
+        {
+          "stream": 10,
+          "queue": 1,
+          "calls_per_step": 1.0
+        }
+      ],
+      "sha256": "d5e331453268145a9b15117cc945c76de4c775cacdb472ae0690181da825cafe",
+      "families": {
+        "decode": {
+          "MoE/router GEMV": [
+            40.0,
+            0.491057
+          ],
+          "TP/low-latency sum": [
+            81.0,
+            2.332293
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            0.72643
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012632
+          ],
+          "TP/allgather": [
+            3.0,
+            0.235596
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.19551
+          ],
+          "RMSNorm/template": [
+            1.0,
+            0.003768
+          ],
+          "MoE/quant sort": [
+            40.0,
+            0.180708
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.183141
+          ],
+          "linear/BF16 prebuilt": [
+            3.0,
+            0.034898
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.037047
+          ],
+          "__amd_rocclr_copyBuffer": [
+            8.0,
+            0.030607
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004685
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.004435
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.004402
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004761
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002606
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.008768
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.009644
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003688
+          ],
+          "_fill_deferred_decode_ids_kernel": [
+            1.0,
+            0.002977
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.019902
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.175149
+          ],
+          "_indices": [
+            8.0,
+            0.034767
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.005027
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.017772
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.002453
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.173017
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.017921
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.014666
+          ],
+          "_window_rows": [
+            1.0,
+            0.004426
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.015494
+          ],
+          "linear/MXscale BMM": [
+            250.0,
+            1.332588
+          ],
+          "MoE/Down": [
+            40.0,
+            0.191866
+          ],
+          "linear/BF16 GEMM": [
+            2.0,
+            0.06021
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.420683
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.037379
+          ],
+          "index/FP4 scores": [
+            8.0,
+            0.038471
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.478592
+          ],
+          "index/radix": [
+            4.0,
+            0.108901
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.005742
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.00823
+          ],
+          "index/block2048": [
+            1.0,
+            0.019826
+          ],
+          "index/compact512": [
+            4.0,
+            0.085591
+          ],
+          "MoE/sort": [
+            40.0,
+            0.413354
+          ],
+          "attention/reduce": [
+            40.0,
+            0.197868
+          ],
+          "MoE/router": [
+            40.0,
+            0.278144
+          ],
+          "AITER/HIP": [
+            12.0,
+            0.052556
+          ],
+          "PyTorch/ATen": [
+            44.0,
+            0.13367
+          ],
+          "attention/Opus main": [
+            40.0,
+            0.459684
+          ]
+        },
+        "prefill_32": {
+          "attention/Opus main": [
+            40.0,
+            1.075964
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            1.203647
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.0172
+          ],
+          "TP/allgather": [
+            3.0,
+            0.052521
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.19684
+          ],
+          "RMSNorm/template": [
+            1.0,
+            0.00436
+          ],
+          "AITER/HIP": [
+            81.0,
+            2.385893
+          ],
+          "MoE/quant sort": [
+            40.0,
+            0.340603
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.18308
+          ],
+          "linear/BF16 prebuilt": [
+            3.0,
+            0.04644
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.03864
+          ],
+          "__amd_rocclr_copyBuffer": [
+            12.0,
+            0.05768
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.02072
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.00448
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.00376
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00476
+          ],
+          "cache/copy tiles": [
+            1.0,
+            0.0054
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.00224
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.01088
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.01724
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.00348
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.01992
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.183922
+          ],
+          "_indices": [
+            9.0,
+            0.04072
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.00484
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.01924
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.00496
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.16556
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.223162
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.0174
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.02532
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.01868
+          ],
+          "linear/MXscale BMM": [
+            250.0,
+            2.396609
+          ],
+          "MoE/Down": [
+            40.0,
+            1.263326
+          ],
+          "linear/BF16 GEMM": [
+            54.0,
+            0.439924
+          ],
+          "MoE/GateUp": [
+            40.0,
+            2.356533
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.0112
+          ],
+          "index/FP4 scores": [
+            8.0,
+            0.110722
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.575442
+          ],
+          "index/radix": [
+            9.0,
+            0.199523
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00832
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.00952
+          ],
+          "MoE/sort": [
+            80.0,
+            0.389685
+          ],
+          "MoE/router": [
+            40.0,
+            0.268123
+          ],
+          "PyTorch/ATen": [
+            49.0,
+            0.263842
+          ]
+        },
+        "prefill_1664": {
+          "linear/Opus BF16": [
+            3.0,
+            0.145801
+          ],
+          "attention/Opus main": [
+            40.0,
+            4.214022
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            4.108107
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.0788
+          ],
+          "TP/allgather": [
+            2.0,
+            0.241482
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.19552
+          ],
+          "AITER/HIP": [
+            161.0,
+            13.122589
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.381845
+          ],
+          "quant/per-group": [
+            80.0,
+            0.45764
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.06496
+          ],
+          "__amd_rocclr_copyBuffer": [
+            86.0,
+            0.533083
+          ],
+          "_block_maxima_kernel": [
+            3.0,
+            0.198681
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.0116
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.012481
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00464
+          ],
+          "cache/copy tiles": [
+            1.0,
+            0.00528
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.00244
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.042361
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.08368
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.00352
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.02292
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.225321
+          ],
+          "_indices": [
+            9.0,
+            0.11268
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.0076
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.02084
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.0058
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.676923
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.18536
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.01824
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.272521
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.01776
+          ],
+          "linear/MXscale BMM": [
+            208.0,
+            4.137103
+          ],
+          "linear/MXFP8 preshuffle": [
+            42.0,
+            1.53609
+          ],
+          "linear/BF16 GEMM": [
+            53.0,
+            0.822328
+          ],
+          "MoE/GateUp": [
+            40.0,
+            7.950722
+          ],
+          "MoE/Down": [
+            40.0,
+            5.47719
+          ],
+          "index/FP4 scores": [
+            13.0,
+            2.157811
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.738721
+          ],
+          "index/radix": [
+            16.0,
+            0.994926
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00844
+          ],
+          "MoE/sort": [
+            80.0,
+            0.626243
+          ],
+          "MoE/router": [
+            40.0,
+            0.302081
+          ],
+          "PyTorch/ATen": [
+            62.0,
+            0.619686
+          ]
+        },
+        "prefill_8192": {
+          "linear/Opus BF16": [
+            3.0,
+            0.242164
+          ],
+          "linear/Opus MXFP8": [
+            40.0,
+            2.550477
+          ],
+          "attention/Opus main": [
+            40.0,
+            17.562639
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            17.235453
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.366669
+          ],
+          "TP/allgather": [
+            2.0,
+            1.078683
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.380142
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            1.314211
+          ],
+          "quant/per-group": [
+            40.0,
+            0.813288
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.175814
+          ],
+          "__amd_rocclr_copyBuffer": [
+            4.0,
+            0.04972
+          ],
+          "_block_maxima_kernel": [
+            6.416667,
+            0.480663
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.023307
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.07581
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00471
+          ],
+          "cache/copy tiles": [
+            0.916667,
+            0.004717
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002413
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.27676
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.406616
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003673
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.05212
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.778188
+          ],
+          "_indices": [
+            9.0,
+            0.439678
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.047752
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.065157
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.017167
+          ],
+          "KV/RoPE window": [
+            40.0,
+            3.17137
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.18638
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.018392
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            1.242348
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.030932
+          ],
+          "linear/MXscale BMM": [
+            40.0,
+            1.489672
+          ],
+          "linear/MXFP8 preshuffle": [
+            170.0,
+            14.755009
+          ],
+          "MoE/Down": [
+            40.0,
+            12.637191
+          ],
+          "linear/BF16 GEMM": [
+            53.0,
+            2.055533
+          ],
+          "MoE/GateUp": [
+            40.0,
+            23.527731
+          ],
+          "MoE/reduction": [
+            40.0,
+            4.430306
+          ],
+          "TP/RCCL": [
+            81.0,
+            64.247739
+          ],
+          "index/FP4 scores": [
+            24.916667,
+            6.856635
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            2.126222
+          ],
+          "index/radix": [
+            31.083333,
+            3.461251
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00868
+          ],
+          "index/block2048": [
+            0.25,
+            0.004013
+          ],
+          "AITER/HIP": [
+            40.0,
+            0.360398
+          ],
+          "MoE/sort": [
+            160.0,
+            1.190542
+          ],
+          "MoE/router": [
+            40.0,
+            0.466052
+          ],
+          "PyTorch/ATen": [
+            76.833333,
+            2.179718
+          ]
+        }
+      },
+      "backend": {
+        "decode": {
+          "ATOM/FlyDSL": [
+            40.0,
+            0.491057
+          ],
+          "AITER/HIP": [
+            468.0,
+            5.308732
+          ],
+          "AITER/prebuilt .co": [
+            3.0,
+            0.034898
+          ],
+          "ROCm runtime": [
+            8.0,
+            0.030607
+          ],
+          "ATOM/Triton": [
+            204.0,
+            0.835746
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.175149
+          ],
+          "AITER/FlyDSL": [
+            351.0,
+            2.266367
+          ],
+          "RCCL": [
+            1.0,
+            0.037379
+          ],
+          "PyTorch/ATen": [
+            44.0,
+            0.13367
+          ]
+        },
+        "prefill_32": {
+          "AITER/HIP": [
+            456.0,
+            6.156556
+          ],
+          "AITER/prebuilt .co": [
+            3.0,
+            0.04644
+          ],
+          "ROCm runtime": [
+            12.0,
+            0.05768
+          ],
+          "ATOM/Triton": [
+            244.0,
+            1.196524
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.183922
+          ],
+          "AITER/FlyDSL": [
+            403.0,
+            6.776157
+          ],
+          "RCCL": [
+            1.0,
+            0.0112
+          ],
+          "PyTorch/ATen": [
+            49.0,
+            0.263842
+          ]
+        },
+        "prefill_1664": {
+          "AITER/HIP": [
+            577.0,
+            23.93909
+          ],
+          "ROCm runtime": [
+            86.0,
+            0.533083
+          ],
+          "ATOM/Triton": [
+            246.0,
+            2.452488
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.225321
+          ],
+          "AITER/FlyDSL": [
+            412.0,
+            23.07617
+          ],
+          "PyTorch/ATen": [
+            62.0,
+            0.619686
+          ]
+        },
+        "prefill_8192": {
+          "AITER/HIP": [
+            536.0,
+            43.736532
+          ],
+          "ROCm runtime": [
+            4.0,
+            0.04972
+          ],
+          "ATOM/Triton": [
+            249.333333,
+            8.684866
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.778188
+          ],
+          "AITER/FlyDSL": [
+            439.25,
+            69.217341
+          ],
+          "RCCL": [
+            81.0,
+            64.247739
+          ],
+          "PyTorch/ATen": [
+            76.833333,
+            2.179718
+          ]
+        }
+      }
+    },
+    {
+      "rank": 2,
+      "scopes": {
+        "decode": {
+          "steps": 1500,
+          "events": 1738500,
+          "calls_min_max": [
+            1159,
+            1159
+          ],
+          "ms_per_forward": 11.595299328666666,
+          "device_span_ms_per_forward": 12.302150425333334,
+          "median_gpu_ms": 12.347366,
+          "unique_symbols": 64
+        },
+        "prefill_8192": {
+          "steps": 12,
+          "events": 17117,
+          "calls_min_max": [
+            1358,
+            1485
+          ],
+          "ms_per_forward": 188.9549205,
+          "device_span_ms_per_forward": 186.51879091666666,
+          "median_gpu_ms": 189.3147625,
+          "unique_symbols": 70
+        },
+        "prefill_1664": {
+          "steps": 1,
+          "events": 1423,
+          "calls_min_max": [
+            1423,
+            1423
+          ],
+          "ms_per_forward": 50.782542,
+          "device_span_ms_per_forward": 51.063746,
+          "median_gpu_ms": 50.782542,
+          "unique_symbols": 66
+        },
+        "prefill_32": {
+          "steps": 1,
+          "events": 1208,
+          "calls_min_max": [
+            1208,
+            1208
+          ],
+          "ms_per_forward": 14.688206,
+          "device_span_ms_per_forward": 15.091723,
+          "median_gpu_ms": 14.688206,
+          "unique_symbols": 72
+        }
+      },
+      "zero_ns_dispatches_kept": 0,
+      "duration_source": "rocprof debug.delta_ns == debug.end_ns - debug.begin_ns; not reconstructed slice.dur",
+      "display_time_audit": {
+        "different_durations": 307421,
+        "zero_display_ns": 28,
+        "min_device_ns": 840,
+        "max_abs_difference_ns": 436403
+      },
+      "memory_copy_separate": 25,
+      "zero_cross_id_flows": true,
+      "connected_marker_roots": 1514,
+      "health": [
+        {
+          "name": "track_descriptor_conflicting_reservation",
+          "value": 1
+        }
+      ],
+      "wall_clock_cut_audit": [
+        {
+          "phase": "decode",
+          "before": 0,
+          "after": 1738500
+        },
+        {
+          "phase": "prefill",
+          "before": 17892,
+          "after": 1856
+        }
+      ],
+      "decode_queues": [
+        {
+          "stream": 0,
+          "queue": 3,
+          "calls_per_step": 204.0
+        },
+        {
+          "stream": 0,
+          "queue": 5,
+          "calls_per_step": 950.0
+        },
+        {
+          "stream": 0,
+          "queue": 7,
+          "calls_per_step": 4.0
+        },
+        {
+          "stream": 10,
+          "queue": 1,
+          "calls_per_step": 1.0
+        }
+      ],
+      "sha256": "315a9a63e0309f7b42581975de13da2b4144349554a61249c673b8bb0fbacfa2",
+      "families": {
+        "decode": {
+          "MoE/router GEMV": [
+            40.0,
+            0.495606
+          ],
+          "TP/low-latency sum": [
+            81.0,
+            4.199434
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            0.732662
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012921
+          ],
+          "TP/allgather": [
+            3.0,
+            0.503202
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.195317
+          ],
+          "RMSNorm/template": [
+            1.0,
+            0.004109
+          ],
+          "MoE/quant sort": [
+            40.0,
+            0.180024
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.184413
+          ],
+          "linear/BF16 prebuilt": [
+            3.0,
+            0.035038
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.037861
+          ],
+          "__amd_rocclr_copyBuffer": [
+            8.0,
+            0.031284
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.004625
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.004527
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.004639
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004625
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002624
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.008784
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.009728
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003703
+          ],
+          "_fill_deferred_decode_ids_kernel": [
+            1.0,
+            0.004012
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.020123
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.17732
+          ],
+          "_indices": [
+            8.0,
+            0.035609
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.004657
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.018015
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.002635
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.180003
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.018969
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.014318
+          ],
+          "_window_rows": [
+            1.0,
+            0.004465
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.016732
+          ],
+          "linear/MXscale BMM": [
+            250.0,
+            1.35902
+          ],
+          "MoE/Down": [
+            40.0,
+            0.189337
+          ],
+          "linear/BF16 GEMM": [
+            2.0,
+            0.060517
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.415226
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.14487
+          ],
+          "index/FP4 scores": [
+            8.0,
+            0.038294
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.482994
+          ],
+          "index/radix": [
+            4.0,
+            0.10923
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.007294
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.008745
+          ],
+          "index/block2048": [
+            1.0,
+            0.019694
+          ],
+          "index/compact512": [
+            4.0,
+            0.083942
+          ],
+          "MoE/sort": [
+            40.0,
+            0.408053
+          ],
+          "attention/reduce": [
+            40.0,
+            0.199631
+          ],
+          "MoE/router": [
+            40.0,
+            0.295725
+          ],
+          "AITER/HIP": [
+            12.0,
+            0.056769
+          ],
+          "PyTorch/ATen": [
+            44.0,
+            0.119184
+          ],
+          "attention/Opus main": [
+            40.0,
+            0.44479
+          ]
+        },
+        "prefill_32": {
+          "attention/Opus main": [
+            40.0,
+            1.068926
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            1.20421
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.0166
+          ],
+          "TP/allgather": [
+            3.0,
+            0.050101
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.197521
+          ],
+          "RMSNorm/template": [
+            1.0,
+            0.00428
+          ],
+          "AITER/HIP": [
+            81.0,
+            2.38545
+          ],
+          "MoE/quant sort": [
+            40.0,
+            0.341282
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.196803
+          ],
+          "linear/BF16 prebuilt": [
+            3.0,
+            0.04756
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.03776
+          ],
+          "__amd_rocclr_copyBuffer": [
+            12.0,
+            0.054921
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.019862
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.00456
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.00388
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00472
+          ],
+          "cache/copy tiles": [
+            1.0,
+            0.0054
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.00212
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.01084
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.01728
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.00364
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.01872
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.180761
+          ],
+          "_indices": [
+            9.0,
+            0.04296
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.005121
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.01876
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.00476
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.171881
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.221681
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.02016
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.02616
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.01728
+          ],
+          "linear/MXscale BMM": [
+            250.0,
+            2.372653
+          ],
+          "MoE/Down": [
+            40.0,
+            1.279008
+          ],
+          "linear/BF16 GEMM": [
+            54.0,
+            0.438521
+          ],
+          "MoE/GateUp": [
+            40.0,
+            2.363495
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.01204
+          ],
+          "index/FP4 scores": [
+            8.0,
+            0.112022
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.574521
+          ],
+          "index/radix": [
+            9.0,
+            0.19796
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.0086
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.008901
+          ],
+          "MoE/sort": [
+            80.0,
+            0.382363
+          ],
+          "MoE/router": [
+            40.0,
+            0.270281
+          ],
+          "PyTorch/ATen": [
+            49.0,
+            0.261881
+          ]
+        },
+        "prefill_1664": {
+          "linear/Opus BF16": [
+            3.0,
+            0.146482
+          ],
+          "attention/Opus main": [
+            40.0,
+            4.229733
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            4.10159
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.08176
+          ],
+          "TP/allgather": [
+            2.0,
+            0.233802
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.19762
+          ],
+          "AITER/HIP": [
+            161.0,
+            13.048014
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.379156
+          ],
+          "quant/per-group": [
+            80.0,
+            0.461609
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.064317
+          ],
+          "__amd_rocclr_copyBuffer": [
+            86.0,
+            0.530824
+          ],
+          "_block_maxima_kernel": [
+            3.0,
+            0.196961
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.01172
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.01228
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00472
+          ],
+          "cache/copy tiles": [
+            1.0,
+            0.00524
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.0024
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.04564
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.08252
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.00356
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.02232
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.228947
+          ],
+          "_indices": [
+            9.0,
+            0.131681
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.01092
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.020038
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.00584
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.649271
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.184589
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.01864
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.275161
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.01712
+          ],
+          "linear/MXscale BMM": [
+            208.0,
+            4.11147
+          ],
+          "linear/MXFP8 preshuffle": [
+            42.0,
+            1.545344
+          ],
+          "linear/BF16 GEMM": [
+            53.0,
+            0.814431
+          ],
+          "MoE/GateUp": [
+            40.0,
+            8.015095
+          ],
+          "MoE/Down": [
+            40.0,
+            5.485749
+          ],
+          "index/FP4 scores": [
+            13.0,
+            2.133773
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.735908
+          ],
+          "index/radix": [
+            16.0,
+            1.006086
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00836
+          ],
+          "MoE/sort": [
+            80.0,
+            0.611099
+          ],
+          "MoE/router": [
+            40.0,
+            0.296528
+          ],
+          "PyTorch/ATen": [
+            62.0,
+            0.614224
+          ]
+        },
+        "prefill_8192": {
+          "linear/Opus BF16": [
+            3.0,
+            0.245913
+          ],
+          "linear/Opus MXFP8": [
+            40.0,
+            2.656692
+          ],
+          "attention/Opus main": [
+            40.0,
+            17.528579
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            17.117721
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.360749
+          ],
+          "TP/allgather": [
+            2.0,
+            1.096663
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.382045
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            1.326341
+          ],
+          "quant/per-group": [
+            40.0,
+            0.811143
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.175358
+          ],
+          "__amd_rocclr_copyBuffer": [
+            4.0,
+            0.04363
+          ],
+          "_block_maxima_kernel": [
+            6.416667,
+            0.481053
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.023067
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.071814
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.004697
+          ],
+          "cache/copy tiles": [
+            0.916667,
+            0.00485
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002333
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.264462
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.399085
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003713
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.052005
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.577712
+          ],
+          "_indices": [
+            9.0,
+            0.513625
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.119621
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.064485
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.0174
+          ],
+          "KV/RoPE window": [
+            40.0,
+            3.390122
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.191132
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.01862
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            1.248777
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.03065
+          ],
+          "linear/MXscale BMM": [
+            40.0,
+            1.467021
+          ],
+          "linear/MXFP8 preshuffle": [
+            170.0,
+            14.177858
+          ],
+          "MoE/Down": [
+            40.0,
+            12.593019
+          ],
+          "linear/BF16 GEMM": [
+            53.0,
+            2.045242
+          ],
+          "MoE/GateUp": [
+            40.0,
+            23.608965
+          ],
+          "MoE/reduction": [
+            40.0,
+            4.279558
+          ],
+          "TP/RCCL": [
+            81.0,
+            65.007904
+          ],
+          "index/FP4 scores": [
+            24.916667,
+            6.728094
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            2.135656
+          ],
+          "index/radix": [
+            31.083333,
+            3.441648
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.008684
+          ],
+          "index/block2048": [
+            0.25,
+            0.00405
+          ],
+          "AITER/HIP": [
+            40.0,
+            0.355551
+          ],
+          "MoE/sort": [
+            160.0,
+            1.176383
+          ],
+          "MoE/router": [
+            40.0,
+            0.463798
+          ],
+          "PyTorch/ATen": [
+            76.833333,
+            2.237436
+          ]
+        }
+      },
+      "backend": {
+        "decode": {
+          "ATOM/FlyDSL": [
+            40.0,
+            0.495606
+          ],
+          "AITER/HIP": [
+            468.0,
+            7.454911
+          ],
+          "AITER/prebuilt .co": [
+            3.0,
+            0.035038
+          ],
+          "ROCm runtime": [
+            8.0,
+            0.031284
+          ],
+          "ATOM/Triton": [
+            204.0,
+            0.853082
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.17732
+          ],
+          "AITER/FlyDSL": [
+            351.0,
+            2.284006
+          ],
+          "RCCL": [
+            1.0,
+            0.14487
+          ],
+          "PyTorch/ATen": [
+            44.0,
+            0.119184
+          ]
+        },
+        "prefill_32": {
+          "AITER/HIP": [
+            456.0,
+            6.155577
+          ],
+          "AITER/prebuilt .co": [
+            3.0,
+            0.04756
+          ],
+          "ROCm runtime": [
+            12.0,
+            0.054921
+          ],
+          "ATOM/Triton": [
+            244.0,
+            1.202906
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.180761
+          ],
+          "AITER/FlyDSL": [
+            403.0,
+            6.77256
+          ],
+          "RCCL": [
+            1.0,
+            0.01204
+          ],
+          "PyTorch/ATen": [
+            49.0,
+            0.261881
+          ]
+        },
+        "prefill_1664": {
+          "AITER/HIP": [
+            577.0,
+            23.85171
+          ],
+          "ROCm runtime": [
+            86.0,
+            0.530824
+          ],
+          "ATOM/Triton": [
+            246.0,
+            2.444889
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.228947
+          ],
+          "AITER/FlyDSL": [
+            412.0,
+            23.111948
+          ],
+          "PyTorch/ATen": [
+            62.0,
+            0.614224
+          ]
+        },
+        "prefill_8192": {
+          "AITER/HIP": [
+            536.0,
+            43.696936
+          ],
+          "ROCm runtime": [
+            4.0,
+            0.04363
+          ],
+          "ATOM/Triton": [
+            249.333333,
+            9.045848
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.577712
+          ],
+          "AITER/FlyDSL": [
+            439.25,
+            68.345454
+          ],
+          "RCCL": [
+            81.0,
+            65.007904
+          ],
+          "PyTorch/ATen": [
+            76.833333,
+            2.237436
+          ]
+        }
+      }
+    },
+    {
+      "rank": 3,
+      "scopes": {
+        "decode": {
+          "steps": 1500,
+          "events": 1738500,
+          "calls_min_max": [
+            1159,
+            1159
+          ],
+          "ms_per_forward": 12.645096661333334,
+          "device_span_ms_per_forward": 12.429516642,
+          "median_gpu_ms": 13.090328,
+          "unique_symbols": 64
+        },
+        "prefill_8192": {
+          "steps": 12,
+          "events": 17117,
+          "calls_min_max": [
+            1358,
+            1485
+          ],
+          "ms_per_forward": 189.01395925,
+          "device_span_ms_per_forward": 186.57916308333333,
+          "median_gpu_ms": 189.419111,
+          "unique_symbols": 70
+        },
+        "prefill_1664": {
+          "steps": 1,
+          "events": 1423,
+          "calls_min_max": [
+            1423,
+            1423
+          ],
+          "ms_per_forward": 50.906277,
+          "device_span_ms_per_forward": 51.053818,
+          "median_gpu_ms": 50.906277,
+          "unique_symbols": 66
+        },
+        "prefill_32": {
+          "steps": 1,
+          "events": 1208,
+          "calls_min_max": [
+            1208,
+            1208
+          ],
+          "ms_per_forward": 14.688639,
+          "device_span_ms_per_forward": 15.089522,
+          "median_gpu_ms": 14.688639,
+          "unique_symbols": 72
+        }
+      },
+      "zero_ns_dispatches_kept": 0,
+      "duration_source": "rocprof debug.delta_ns == debug.end_ns - debug.begin_ns; not reconstructed slice.dur",
+      "display_time_audit": {
+        "different_durations": 315201,
+        "zero_display_ns": 11,
+        "min_device_ns": 640,
+        "max_abs_difference_ns": 583844
+      },
+      "memory_copy_separate": 25,
+      "zero_cross_id_flows": true,
+      "connected_marker_roots": 1514,
+      "health": [
+        {
+          "name": "track_descriptor_conflicting_reservation",
+          "value": 1
+        }
+      ],
+      "wall_clock_cut_audit": [
+        {
+          "phase": "decode",
+          "before": 0,
+          "after": 1738500
+        },
+        {
+          "phase": "prefill",
+          "before": 17892,
+          "after": 1856
+        }
+      ],
+      "decode_queues": [
+        {
+          "stream": 0,
+          "queue": 3,
+          "calls_per_step": 204.0
+        },
+        {
+          "stream": 0,
+          "queue": 5,
+          "calls_per_step": 950.0
+        },
+        {
+          "stream": 0,
+          "queue": 7,
+          "calls_per_step": 4.0
+        },
+        {
+          "stream": 10,
+          "queue": 1,
+          "calls_per_step": 1.0
+        }
+      ],
+      "sha256": "4b028fd401dcf3977b8bce04a12404cc1fee27a94461cfbf7e6e8fef58ada4e6",
+      "families": {
+        "decode": {
+          "MoE/router GEMV": [
+            40.0,
+            0.497596
+          ],
+          "TP/low-latency sum": [
+            81.0,
+            5.01918
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            0.721458
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.012855
+          ],
+          "TP/allgather": [
+            3.0,
+            0.679401
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.194857
+          ],
+          "RMSNorm/template": [
+            1.0,
+            0.004261
+          ],
+          "MoE/quant sort": [
+            40.0,
+            0.177838
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.184942
+          ],
+          "linear/BF16 prebuilt": [
+            3.0,
+            0.034977
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.037213
+          ],
+          "__amd_rocclr_copyBuffer": [
+            8.0,
+            0.032409
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.00468
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.004432
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.004789
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00477
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002557
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.008652
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.00977
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003709
+          ],
+          "_fill_deferred_decode_ids_kernel": [
+            1.0,
+            0.004254
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.020001
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.177228
+          ],
+          "_indices": [
+            8.0,
+            0.03467
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.004681
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.017871
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.002754
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.18089
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.018949
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.015342
+          ],
+          "_window_rows": [
+            1.0,
+            0.004333
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.017011
+          ],
+          "linear/MXscale BMM": [
+            250.0,
+            1.365161
+          ],
+          "MoE/Down": [
+            40.0,
+            0.187549
+          ],
+          "linear/BF16 GEMM": [
+            2.0,
+            0.060419
+          ],
+          "MoE/GateUp": [
+            40.0,
+            0.414204
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.207339
+          ],
+          "index/FP4 scores": [
+            8.0,
+            0.038477
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.484207
+          ],
+          "index/radix": [
+            4.0,
+            0.108365
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.007919
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.009226
+          ],
+          "index/block2048": [
+            1.0,
+            0.019836
+          ],
+          "index/compact512": [
+            4.0,
+            0.084719
+          ],
+          "MoE/sort": [
+            40.0,
+            0.409061
+          ],
+          "attention/reduce": [
+            40.0,
+            0.198157
+          ],
+          "MoE/router": [
+            40.0,
+            0.291014
+          ],
+          "AITER/HIP": [
+            12.0,
+            0.057095
+          ],
+          "PyTorch/ATen": [
+            44.0,
+            0.116653
+          ],
+          "attention/Opus main": [
+            40.0,
+            0.447365
+          ]
+        },
+        "prefill_32": {
+          "attention/Opus main": [
+            40.0,
+            1.076485
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            1.193405
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.0174
+          ],
+          "TP/allgather": [
+            3.0,
+            0.048321
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.192681
+          ],
+          "RMSNorm/template": [
+            1.0,
+            0.00432
+          ],
+          "AITER/HIP": [
+            81.0,
+            2.366007
+          ],
+          "MoE/quant sort": [
+            40.0,
+            0.337043
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.191761
+          ],
+          "linear/BF16 prebuilt": [
+            3.0,
+            0.04692
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.039161
+          ],
+          "__amd_rocclr_copyBuffer": [
+            12.0,
+            0.05656
+          ],
+          "_block_maxima_kernel": [
+            1.0,
+            0.02064
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.00584
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.00376
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00512
+          ],
+          "cache/copy tiles": [
+            1.0,
+            0.00544
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.0024
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.01168
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.01752
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.00356
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.0198
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.181801
+          ],
+          "_indices": [
+            9.0,
+            0.0414
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.00508
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.0184
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.00464
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.169523
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.225202
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.01916
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.02708
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.01704
+          ],
+          "linear/MXscale BMM": [
+            250.0,
+            2.376489
+          ],
+          "MoE/Down": [
+            40.0,
+            1.289644
+          ],
+          "linear/BF16 GEMM": [
+            54.0,
+            0.437321
+          ],
+          "MoE/GateUp": [
+            40.0,
+            2.386819
+          ],
+          "TP/RCCL": [
+            1.0,
+            0.01244
+          ],
+          "index/FP4 scores": [
+            8.0,
+            0.11004
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.571963
+          ],
+          "index/radix": [
+            9.0,
+            0.197645
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.00832
+          ],
+          "sampling/argmax": [
+            2.0,
+            0.009521
+          ],
+          "MoE/sort": [
+            80.0,
+            0.385686
+          ],
+          "MoE/router": [
+            40.0,
+            0.27112
+          ],
+          "PyTorch/ATen": [
+            49.0,
+            0.256481
+          ]
+        },
+        "prefill_1664": {
+          "linear/Opus BF16": [
+            3.0,
+            0.14544
+          ],
+          "attention/Opus main": [
+            40.0,
+            4.213622
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            4.114983
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.07852
+          ],
+          "TP/allgather": [
+            2.0,
+            0.238121
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.1998
+          ],
+          "AITER/HIP": [
+            161.0,
+            13.10751
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            0.385243
+          ],
+          "quant/per-group": [
+            80.0,
+            0.464245
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.064201
+          ],
+          "__amd_rocclr_copyBuffer": [
+            86.0,
+            0.536603
+          ],
+          "_block_maxima_kernel": [
+            3.0,
+            0.20108
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.01164
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.012401
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00488
+          ],
+          "cache/copy tiles": [
+            1.0,
+            0.00508
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.00228
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.04248
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.082162
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.00356
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.0228
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.22984
+          ],
+          "_indices": [
+            9.0,
+            0.11852
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.03028
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.02064
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.0056
+          ],
+          "KV/RoPE window": [
+            40.0,
+            0.659043
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.185602
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.01768
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            0.272162
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.01848
+          ],
+          "linear/MXscale BMM": [
+            208.0,
+            4.130906
+          ],
+          "linear/MXFP8 preshuffle": [
+            42.0,
+            1.528409
+          ],
+          "linear/BF16 GEMM": [
+            53.0,
+            0.822725
+          ],
+          "MoE/GateUp": [
+            40.0,
+            8.018363
+          ],
+          "MoE/Down": [
+            40.0,
+            5.486305
+          ],
+          "index/FP4 scores": [
+            13.0,
+            2.13089
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            0.741402
+          ],
+          "index/radix": [
+            16.0,
+            0.998087
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.01004
+          ],
+          "MoE/sort": [
+            80.0,
+            0.625925
+          ],
+          "MoE/router": [
+            40.0,
+            0.304121
+          ],
+          "PyTorch/ATen": [
+            62.0,
+            0.614606
+          ]
+        },
+        "prefill_8192": {
+          "linear/Opus BF16": [
+            3.0,
+            0.240968
+          ],
+          "linear/Opus MXFP8": [
+            40.0,
+            2.640536
+          ],
+          "attention/Opus main": [
+            40.0,
+            17.343276
+          ],
+          "mHC/HIP Mega": [
+            80.0,
+            17.147781
+          ],
+          "mHC/separate post": [
+            3.0,
+            0.359095
+          ],
+          "TP/allgather": [
+            2.0,
+            1.084253
+          ],
+          "FFN/act-and-mul": [
+            40.0,
+            0.381896
+          ],
+          "output/inverse RoPE+quant": [
+            40.0,
+            1.33869
+          ],
+          "quant/per-group": [
+            40.0,
+            0.829582
+          ],
+          "index/Q rotate+FP4": [
+            8.0,
+            0.175274
+          ],
+          "__amd_rocclr_copyBuffer": [
+            4.0,
+            0.041913
+          ],
+          "_block_maxima_kernel": [
+            6.416667,
+            0.490726
+          ],
+          "_candidate_table_kernel": [
+            1.0,
+            0.023127
+          ],
+          "_collapse_kernel": [
+            1.0,
+            0.07256
+          ],
+          "_compress_kernel": [
+            1.0,
+            0.00495
+          ],
+          "cache/copy tiles": [
+            0.916667,
+            0.004683
+          ],
+          "_engram_cursor_kernel": [
+            1.0,
+            0.002227
+          ],
+          "_engram_hash_kernel": [
+            2.0,
+            0.265841
+          ],
+          "_engram_post_wkv_kernel": [
+            2.0,
+            0.399542
+          ],
+          "_engram_snapshot_kernel": [
+            1.0,
+            0.003633
+          ],
+          "_fused_compress_attn_kernel": [
+            4.0,
+            0.05265
+          ],
+          "QK/dual RMSNorm MXFP8": [
+            40.0,
+            0.580463
+          ],
+          "_indices": [
+            9.0,
+            0.421359
+          ],
+          "_indptr_scan_all": [
+            1.0,
+            0.112871
+          ],
+          "_lift_kernel": [
+            4.0,
+            0.064326
+          ],
+          "_masked_embedding_kernel": [
+            1.0,
+            0.01709
+          ],
+          "KV/RoPE window": [
+            40.0,
+            3.58598
+          ],
+          "_swa_write_kernel": [
+            40.0,
+            0.197736
+          ],
+          "_update_compressor_states_kernel": [
+            4.0,
+            0.01825
+          ],
+          "_uva_lookup_kernel": [
+            2.0,
+            1.255327
+          ],
+          "_write_index_fp4_kernel": [
+            4.0,
+            0.03049
+          ],
+          "linear/MXscale BMM": [
+            40.0,
+            1.463154
+          ],
+          "linear/MXFP8 preshuffle": [
+            170.0,
+            14.116798
+          ],
+          "MoE/Down": [
+            40.0,
+            12.569848
+          ],
+          "linear/BF16 GEMM": [
+            53.0,
+            2.036083
+          ],
+          "MoE/GateUp": [
+            40.0,
+            23.523667
+          ],
+          "MoE/reduction": [
+            40.0,
+            4.362857
+          ],
+          "TP/RCCL": [
+            81.0,
+            65.266412
+          ],
+          "index/FP4 scores": [
+            24.916667,
+            6.694451
+          ],
+          "quant/group32 FP8": [
+            122.0,
+            2.130007
+          ],
+          "index/radix": [
+            31.083333,
+            3.43475
+          ],
+          "scatter_packed_bytes": [
+            2.0,
+            0.009503
+          ],
+          "index/block2048": [
+            0.25,
+            0.004023
+          ],
+          "AITER/HIP": [
+            40.0,
+            0.360735
+          ],
+          "MoE/sort": [
+            160.0,
+            1.182139
+          ],
+          "MoE/router": [
+            40.0,
+            0.463295
+          ],
+          "PyTorch/ATen": [
+            76.833333,
+            2.209141
+          ]
+        }
+      },
+      "backend": {
+        "decode": {
+          "ATOM/FlyDSL": [
+            40.0,
+            0.497596
+          ],
+          "AITER/HIP": [
+            468.0,
+            8.434698
+          ],
+          "AITER/prebuilt .co": [
+            3.0,
+            0.034977
+          ],
+          "ROCm runtime": [
+            8.0,
+            0.032409
+          ],
+          "ATOM/Triton": [
+            204.0,
+            0.856241
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.177228
+          ],
+          "AITER/FlyDSL": [
+            351.0,
+            2.287955
+          ],
+          "RCCL": [
+            1.0,
+            0.207339
+          ],
+          "PyTorch/ATen": [
+            44.0,
+            0.116653
+          ]
+        },
+        "prefill_32": {
+          "AITER/HIP": [
+            456.0,
+            6.12339
+          ],
+          "AITER/prebuilt .co": [
+            3.0,
+            0.04692
+          ],
+          "ROCm runtime": [
+            12.0,
+            0.05656
+          ],
+          "ATOM/Triton": [
+            244.0,
+            1.203568
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.181801
+          ],
+          "AITER/FlyDSL": [
+            403.0,
+            6.807479
+          ],
+          "RCCL": [
+            1.0,
+            0.01244
+          ],
+          "PyTorch/ATen": [
+            49.0,
+            0.256481
+          ]
+        },
+        "prefill_1664": {
+          "AITER/HIP": [
+            577.0,
+            23.941731
+          ],
+          "ROCm runtime": [
+            86.0,
+            0.536603
+          ],
+          "ATOM/Triton": [
+            246.0,
+            2.467812
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.22984
+          ],
+          "AITER/FlyDSL": [
+            412.0,
+            23.115685
+          ],
+          "PyTorch/ATen": [
+            62.0,
+            0.614606
+          ]
+        },
+        "prefill_8192": {
+          "AITER/HIP": [
+            536.0,
+            43.547519
+          ],
+          "ROCm runtime": [
+            4.0,
+            0.041913
+          ],
+          "ATOM/Triton": [
+            249.333333,
+            9.162879
+          ],
+          "AITER/Triton": [
+            40.0,
+            0.580463
+          ],
+          "AITER/FlyDSL": [
+            439.25,
+            68.205632
+          ],
+          "RCCL": [
+            81.0,
+            65.266412
+          ],
+          "PyTorch/ATen": [
+            76.833333,
+            2.209141
+          ]
+        }
+      }
+    }
+  ],
+  "zip_sha256": "60dcfbf67f82a01359aa67c7a9e014b9e2456717c8c1a36f6f681714a42ef753",
+  "atom950_request": {
+    "runtime": [
+      "torch 2.13.0+rocm10.0.0 hip 7.15.26333",
+      "[('atom', '0.1.1.dev1+gd6681e153'), ('amd-aiter', '0.1.0')]",
+      "d6681e1535b1c0dde595655d02dc08dca38db84a"
+    ],
+    "image": "sha256:dbf41b16c025637fc55a91ecf8108c456ab88bd3aca6afc49603daab5ec96cbf",
+    "traced_request_usage": {
+      "prompt_tokens": 100000,
+      "completion_tokens": 1500,
+      "total_tokens": 101500,
+      "ttft_s": 2.3242,
+      "tpot_s": 0.0127,
+      "latency_s": 21.313
+    },
+    "traced_http_elapsed_s": 21.319947242736816,
+    "warmup_only_usage": {
+      "prompt_tokens": 100000,
+      "completion_tokens": 4,
+      "total_tokens": 100004,
+      "ttft_s": 13.4167,
+      "tpot_s": 0.0073,
+      "latency_s": 13.4386
+    },
+    "equal_prompt_fingerprints": false
+  }
+}

@@ -87,13 +87,14 @@ def write_tsv(path, fields, rows):
         writer = csv.writer(file, delimiter='\t', lineterminator='\n'); writer.writerow(fields); writer.writerows(rows)
 
 
-def read_rank(path, engine, detailed=False):
+def read_rank(path, engine, detailed=False, *, atom_outer=False):
     with path.open('rb') as file:
         sha = hashlib.file_digest(file, 'sha256').hexdigest()
     with gzip.open(path,'rb') as file:
         doc = json.load(file)
     events=doc['traceEvents']; vllm=engine=='vllm950'
-    marks = sorted((ev for ev in events if ev.get('cat')=='user_annotation' and ev.get('ph')=='X' and (ev['name']=='execute_context_0(0)_generation_1(6)' if vllm else ev['name']=='decode[bs=1 tok=1 d=1]')), key=lambda ev:ev['ts'])
+    marker = 'execute_context_0(0)_generation_1(6)' if vllm else ('ATOM::forward tokens=1 prefill=0 decode=1' if atom_outer else 'decode[bs=1 tok=1 d=1]')
+    marks = sorted((ev for ev in events if ev.get('cat')=='user_annotation' and ev.get('ph')=='X' and ev['name']==marker), key=lambda ev:ev['ts'])
     assert len(marks)==(20 if vllm else 24) and all(left['ts']+left['dur']<=right['ts'] for left,right in zip(marks,marks[1:]))
     starts=[ev['ts'] for ev in marks]; captures=Counter(); owners={}; graph_ancestry=Counter(); cpu=defaultdict(list)
     if vllm:
@@ -134,11 +135,12 @@ def read_rank(path, engine, detailed=False):
         if detailed:
             stream_rows[stream].append((idx,role,symbol))
             if idx==9:order[stream].append((ev['ts'],dur,role,launch,symbol))
-    assert len(kernels)==incount if vllm else incount==24*967
+    atom_calls = 974 if atom_outer else 967
+    assert len(kernels)==incount if vllm else incount==24*atom_calls
     if vllm:
         assert perstep['target_graph']==[2225]*20 and perstep['draft_graph']==[204]*20 and perstep['outside_aux']==[73]*20
         assert sum(perstep['target_aux'])==2328 and incount==52368
-    else: assert perstep['decode']==[967]*24
+    else: assert perstep['decode']==[atom_calls]*24
     groups=defaultdict(lambda:[0,0.]);families=defaultdict(lambda:[0,0.]);symbol_rows=[]
     for role,counts in counters.items():
         for sym,count in counts.items():

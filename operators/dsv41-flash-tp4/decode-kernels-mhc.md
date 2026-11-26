@@ -2,7 +2,7 @@
 
 [返回全模型图册](../../README.md) · [40 层 shape / dtype 讲解](README.md)
 
-跨引擎对照另见：[gfx942 ATOM vs gfx950 vLLM 的实际 kernel、调用数与前后顺序](mi308x-mi355x-traces.md)。
+新增同引擎实测：[gfx942 ATOM vs gfx950 ATOM 的实际 kernel、调用数与前后队列](atom-mi308x-mi355x.md)；另见[含 vLLM target/draft 的三方对照](mi308x-mi355x-traces.md)。gfx950 确实发射专用 HIP Mega-mHC，并不改变下面 **gfx942 同卡** generic HIP 单测比 Triton 慢的结论。
 
 **结论（2026-11-26）：MI308X 上保留 Triton。** 本机 rank 0 trace 中，准备替换的 80 次 delayed mHC + RMSNorm 合计 **1.480769 ms/decode 步**，不是能直接减掉的延迟。在同服务镜像、同型号单卡、80 套真实权重的 A/B 中，最快实测的 AITER generic HIP 比 Triton **慢 1.257–1.268 ms/80 次**，尽管发射数从 160 变为 80。原 TP4 卡组未通过空闲检查，**没有测出 HIP 服务的 E2E**；第 7 节单列条件估算和零成本上限。
 

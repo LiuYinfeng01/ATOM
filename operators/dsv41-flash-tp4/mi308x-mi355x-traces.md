@@ -1,20 +1,20 @@
 # MI308X 与 MI355X：TP4 decode 实际跑了哪些 kernel？
 
-[图册首页](../../README.md) · [gfx942 的 543 + 424 次调用、两个 prefill 与 mHC 单测](decode-kernels-mhc.md) · [全符号表](trace-compare/symbols.tsv) · [第 10 步逐 stream 顺序](trace-compare/step10-order.tsv)
+[ATOM 对 ATOM 完整实测](atom-mi308x-mi355x.md) · [图册首页](../../README.md) · [gfx942 的 543 + 424 次调用、两个 prefill 与 mHC 单测](decode-kernels-mhc.md) · [含 vLLM 的符号表](trace-compare/symbols.tsv)
 
-**先说能证实的结论。** MI308X/gfx942 的 ATOM base 每步 **967 次**；这份 MI355X/gfx950 的 **vLLM + DSpark** 每次验证迭代平均 **2618.4 次**，其中 **2341.4** 次属于 target 的 `execute_model` 范围。不同的不只是 GPU：主查询从 1 行变成了验证 6 行，专家从在线 FP8 变为 MXFP4，执行引擎、软件版本和上下文也不同。并非 MI355X 硬件多执行了 1651.4 次才生成一个 token。
+**相同引擎先看这一对：MI308X ATOM 外层 974 次/步，MI355X ATOM 外层 1159 次/步，多 185 次。** 旧图中的 967 是 gfx942 内层模型标记。两边都实跑 TP4、BS1、无草稿。gfx950 每步 80 发 HIP Mega-mHC，对 gfx942 的 160 发 Triton main/reduce；主注意力走 Opus/HIP，索引算分走 FP4 FlyDSL；共享专家不再折入，另走一条物理队列。rank 0 的 81 次 all-reduce 设备和为 **0.708 vs 4.220 ms**，含等待。新增四卡的全部 6000 个 decode 标记已核对，详见[同引擎分模块、物理队列前后顺序与 prefill 表](atom-mi308x-mi355x.md)。
 
-**第三组数据的状态（2026-11-26）：** 名为 `mi355x-atom-dsv41-flash-tp4-100k-1500-trace-20261126.zip` 的文件在此次可访问的工作区、共享盘和报告分支中未定位到。可读取的 `dsv4.1_flash_vLLM_TP4.gz` 没有 `fz_` 前缀；解包后确实是 MI355X vLLM 的四个并发档、16 份 rank trace，不含 ATOM ZIP。**本文不把 vLLM 代填到 MI355X ATOM 栏，也不据 ATOM 的 gfx950 源码推断其实际发射。** 同引擎 ATOM→ATOM 的每步计数、前后顺序与真实 TPOT 仍需那份 ZIP。
+**第三列为什么单独看？** MI355X 的 **vLLM + DSpark** 每次验证迭代平均 **2618.4 次**，其中 **2341.4** 次属于 target 的 `execute_model` 范围。主查询是验证 6 行，含草稿、合成接受和不同的 350K 上下文，**不能当作 MI355X ATOM 的每输出 token 调用数**。新 ZIP 已解析；它的 12.7 ms 是**带 rocprof**的 TPOT，依然不能与 gfx942 7.490 ms 的不开 profiler C1 做硬件速度比。
 
 ## 1. 比较合同：先分清 token、迭代与请求
 
 | 项目 | MI308X / ATOM（gfx942） | MI355X / vLLM（gfx950） | MI355X / ATOM（gfx950） |
 |---|---|---|---|
-| 实际来源 | 11-24 的 FP4PTPC 24 步 trace；四 rank 均复算 | 上传 tar.gz 内 **C1** 的四份 Kineto trace；实际采集 09-16。设备字段为 MI355X、256 CU，不是从文件名猜 | 指定 ZIP 未取得，待核验 |
-| 模型、执行 | `1017-FP4PTPC`；4×80 CU；无草稿；BF16 主 KV、FP8 index；路由专家在线转逐通道 FP8 | 服务名 `DeepSeek-V4.1-Flash`，未证实是同一 revision；4×256 CU；FP8 index，主 KV 配置是 `auto`；日志为 `AITER_MXFP4_BF16` MoE | 未知 |
-| 版本 | ATOM `5f6bdb75`、AITER `ad0d5e20`、ROCm 7.2.4 系列 | vLLM `86973da96e` **加本地 MXFP8 修改**；AITER `0.1.21.post1`、Torch `2.12.0+rocm10.0.0` | 未知 |
-| Profile 请求 | 100000 输入 / 24 输出；命中 89984；两个 prefill + 24 个 base decode 标记 | 350000 / 512，命中计数 349952；开 CSA，DSpark 草稿 5、synthetic acceptance length 3.51；首个内容后再跳过 5 次迭代，**只抓 20 个 decode**。另有 C4/C16/C32，不混入 | 文件名暗示 100K/1500；不能凭文件名确认 profiler 窗口、DSpark 或 cache |
-| 未开 profiler 的客户端结果 | 另跑 100K→1500，四请求中位 **TTFT 627.613 ms、TPOT 7.490 ms、E2E 11.886 s** | 同包、预热后的**一个** C1 请求：首个内容 **506.536 ms**，**TPOT 3.336 ms/输出 token、E2E 2.211 s**；零抢占 | 无实测值 |
+| 实际来源 | 11-24 的 FP4PTPC 24 步 trace；四 rank 均复算 | 上传 tar.gz 内 **C1** 的四份 Kineto trace；实际采集 09-16。设备字段为 MI355X、256 CU | 11-26 ZIP：4 份 rocprofv3 `.pftrace`；各 1,758,248 个设备 dispatch，逐 rank 校验 SHA |
+| 模型、执行 | `1017-FP4PTPC`；4×80 CU；无草稿；BF16 主 KV、FP8 index；路由专家在线转逐通道 FP8 | 服务名 `DeepSeek-V4.1-Flash`，未证实是同一 revision；4×256 CU；FP8 index，主 KV 配置是 `auto`；日志为 `AITER_MXFP4_BF16` MoE | TP4/DP1/C1、FULL 单序列 graph，无草稿；BF16 主 KV、FP4 index；native FP8 dense、路由 FP4，FP8 shared 单独算。checkpoint revision 未给出 |
+| 版本 | ATOM `5f6bdb75`、AITER `ad0d5e20`、ROCm 7.2.4 系列 | vLLM `86973da96e` **加本地 MXFP8 修改**；AITER `0.1.21.post1`、Torch `2.12.0+rocm10.0.0` | ATOM `d6681e153`、`amd-aiter 0.1.0`、Torch `2.13.0+rocm10.0.0`；未提供 AITER 构建 commit |
+| Profile 请求 | 100000 输入 / 24 输出；命中 89984；两个 prefill + 24 个 base decode 标记 | 350000 / 512，命中计数 349952；开 CSA，DSpark 草稿 5、synthetic acceptance length 3.51；首个内容后再跳过 5 次迭代，**只抓 20 个 decode**。另有 C4/C16/C32，不混入 | 整条 100000→1500；不同前缀预热，实际 prefill 100000 行（12×8192+1664+32），两种 bounded replay 关；1500 个 decode 标记 |
+| 未开 profiler 的客户端结果 | 另跑 100K→1500，四请求中位 **TTFT 627.613 ms、TPOT 7.490 ms、E2E 11.886 s** | 同包、预热后的**一个** C1 请求：首个内容 **506.536 ms**，**TPOT 3.336 ms/输出 token、E2E 2.211 s**；零抢占 | 无等价 1500 输出 C1；未录制 warmup 仅 **4 输出**，7.3 ms TPOT。1500 输出的 **12.7 ms TPOT / 21.313 s 服务 latency** 是 profiler 开启时的实测 |
 
 这里的 TPOT 均按 `(E2E − 首个内容时间)/(输出数 − 1)`。vLLM 的 unprofiled 指标增量为 146 次 draft、730 个草稿 token、367 个接受、512 个实际输出。按整条请求算的 **512/146 ≈ 3.51 个输出/draft 轮次**，不表示每次都接受 3.51 个草稿，也不是 profiler 那 20 次的逐步接受数。不能用 3.51 或标记中的 6 去除 kernel 次数，伪造实测的每输出 token 计数。也不能拿开启 profiler 的 vLLM 请求 **45.075 s** 当服务性能。
 
@@ -25,6 +25,8 @@
 | 采样区间 | 实测原始事件数 / 分母 | 次/迭代 | GPU ms/迭代 | 怎么认出来的 |
 |---|---:|---:|---:|---|
 | gfx942 ATOM：decode 标记内 | 23208 / 24 | **967** | **8.349** | `decode[bs=1 tok=1 d=1]` → 同线程 HIP launch → 唯一 correlation 的 GPU kernel；不含 prefill 或标记外采样 |
+| gfx942 ATOM：外层 forward | 23376 / 24 | **974** | **8.392** | 重新按 `ATOM::forward … decode=1` 取样，含 argmax 与 RCCL；与上一行是嵌套范围，不相加 |
+| gfx950 ATOM：rocprof decode forward | 1738500 / 1500 | **1159** | **11.525** | GPU 与 1500 个 ROCTx 标记按 `debug.corr_id` 配对；全部 4 张卡每步恰为 1159。前 24 步单独统计为 **8.539 ms/步** |
 | gfx950 vLLM：target graph | 44500 / 20 | **2225** | 13.655 | 标记 `execute_context_0(0)_generation_1(6)` 内；每个 graph launch 的父栈含 `model_runner.execute_model` |
 | gfx950 vLLM：target 标记内的图外工作 | 2328 / 20 | **116.4** | 0.297 | eager 准备/拷贝等；18 轮 116 次，另两轮 120 次。平均的小数不是“半发 kernel” |
 | **gfx950 vLLM：target 小计** | **46828 / 20** | **2341.4** | **13.952** | 主模型口径；每轮 1 请求验证 6 行，仍不是 base BS1/S=1 |
@@ -34,7 +36,9 @@
 
 gfx942 标记内有 **53** 个不同完整设备符号；gfx950 vLLM target 有 **90** 个，其中 target graph 72 个；整个窗口共 **123** 个。符号数不等于模型算子种数：一个模板特化可能是不同符号，一个通用符号也可能服务多个投影。vLLM 各 rank 调用数相同，但全窗口 GPU duration 和分别为 **15.804 / 32.245 / 31.828 / 33.001 ms/迭代**；只报 rank 0、把四卡加起来或取最慢卡，都不能直接得到 TPOT。
 
-## 3. 按算子看：实现替换还是额外工作？
+## 3. 按算子看：ATOM 同引擎与 vLLM 的区别
+
+**先比较同引擎：**[两套 ATOM 的实测模块表](atom-mi308x-mi355x.md)给出 mHC、dense、Q/K、索引、attention、MoE、共享专家、通信、词表等的名称、次数和设备时长。例：mHC 主体 **160 / 1.481 → 80 / 0.725**；打分 **Gluon FP8 8 / 0.046 → FlyDSL FP4 8 / 0.039**；主 attention **Triton 78 / 0.706 → Opus/HIP 80 / 0.644**。以下原表继续回答 ATOM→vLLM：
 
 每格为 **调用数 / GPU ms**，rank 0；左列每一个 base decode，右列每一个 target 验证（含 target 图外）。不是同样的矩阵 M、上下文长度和量化：这张表用来对 dispatch，不作同形状速度排名。
 
@@ -52,7 +56,7 @@ gfx942 标记内有 **53** 个不同完整设备符号；gfx950 vLLM target 有 
 
 ## 4. 到底多少 Triton、Gluon、FlyDSL、HIP？
 
-rank 0 的**每迭代调用数**。每列互斥、穷尽；0 指这个口径未识别到，不代表该库完全没有调用。AITER 是库，不是语言；`hipGraphLaunch` 是 host 提交方式，不能把里面的所有设备节点都算成「用 HIP C++ 写的」。`.kd` 是设备符号后缀，也不是语言。
+以下原表保留 gfx942 **内层**与 vLLM 的归属口径。两套 ATOM 用更接近的外层范围时，**原生 AITER HIP 290→468、AITER FlyDSL 87→351、ATOM FlyDSL 0→40、AITER Triton 160→40、ATOM Triton 206→204、Gluon 8→0**；详见[净增 185 发的完整分解](atom-mi308x-mi355x.md)。每列互斥、穷尽；0 指这个口径未识别到，不代表库完全没有调用。`hipGraphLaunch` 是 host 提交方式，`.kd` 是设备符号后缀，都不是实现语言。
 
 | 实现归属 | gfx942 ATOM decode | gfx950 vLLM target | gfx950 vLLM 整轮（含 draft 等） |
 |---|---:|---:|---:|
@@ -79,6 +83,8 @@ rank 0 的**每迭代调用数**。每列互斥、穷尽；0 指这个口径未�
 
 以下是**原 trace 的同 stream 设备开始顺序**。箭头表示相邻发射，不是跨 stream 数据依赖。不同 GPU、引擎的 stream ID 也不是对应关系。用 [代表性第 10 步](trace-compare/step10-order.tsv) 查细节：总共 967 + 2618 条，按 `engine,stream,stream_ordinal` 排序，保留时间、时长、target/draft/aux 角色和稳定的 `symbol_id`。
 
+新增的 [ATOM→ATOM 第 10 步（974 + 1159 条）](trace-compare/atom-pair/step10-order.tsv) 还保留 gfx950 的 HSA **queue**。该次 rocprof 的 stream 0 含多个 queue：路由专家走 queue 5，独立共享专家主计算走 queue 3。[同 queue 邻居](trace-compare/atom-pair/mi355x-queue-neighbors.tsv)证实 `MX quant/sort → GateUp → Down` 在 queue 5 的 1500 步恰出现 **60000 次**。不要把 stream 0 上并行的 shared BMM 当成这两发之间的必经节点。
+
 ```mermaid
 flowchart TB
 	subgraph A[MI308X · ATOM base · stream 3]
@@ -102,14 +108,15 @@ flowchart TB
 
 ## 6. 哪些结论能用于优化？
 
-- **要同引擎比较芯片**：需要 gfx950 ATOM 的原始 trace 和未开 profiler 的 C1。到位后先对齐 checkpoint revision、专家/主 KV/index dtype、TP/EP、DSpark、prefix hit、M、采样窗口和 profiler 设置，再比较 ATOM 的 mHC、MoE、attention 与通信。不能拿 vLLM 的混合 mHC 路径回答“MI355X ATOM 默认开了 HIP 吗”。
+- **同引擎 dispatch 已确认**：这次 gfx950 ATOM 确实用 HIP Mega-mHC，不是 vLLM 的混合 mHC 路径。缺的是同输入、同命中、同精度约定、无 profiler 的 100K→1500 服务 C1，而不是 MI355X 的 trace。rank 0 的 gfx950 all-reduce 在初/末 24 步是 1.772 / 5.096 ms；先区分等待与传输，再谈互联或生产 TPOT。
 - **要优化 gfx942 TPOT**：先看 967 次的 base 步，尤其 1.481 ms 的 Triton mHC 主体、两发专家、索引选择与 TP 等待。已有[同卡 mHC 单测](decode-kernels-mhc.md)显示 gfx942 generic HIP 比 Triton 慢；本页 gfx950 vLLM 不是该单测的反例。
-- **要优化长输入 TTFT**：看 [gfx942 两个 prefill chunk](decode-kernels-mhc.md) 的实测。gfx950 vLLM 包按设计在开始生成后才开 profile，**没有 prefill GPU window**；不能拿它的 decode 符号耗时填一列 gfx950 prefill，也不能把客户端 TTFT 解释为其中某一发 kernel。
+- **要优化长输入 TTFT**：看 [gfx942 两个 prefill chunk](decode-kernels-mhc.md) 和 [gfx950 ATOM 14 个 chunk](atom-mi308x-mi355x.md) 的分项实测。只有 gfx950 **vLLM** 包按设计在开始生成后才开 profile，没有 prefill GPU window。不能把客户端 TTFT 解释为其中某一发 kernel。
 
 ## 7. 可复核的材料
 
 | 文件 | 用途 |
 |---|---|
+| [ATOM 同引擎四卡摘要](trace-compare/atom-pair/summary.json) · [完整符号](trace-compare/atom-pair/symbols.tsv) · [rocprof 复算器](trace-compare/atom950_perfetto.py) | 新 ZIP 的 SHA、无损计数、ROCTx corr_id、四卡每阶段、gfx942 外层 forward；与下面两套 Kineto 的旧标记口径分开 |
 | [四 rank 摘要](trace-compare/summary.json) | 各 rank 原始压缩 trace SHA、GPU 型号、标记数、按阶段调用数和 `ms/iteration`；rank 0 附完整家族与实现汇总 |
 | [逐符号 TSV](trace-compare/symbols.tsv) | 完整符号、scope、总次数、每步次数、时长、实现归属和依据；同名符号可以在不同 scope 出现 |
 | [逐流顺序](trace-compare/step10-order.tsv) · [全窗口前后邻居](trace-compare/neighbors.tsv) | 定位单次发射和反复出现的前后组合；公开的是派生事件清单，不含请求或张量内容 |

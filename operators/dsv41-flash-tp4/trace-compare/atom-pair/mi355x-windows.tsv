@@ -1,0 +1,1137 @@
+window	forwards	id	family	calls	calls_per_forward	device_ms_per_forward
+decode_first24	24	atom950p-005	MoE/router GEMV	960	40.0	0.490668
+decode_first24	24	atom950p-006	TP/low-latency sum	1944	81.0	1.771734
+decode_first24	24	atom950p-013	mHC/HIP Mega	960	40.0	0.356127
+decode_first24	24	atom950p-014	mHC/HIP Mega	72	3.0	0.025888
+decode_first24	24	atom950p-015	mHC/HIP Mega	888	37.0	0.343655
+decode_first24	24	atom950p-019	mHC/separate post	72	3.0	0.012453
+decode_first24	24	atom950p-021	TP/allgather	72	3.0	0.06354
+decode_first24	24	atom950p-022	FFN/act-and-mul	960	40.0	0.195773
+decode_first24	24	atom950p-023	RMSNorm/template	24	1.0	0.003765
+decode_first24	24	atom950p-025	MoE/quant sort	960	40.0	0.180225
+decode_first24	24	atom950p-026	output/inverse RoPE+quant	960	40.0	0.182946
+decode_first24	24	atom950p-030	linear/BF16 prebuilt	72	3.0	0.035119
+decode_first24	24	atom950p-032	index/Q rotate+FP4	192	8.0	0.040139
+decode_first24	24	atom950p-033	__amd_rocclr_copyBuffer	192	8.0	0.031338
+decode_first24	24	atom950p-034	_block_maxima_kernel	24	1.0	0.004538
+decode_first24	24	atom950p-035	_candidate_table_kernel	24	1.0	0.004378
+decode_first24	24	atom950p-036	_collapse_kernel	24	1.0	0.004347
+decode_first24	24	atom950p-037	_compress_kernel	24	1.0	0.004865
+decode_first24	24	atom950p-039	_engram_cursor_kernel	24	1.0	0.002582
+decode_first24	24	atom950p-040	_engram_hash_kernel	48	2.0	0.008535
+decode_first24	24	atom950p-041	_engram_post_wkv_kernel	48	2.0	0.010275
+decode_first24	24	atom950p-042	_engram_snapshot_kernel	24	1.0	0.003657
+decode_first24	24	atom950p-043	_fill_deferred_decode_ids_kernel	24	1.0	0.002708
+decode_first24	24	atom950p-044	_fused_compress_attn_kernel	96	4.0	0.021125
+decode_first24	24	atom950p-045	QK/dual RMSNorm MXFP8	960	40.0	0.174891
+decode_first24	24	atom950p-046	_indices	192	8.0	0.03545
+decode_first24	24	atom950p-047	_indptr_scan_all	24	1.0	0.005172
+decode_first24	24	atom950p-048	_lift_kernel	96	4.0	0.018005
+decode_first24	24	atom950p-049	_masked_embedding_kernel	24	1.0	0.00356
+decode_first24	24	atom950p-050	KV/RoPE window	960	40.0	0.170774
+decode_first24	24	atom950p-052	_update_compressor_states_kernel	96	4.0	0.01805
+decode_first24	24	atom950p-053	_uva_lookup_kernel	48	2.0	0.01437
+decode_first24	24	atom950p-054	_window_rows	24	1.0	0.004815
+decode_first24	24	atom950p-055	_write_index_fp4_kernel	96	4.0	0.014739
+decode_first24	24	atom950p-060	linear/MXscale BMM	48	2.0	0.051622
+decode_first24	24	atom950p-061	linear/MXscale BMM	192	8.0	0.037554
+decode_first24	24	atom950p-062	linear/MXscale BMM	960	40.0	0.167414
+decode_first24	24	atom950p-063	linear/MXscale BMM	960	40.0	0.194816
+decode_first24	24	atom950p-064	linear/MXscale BMM	960	40.0	0.216733
+decode_first24	24	atom950p-065	linear/MXscale BMM	960	40.0	0.246663
+decode_first24	24	atom950p-066	linear/MXscale BMM	960	40.0	0.219924
+decode_first24	24	atom950p-067	linear/MXscale BMM	960	40.0	0.191766
+decode_first24	24	atom950p-085	MoE/Down	960	40.0	0.192731
+decode_first24	24	atom950p-090	linear/BF16 GEMM	24	1.0	0.005825
+decode_first24	24	atom950p-091	linear/BF16 GEMM	24	1.0	0.055834
+decode_first24	24	atom950p-107	MoE/GateUp	960	40.0	0.423085
+decode_first24	24	atom950p-110	TP/RCCL	24	1.0	0.010192
+decode_first24	24	atom950p-111	index/FP4 scores	192	8.0	0.038912
+decode_first24	24	atom950p-112	quant/group32 FP8	2928	122.0	0.475921
+decode_first24	24	atom950p-115	index/radix	96	4.0	0.108617
+decode_first24	24	atom950p-116	scatter_packed_bytes	48	2.0	0.005107
+decode_first24	24	atom950p-117	sampling/argmax	24	1.0	0.004763
+decode_first24	24	atom950p-118	sampling/argmax	24	1.0	0.003422
+decode_first24	24	atom950p-119	index/block2048	24	1.0	0.019828
+decode_first24	24	atom950p-120	index/compact512	96	4.0	0.083742
+decode_first24	24	atom950p-124	MoE/sort	960	40.0	0.414913
+decode_first24	24	atom950p-131	attention/reduce	960	40.0	0.198388
+decode_first24	24	atom950p-132	MoE/router	960	40.0	0.278753
+decode_first24	24	atom950p-133	AITER/HIP	288	12.0	0.051208
+decode_first24	24	atom950p-134	PyTorch/ATen	24	1.0	0.003762
+decode_first24	24	atom950p-137	PyTorch/ATen	24	1.0	0.004817
+decode_first24	24	atom950p-144	PyTorch/ATen	48	2.0	0.00901
+decode_first24	24	atom950p-147	PyTorch/ATen	960	40.0	0.108309
+decode_first24	24	atom950p-148	attention/Opus main	960	40.0	0.455605
+decode_last24	24	atom950p-005	MoE/router GEMV	960	40.0	0.496557
+decode_last24	24	atom950p-006	TP/low-latency sum	1944	81.0	5.095893
+decode_last24	24	atom950p-013	mHC/HIP Mega	960	40.0	0.354829
+decode_last24	24	atom950p-014	mHC/HIP Mega	72	3.0	0.02536
+decode_last24	24	atom950p-015	mHC/HIP Mega	888	37.0	0.343942
+decode_last24	24	atom950p-019	mHC/separate post	72	3.0	0.012715
+decode_last24	24	atom950p-021	TP/allgather	72	3.0	1.230308
+decode_last24	24	atom950p-022	FFN/act-and-mul	960	40.0	0.191904
+decode_last24	24	atom950p-023	RMSNorm/template	24	1.0	0.004658
+decode_last24	24	atom950p-025	MoE/quant sort	960	40.0	0.177242
+decode_last24	24	atom950p-026	output/inverse RoPE+quant	960	40.0	0.186184
+decode_last24	24	atom950p-030	linear/BF16 prebuilt	72	3.0	0.035482
+decode_last24	24	atom950p-032	index/Q rotate+FP4	192	8.0	0.037777
+decode_last24	24	atom950p-033	__amd_rocclr_copyBuffer	192	8.0	0.034822
+decode_last24	24	atom950p-034	_block_maxima_kernel	24	1.0	0.004923
+decode_last24	24	atom950p-035	_candidate_table_kernel	24	1.0	0.004443
+decode_last24	24	atom950p-036	_collapse_kernel	24	1.0	0.00458
+decode_last24	24	atom950p-037	_compress_kernel	24	1.0	0.004603
+decode_last24	24	atom950p-039	_engram_cursor_kernel	24	1.0	0.00244
+decode_last24	24	atom950p-040	_engram_hash_kernel	48	2.0	0.008203
+decode_last24	24	atom950p-041	_engram_post_wkv_kernel	48	2.0	0.009572
+decode_last24	24	atom950p-042	_engram_snapshot_kernel	24	1.0	0.003515
+decode_last24	24	atom950p-043	_fill_deferred_decode_ids_kernel	24	1.0	0.005879
+decode_last24	24	atom950p-044	_fused_compress_attn_kernel	96	4.0	0.021085
+decode_last24	24	atom950p-045	QK/dual RMSNorm MXFP8	960	40.0	0.179658
+decode_last24	24	atom950p-046	_indices	192	8.0	0.035787
+decode_last24	24	atom950p-047	_indptr_scan_all	24	1.0	0.004767
+decode_last24	24	atom950p-048	_lift_kernel	96	4.0	0.01793
+decode_last24	24	atom950p-049	_masked_embedding_kernel	24	1.0	0.002661
+decode_last24	24	atom950p-050	KV/RoPE window	960	40.0	0.184786
+decode_last24	24	atom950p-052	_update_compressor_states_kernel	96	4.0	0.020057
+decode_last24	24	atom950p-053	_uva_lookup_kernel	48	2.0	0.013953
+decode_last24	24	atom950p-054	_window_rows	24	1.0	0.004407
+decode_last24	24	atom950p-055	_write_index_fp4_kernel	96	4.0	0.017607
+decode_last24	24	atom950p-060	linear/MXscale BMM	48	2.0	0.051864
+decode_last24	24	atom950p-061	linear/MXscale BMM	192	8.0	0.038442
+decode_last24	24	atom950p-062	linear/MXscale BMM	960	40.0	0.171099
+decode_last24	24	atom950p-063	linear/MXscale BMM	960	40.0	0.198199
+decode_last24	24	atom950p-064	linear/MXscale BMM	960	40.0	0.21805
+decode_last24	24	atom950p-065	linear/MXscale BMM	960	40.0	0.276127
+decode_last24	24	atom950p-066	linear/MXscale BMM	960	40.0	0.220998
+decode_last24	24	atom950p-067	linear/MXscale BMM	960	40.0	0.194786
+decode_last24	24	atom950p-085	MoE/Down	960	40.0	0.187327
+decode_last24	24	atom950p-090	linear/BF16 GEMM	24	1.0	0.005835
+decode_last24	24	atom950p-091	linear/BF16 GEMM	24	1.0	0.054959
+decode_last24	24	atom950p-107	MoE/GateUp	960	40.0	0.415967
+decode_last24	24	atom950p-110	TP/RCCL	24	1.0	0.009286
+decode_last24	24	atom950p-111	index/FP4 scores	192	8.0	0.039104
+decode_last24	24	atom950p-112	quant/group32 FP8	2928	122.0	0.482487
+decode_last24	24	atom950p-115	index/radix	96	4.0	0.106327
+decode_last24	24	atom950p-116	scatter_packed_bytes	48	2.0	0.011198
+decode_last24	24	atom950p-117	sampling/argmax	24	1.0	0.004835
+decode_last24	24	atom950p-118	sampling/argmax	24	1.0	0.004958
+decode_last24	24	atom950p-119	index/block2048	24	1.0	0.020207
+decode_last24	24	atom950p-120	index/compact512	96	4.0	0.085124
+decode_last24	24	atom950p-124	MoE/sort	960	40.0	0.408422
+decode_last24	24	atom950p-131	attention/reduce	960	40.0	0.198791
+decode_last24	24	atom950p-132	MoE/router	960	40.0	0.290276
+decode_last24	24	atom950p-133	AITER/HIP	288	12.0	0.058692
+decode_last24	24	atom950p-134	PyTorch/ATen	24	1.0	0.004503
+decode_last24	24	atom950p-137	PyTorch/ATen	24	1.0	0.004727
+decode_last24	24	atom950p-144	PyTorch/ATen	48	2.0	0.010112
+decode_last24	24	atom950p-147	PyTorch/ATen	960	40.0	0.097856
+decode_last24	24	atom950p-148	attention/Opus main	960	40.0	0.440542
+decode_middle24	24	atom950p-005	MoE/router GEMV	960	40.0	0.493739
+decode_middle24	24	atom950p-006	TP/low-latency sum	1944	81.0	2.929342
+decode_middle24	24	atom950p-013	mHC/HIP Mega	960	40.0	0.355037
+decode_middle24	24	atom950p-014	mHC/HIP Mega	72	3.0	0.025873
+decode_middle24	24	atom950p-015	mHC/HIP Mega	888	37.0	0.343148
+decode_middle24	24	atom950p-019	mHC/separate post	72	3.0	0.01239
+decode_middle24	24	atom950p-021	TP/allgather	72	3.0	0.131659
+decode_middle24	24	atom950p-022	FFN/act-and-mul	960	40.0	0.196688
+decode_middle24	24	atom950p-023	RMSNorm/template	24	1.0	0.003613
+decode_middle24	24	atom950p-025	MoE/quant sort	960	40.0	0.179383
+decode_middle24	24	atom950p-026	output/inverse RoPE+quant	960	40.0	0.184698
+decode_middle24	24	atom950p-030	linear/BF16 prebuilt	72	3.0	0.035133
+decode_middle24	24	atom950p-032	index/Q rotate+FP4	192	8.0	0.037952
+decode_middle24	24	atom950p-033	__amd_rocclr_copyBuffer	192	8.0	0.029995
+decode_middle24	24	atom950p-034	_block_maxima_kernel	24	1.0	0.004805
+decode_middle24	24	atom950p-035	_candidate_table_kernel	24	1.0	0.004413
+decode_middle24	24	atom950p-036	_collapse_kernel	24	1.0	0.004382
+decode_middle24	24	atom950p-037	_compress_kernel	24	1.0	0.004678
+decode_middle24	24	atom950p-039	_engram_cursor_kernel	24	1.0	0.002515
+decode_middle24	24	atom950p-040	_engram_hash_kernel	48	2.0	0.00825
+decode_middle24	24	atom950p-041	_engram_post_wkv_kernel	48	2.0	0.010067
+decode_middle24	24	atom950p-042	_engram_snapshot_kernel	24	1.0	0.003775
+decode_middle24	24	atom950p-043	_fill_deferred_decode_ids_kernel	24	1.0	0.002508
+decode_middle24	24	atom950p-044	_fused_compress_attn_kernel	96	4.0	0.02095
+decode_middle24	24	atom950p-045	QK/dual RMSNorm MXFP8	960	40.0	0.175744
+decode_middle24	24	atom950p-046	_indices	192	8.0	0.035377
+decode_middle24	24	atom950p-047	_indptr_scan_all	24	1.0	0.00516
+decode_middle24	24	atom950p-048	_lift_kernel	96	4.0	0.017553
+decode_middle24	24	atom950p-049	_masked_embedding_kernel	24	1.0	0.003992
+decode_middle24	24	atom950p-050	KV/RoPE window	960	40.0	0.173638
+decode_middle24	24	atom950p-052	_update_compressor_states_kernel	96	4.0	0.018855
+decode_middle24	24	atom950p-053	_uva_lookup_kernel	48	2.0	0.013742
+decode_middle24	24	atom950p-054	_window_rows	24	1.0	0.004453
+decode_middle24	24	atom950p-055	_write_index_fp4_kernel	96	4.0	0.015095
+decode_middle24	24	atom950p-060	linear/MXscale BMM	48	2.0	0.051847
+decode_middle24	24	atom950p-061	linear/MXscale BMM	192	8.0	0.0379
+decode_middle24	24	atom950p-062	linear/MXscale BMM	960	40.0	0.168694
+decode_middle24	24	atom950p-063	linear/MXscale BMM	960	40.0	0.193727
+decode_middle24	24	atom950p-064	linear/MXscale BMM	960	40.0	0.215873
+decode_middle24	24	atom950p-065	linear/MXscale BMM	960	40.0	0.258053
+decode_middle24	24	atom950p-066	linear/MXscale BMM	960	40.0	0.220521
+decode_middle24	24	atom950p-067	linear/MXscale BMM	960	40.0	0.192449
+decode_middle24	24	atom950p-085	MoE/Down	960	40.0	0.189018
+decode_middle24	24	atom950p-090	linear/BF16 GEMM	24	1.0	0.005795
+decode_middle24	24	atom950p-091	linear/BF16 GEMM	24	1.0	0.055044
+decode_middle24	24	atom950p-107	MoE/GateUp	960	40.0	0.420759
+decode_middle24	24	atom950p-110	TP/RCCL	24	1.0	0.010188
+decode_middle24	24	atom950p-111	index/FP4 scores	192	8.0	0.038918
+decode_middle24	24	atom950p-112	quant/group32 FP8	2928	122.0	0.481731
+decode_middle24	24	atom950p-115	index/radix	96	4.0	0.107451
+decode_middle24	24	atom950p-116	scatter_packed_bytes	48	2.0	0.004918
+decode_middle24	24	atom950p-117	sampling/argmax	24	1.0	0.004627
+decode_middle24	24	atom950p-118	sampling/argmax	24	1.0	0.003388
+decode_middle24	24	atom950p-119	index/block2048	24	1.0	0.01951
+decode_middle24	24	atom950p-120	index/compact512	96	4.0	0.08474
+decode_middle24	24	atom950p-124	MoE/sort	960	40.0	0.411167
+decode_middle24	24	atom950p-131	attention/reduce	960	40.0	0.199282
+decode_middle24	24	atom950p-132	MoE/router	960	40.0	0.281918
+decode_middle24	24	atom950p-133	AITER/HIP	288	12.0	0.052639
+decode_middle24	24	atom950p-134	PyTorch/ATen	24	1.0	0.004085
+decode_middle24	24	atom950p-137	PyTorch/ATen	24	1.0	0.004852
+decode_middle24	24	atom950p-144	PyTorch/ATen	48	2.0	0.009075
+decode_middle24	24	atom950p-147	PyTorch/ATen	960	40.0	0.105431
+decode_middle24	24	atom950p-148	attention/Opus main	960	40.0	0.451131
+prefill_01	1	atom950p-001	linear/Opus BF16	3	3.0	0.24604
+prefill_01	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.550653
+prefill_01	1	atom950p-004	attention/Opus main	40	40.0	16.390046
+prefill_01	1	atom950p-010	mHC/HIP Mega	40	40.0	8.280402
+prefill_01	1	atom950p-011	mHC/HIP Mega	3	3.0	0.746924
+prefill_01	1	atom950p-012	mHC/HIP Mega	37	37.0	8.206479
+prefill_01	1	atom950p-020	mHC/separate post	3	3.0	0.359282
+prefill_01	1	atom950p-021	TP/allgather	2	2.0	0.967925
+prefill_01	1	atom950p-022	FFN/act-and-mul	40	40.0	0.377561
+prefill_01	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.288769
+prefill_01	1	atom950p-029	quant/per-group	40	40.0	0.832682
+prefill_01	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.17672
+prefill_01	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.049361
+prefill_01	1	atom950p-034	_block_maxima_kernel	1	1.0	0.03212
+prefill_01	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02128
+prefill_01	1	atom950p-036	_collapse_kernel	1	1.0	0.069441
+prefill_01	1	atom950p-037	_compress_kernel	1	1.0	0.00444
+prefill_01	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00216
+prefill_01	1	atom950p-040	_engram_hash_kernel	2	2.0	0.302882
+prefill_01	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.398322
+prefill_01	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00372
+prefill_01	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.05288
+prefill_01	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.556962
+prefill_01	1	atom950p-046	_indices	9	9.0	0.407004
+prefill_01	1	atom950p-047	_indptr_scan_all	1	1.0	0.01936
+prefill_01	1	atom950p-048	_lift_kernel	4	4.0	0.04304
+prefill_01	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.035761
+prefill_01	1	atom950p-050	KV/RoPE window	40	40.0	3.090496
+prefill_01	1	atom950p-051	_swa_write_kernel	40	40.0	0.179441
+prefill_01	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01812
+prefill_01	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.240646
+prefill_01	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.03076
+prefill_01	1	atom950p-076	linear/MXscale BMM	40	40.0	1.481927
+prefill_01	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.353814
+prefill_01	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.89134
+prefill_01	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.96549
+prefill_01	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.389802
+prefill_01	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.302362
+prefill_01	1	atom950p-087	MoE/Down	40	40.0	12.798107
+prefill_01	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.052401
+prefill_01	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.806286
+prefill_01	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.16088
+prefill_01	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.01552
+prefill_01	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.00596
+prefill_01	1	atom950p-105	MoE/GateUp	40	40.0	23.844295
+prefill_01	1	atom950p-109	MoE/reduction	40	40.0	4.275819
+prefill_01	1	atom950p-110	TP/RCCL	81	81.0	64.598672
+prefill_01	1	atom950p-111	index/FP4 scores	12	12.0	3.080978
+prefill_01	1	atom950p-112	quant/group32 FP8	122	122.0	2.142098
+prefill_01	1	atom950p-113	index/radix	1	1.0	0.0216
+prefill_01	1	atom950p-114	index/radix	8	8.0	0.634284
+prefill_01	1	atom950p-115	index/radix	4	4.0	0.447641
+prefill_01	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00752
+prefill_01	1	atom950p-121	AITER/HIP	40	40.0	0.362761
+prefill_01	1	atom950p-123	MoE/sort	40	40.0	0.176561
+prefill_01	1	atom950p-125	MoE/sort	40	40.0	0.168643
+prefill_01	1	atom950p-128	MoE/sort	40	40.0	0.16608
+prefill_01	1	atom950p-130	MoE/sort	40	40.0	0.668285
+prefill_01	1	atom950p-132	MoE/router	40	40.0	0.465964
+prefill_01	1	atom950p-134	PyTorch/ATen	1	1.0	0.00396
+prefill_01	1	atom950p-136	PyTorch/ATen	1	1.0	0.074441
+prefill_01	1	atom950p-137	PyTorch/ATen	1	1.0	0.277362
+prefill_01	1	atom950p-139	PyTorch/ATen	1	1.0	0.00868
+prefill_01	1	atom950p-140	PyTorch/ATen	1	1.0	0.00248
+prefill_01	1	atom950p-144	PyTorch/ATen	1	1.0	0.08928
+prefill_01	1	atom950p-147	PyTorch/ATen	40	40.0	1.547932
+prefill_02	1	atom950p-001	linear/Opus BF16	3	3.0	0.24516
+prefill_02	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.671538
+prefill_02	1	atom950p-004	attention/Opus main	40	40.0	17.027769
+prefill_02	1	atom950p-010	mHC/HIP Mega	40	40.0	8.253805
+prefill_02	1	atom950p-011	mHC/HIP Mega	3	3.0	0.619564
+prefill_02	1	atom950p-012	mHC/HIP Mega	37	37.0	8.235364
+prefill_02	1	atom950p-020	mHC/separate post	3	3.0	0.350363
+prefill_02	1	atom950p-021	TP/allgather	2	2.0	1.186166
+prefill_02	1	atom950p-022	FFN/act-and-mul	40	40.0	0.379162
+prefill_02	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.353286
+prefill_02	1	atom950p-029	quant/per-group	40	40.0	0.834644
+prefill_02	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.173801
+prefill_02	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.046921
+prefill_02	1	atom950p-034	_block_maxima_kernel	2	2.0	0.11276
+prefill_02	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02268
+prefill_02	1	atom950p-036	_collapse_kernel	1	1.0	0.07012
+prefill_02	1	atom950p-037	_compress_kernel	1	1.0	0.00476
+prefill_02	1	atom950p-038	cache/copy tiles	1	1.0	0.00508
+prefill_02	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00216
+prefill_02	1	atom950p-040	_engram_hash_kernel	2	2.0	0.287602
+prefill_02	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.397882
+prefill_02	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00368
+prefill_02	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.052882
+prefill_02	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.608362
+prefill_02	1	atom950p-046	_indices	9	9.0	0.476042
+prefill_02	1	atom950p-047	_indptr_scan_all	1	1.0	0.018922
+prefill_02	1	atom950p-048	_lift_kernel	4	4.0	0.06116
+prefill_02	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.0324
+prefill_02	1	atom950p-050	KV/RoPE window	40	40.0	3.113344
+prefill_02	1	atom950p-051	_swa_write_kernel	40	40.0	0.20536
+prefill_02	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01864
+prefill_02	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.388447
+prefill_02	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.03092
+prefill_02	1	atom950p-076	linear/MXscale BMM	40	40.0	1.480366
+prefill_02	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.338089
+prefill_02	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.943338
+prefill_02	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.93657
+prefill_02	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.390562
+prefill_02	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.289589
+prefill_02	1	atom950p-087	MoE/Down	40	40.0	12.680714
+prefill_02	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.05264
+prefill_02	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.813213
+prefill_02	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.158121
+prefill_02	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.0152
+prefill_02	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.0062
+prefill_02	1	atom950p-105	MoE/GateUp	40	40.0	23.652565
+prefill_02	1	atom950p-109	MoE/reduction	40	40.0	4.231743
+prefill_02	1	atom950p-110	TP/RCCL	81	81.0	64.706784
+prefill_02	1	atom950p-111	index/FP4 scores	13	13.0	3.862821
+prefill_02	1	atom950p-112	quant/group32 FP8	122	122.0	2.146692
+prefill_02	1	atom950p-113	index/radix	2	2.0	0.0252
+prefill_02	1	atom950p-114	index/radix	8	8.0	1.220607
+prefill_02	1	atom950p-115	index/radix	5	5.0	0.921087
+prefill_02	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00792
+prefill_02	1	atom950p-121	AITER/HIP	40	40.0	0.360562
+prefill_02	1	atom950p-123	MoE/sort	40	40.0	0.175562
+prefill_02	1	atom950p-125	MoE/sort	40	40.0	0.167841
+prefill_02	1	atom950p-128	MoE/sort	40	40.0	0.166122
+prefill_02	1	atom950p-130	MoE/sort	40	40.0	0.664042
+prefill_02	1	atom950p-132	MoE/router	40	40.0	0.466522
+prefill_02	1	atom950p-134	PyTorch/ATen	1	1.0	0.00416
+prefill_02	1	atom950p-136	PyTorch/ATen	1	1.0	0.088281
+prefill_02	1	atom950p-137	PyTorch/ATen	1	1.0	0.252682
+prefill_02	1	atom950p-142	PyTorch/ATen	2	2.0	0.00848
+prefill_02	1	atom950p-143	PyTorch/ATen	2	2.0	0.0086
+prefill_02	1	atom950p-144	PyTorch/ATen	1	1.0	0.11488
+prefill_02	1	atom950p-147	PyTorch/ATen	40	40.0	1.546408
+prefill_03	1	atom950p-001	linear/Opus BF16	3	3.0	0.243362
+prefill_03	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.552774
+prefill_03	1	atom950p-004	attention/Opus main	40	40.0	17.357934
+prefill_03	1	atom950p-010	mHC/HIP Mega	40	40.0	8.282166
+prefill_03	1	atom950p-011	mHC/HIP Mega	3	3.0	0.602403
+prefill_03	1	atom950p-012	mHC/HIP Mega	37	37.0	8.240164
+prefill_03	1	atom950p-020	mHC/separate post	3	3.0	0.357001
+prefill_03	1	atom950p-021	TP/allgather	2	2.0	0.984526
+prefill_03	1	atom950p-022	FFN/act-and-mul	40	40.0	0.376801
+prefill_03	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.299445
+prefill_03	1	atom950p-029	quant/per-group	40	40.0	0.833844
+prefill_03	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.176082
+prefill_03	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.044
+prefill_03	1	atom950p-034	_block_maxima_kernel	3	3.0	0.19236
+prefill_03	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02312
+prefill_03	1	atom950p-036	_collapse_kernel	1	1.0	0.06728
+prefill_03	1	atom950p-037	_compress_kernel	1	1.0	0.00472
+prefill_03	1	atom950p-038	cache/copy tiles	1	1.0	0.00528
+prefill_03	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00248
+prefill_03	1	atom950p-040	_engram_hash_kernel	2	2.0	0.261041
+prefill_03	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.395242
+prefill_03	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00376
+prefill_03	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.055601
+prefill_03	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.553803
+prefill_03	1	atom950p-046	_indices	9	9.0	0.434083
+prefill_03	1	atom950p-047	_indptr_scan_all	1	1.0	0.0414
+prefill_03	1	atom950p-048	_lift_kernel	4	4.0	0.06788
+prefill_03	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.03324
+prefill_03	1	atom950p-050	KV/RoPE window	40	40.0	3.155096
+prefill_03	1	atom950p-051	_swa_write_kernel	40	40.0	0.178003
+prefill_03	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01876
+prefill_03	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.299727
+prefill_03	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.03204
+prefill_03	1	atom950p-076	linear/MXscale BMM	40	40.0	1.477489
+prefill_03	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.367451
+prefill_03	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.882695
+prefill_03	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.923451
+prefill_03	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.390802
+prefill_03	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.419602
+prefill_03	1	atom950p-087	MoE/Down	40	40.0	12.631483
+prefill_03	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.055
+prefill_03	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.81561
+prefill_03	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.157881
+prefill_03	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.01552
+prefill_03	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.0064
+prefill_03	1	atom950p-105	MoE/GateUp	40	40.0	23.59722
+prefill_03	1	atom950p-109	MoE/reduction	40	40.0	4.217061
+prefill_03	1	atom950p-110	TP/RCCL	81	81.0	64.876313
+prefill_03	1	atom950p-111	index/FP4 scores	17	17.0	4.577388
+prefill_03	1	atom950p-112	quant/group32 FP8	122	122.0	2.121855
+prefill_03	1	atom950p-113	index/radix	3	3.0	0.127323
+prefill_03	1	atom950p-114	index/radix	8	8.0	1.461848
+prefill_03	1	atom950p-115	index/radix	9	9.0	1.229851
+prefill_03	1	atom950p-116	scatter_packed_bytes	2	2.0	0.01436
+prefill_03	1	atom950p-121	AITER/HIP	40	40.0	0.360883
+prefill_03	1	atom950p-123	MoE/sort	40	40.0	0.176081
+prefill_03	1	atom950p-125	MoE/sort	40	40.0	0.170082
+prefill_03	1	atom950p-128	MoE/sort	40	40.0	0.16464
+prefill_03	1	atom950p-130	MoE/sort	40	40.0	0.666484
+prefill_03	1	atom950p-132	MoE/router	40	40.0	0.465361
+prefill_03	1	atom950p-134	PyTorch/ATen	1	1.0	0.00444
+prefill_03	1	atom950p-136	PyTorch/ATen	1	1.0	0.02532
+prefill_03	1	atom950p-137	PyTorch/ATen	1	1.0	0.532243
+prefill_03	1	atom950p-142	PyTorch/ATen	9	9.0	0.03712
+prefill_03	1	atom950p-143	PyTorch/ATen	9	9.0	0.03744
+prefill_03	1	atom950p-144	PyTorch/ATen	1	1.0	0.0544
+prefill_03	1	atom950p-147	PyTorch/ATen	40	40.0	1.555288
+prefill_04	1	atom950p-001	linear/Opus BF16	3	3.0	0.242762
+prefill_04	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.620447
+prefill_04	1	atom950p-004	attention/Opus main	40	40.0	17.524614
+prefill_04	1	atom950p-010	mHC/HIP Mega	40	40.0	8.270165
+prefill_04	1	atom950p-011	mHC/HIP Mega	3	3.0	0.674244
+prefill_04	1	atom950p-012	mHC/HIP Mega	37	37.0	8.220322
+prefill_04	1	atom950p-020	mHC/separate post	3	3.0	0.352523
+prefill_04	1	atom950p-021	TP/allgather	2	2.0	1.078846
+prefill_04	1	atom950p-022	FFN/act-and-mul	40	40.0	0.379934
+prefill_04	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.364889
+prefill_04	1	atom950p-029	quant/per-group	40	40.0	0.838199
+prefill_04	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.173562
+prefill_04	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.04304
+prefill_04	1	atom950p-034	_block_maxima_kernel	4	4.0	0.304722
+prefill_04	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02344
+prefill_04	1	atom950p-036	_collapse_kernel	1	1.0	0.07604
+prefill_04	1	atom950p-037	_compress_kernel	1	1.0	0.00472
+prefill_04	1	atom950p-038	cache/copy tiles	1	1.0	0.00504
+prefill_04	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00252
+prefill_04	1	atom950p-040	_engram_hash_kernel	2	2.0	0.275961
+prefill_04	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.398842
+prefill_04	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.0036
+prefill_04	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.053321
+prefill_04	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.553447
+prefill_04	1	atom950p-046	_indices	9	9.0	0.418024
+prefill_04	1	atom950p-047	_indptr_scan_all	1	1.0	0.019161
+prefill_04	1	atom950p-048	_lift_kernel	4	4.0	0.066401
+prefill_04	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.03256
+prefill_04	1	atom950p-050	KV/RoPE window	40	40.0	3.200832
+prefill_04	1	atom950p-051	_swa_write_kernel	40	40.0	0.189721
+prefill_04	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01828
+prefill_04	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.324967
+prefill_04	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.0316
+prefill_04	1	atom950p-076	linear/MXscale BMM	40	40.0	1.47789
+prefill_04	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.358545
+prefill_04	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.893596
+prefill_04	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.941611
+prefill_04	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.391163
+prefill_04	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.125101
+prefill_04	1	atom950p-087	MoE/Down	40	40.0	12.621751
+prefill_04	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.05296
+prefill_04	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.81563
+prefill_04	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.159801
+prefill_04	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.01536
+prefill_04	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.00612
+prefill_04	1	atom950p-105	MoE/GateUp	40	40.0	23.684335
+prefill_04	1	atom950p-109	MoE/reduction	40	40.0	4.256817
+prefill_04	1	atom950p-110	TP/RCCL	81	81.0	64.381831
+prefill_04	1	atom950p-111	index/FP4 scores	18	18.0	5.341788
+prefill_04	1	atom950p-112	quant/group32 FP8	122	122.0	2.121211
+prefill_04	1	atom950p-113	index/radix	4	4.0	0.15308
+prefill_04	1	atom950p-114	index/radix	8	8.0	1.461487
+prefill_04	1	atom950p-115	index/radix	10	10.0	1.615131
+prefill_04	1	atom950p-116	scatter_packed_bytes	2	2.0	0.0084
+prefill_04	1	atom950p-121	AITER/HIP	40	40.0	0.359385
+prefill_04	1	atom950p-123	MoE/sort	40	40.0	0.17793
+prefill_04	1	atom950p-125	MoE/sort	40	40.0	0.16951
+prefill_04	1	atom950p-128	MoE/sort	40	40.0	0.166709
+prefill_04	1	atom950p-130	MoE/sort	40	40.0	0.669213
+prefill_04	1	atom950p-132	MoE/router	40	40.0	0.463872
+prefill_04	1	atom950p-134	PyTorch/ATen	1	1.0	0.0042
+prefill_04	1	atom950p-136	PyTorch/ATen	1	1.0	0.0524
+prefill_04	1	atom950p-137	PyTorch/ATen	1	1.0	0.399682
+prefill_04	1	atom950p-142	PyTorch/ATen	10	10.0	0.039633
+prefill_04	1	atom950p-143	PyTorch/ATen	10	10.0	0.040953
+prefill_04	1	atom950p-144	PyTorch/ATen	1	1.0	0.07312
+prefill_04	1	atom950p-147	PyTorch/ATen	40	40.0	1.54605
+prefill_05	1	atom950p-001	linear/Opus BF16	3	3.0	0.246481
+prefill_05	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.570097
+prefill_05	1	atom950p-004	attention/Opus main	40	40.0	17.705934
+prefill_05	1	atom950p-010	mHC/HIP Mega	40	40.0	8.284205
+prefill_05	1	atom950p-011	mHC/HIP Mega	3	3.0	0.672244
+prefill_05	1	atom950p-012	mHC/HIP Mega	37	37.0	8.220325
+prefill_05	1	atom950p-020	mHC/separate post	3	3.0	0.355442
+prefill_05	1	atom950p-021	TP/allgather	2	2.0	1.136926
+prefill_05	1	atom950p-022	FFN/act-and-mul	40	40.0	0.381641
+prefill_05	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.311247
+prefill_05	1	atom950p-029	quant/per-group	40	40.0	0.831567
+prefill_05	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.172721
+prefill_05	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.0414
+prefill_05	1	atom950p-034	_block_maxima_kernel	5	5.0	0.349682
+prefill_05	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02324
+prefill_05	1	atom950p-036	_collapse_kernel	1	1.0	0.06932
+prefill_05	1	atom950p-037	_compress_kernel	1	1.0	0.00468
+prefill_05	1	atom950p-038	cache/copy tiles	1	1.0	0.00508
+prefill_05	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00244
+prefill_05	1	atom950p-040	_engram_hash_kernel	2	2.0	0.288442
+prefill_05	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.401002
+prefill_05	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00352
+prefill_05	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.05236
+prefill_05	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.612042
+prefill_05	1	atom950p-046	_indices	9	9.0	0.410363
+prefill_05	1	atom950p-047	_indptr_scan_all	1	1.0	0.01856
+prefill_05	1	atom950p-048	_lift_kernel	4	4.0	0.068921
+prefill_05	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.033161
+prefill_05	1	atom950p-050	KV/RoPE window	40	40.0	3.51042
+prefill_05	1	atom950p-051	_swa_write_kernel	40	40.0	0.198201
+prefill_05	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.02008
+prefill_05	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.188446
+prefill_05	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.03096
+prefill_05	1	atom950p-076	linear/MXscale BMM	40	40.0	1.483453
+prefill_05	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.359572
+prefill_05	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.940175
+prefill_05	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.94977
+prefill_05	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.385962
+prefill_05	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	6.924274
+prefill_05	1	atom950p-087	MoE/Down	40	40.0	12.58019
+prefill_05	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.053481
+prefill_05	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.82729
+prefill_05	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.164121
+prefill_05	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.01436
+prefill_05	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.00632
+prefill_05	1	atom950p-105	MoE/GateUp	40	40.0	23.58497
+prefill_05	1	atom950p-109	MoE/reduction	40	40.0	4.284541
+prefill_05	1	atom950p-110	TP/RCCL	81	81.0	64.460596
+prefill_05	1	atom950p-111	index/FP4 scores	22	22.0	5.590469
+prefill_05	1	atom950p-112	quant/group32 FP8	122	122.0	2.122486
+prefill_05	1	atom950p-113	index/radix	5	5.0	0.22312
+prefill_05	1	atom950p-114	index/radix	8	8.0	1.457649
+prefill_05	1	atom950p-115	index/radix	14	14.0	1.58085
+prefill_05	1	atom950p-116	scatter_packed_bytes	2	2.0	0.01012
+prefill_05	1	atom950p-121	AITER/HIP	40	40.0	0.362681
+prefill_05	1	atom950p-123	MoE/sort	40	40.0	0.17872
+prefill_05	1	atom950p-125	MoE/sort	40	40.0	0.169802
+prefill_05	1	atom950p-128	MoE/sort	40	40.0	0.168161
+prefill_05	1	atom950p-130	MoE/sort	40	40.0	0.668041
+prefill_05	1	atom950p-132	MoE/router	40	40.0	0.464561
+prefill_05	1	atom950p-134	PyTorch/ATen	1	1.0	0.00412
+prefill_05	1	atom950p-136	PyTorch/ATen	1	1.0	0.06776
+prefill_05	1	atom950p-137	PyTorch/ATen	1	1.0	0.251001
+prefill_05	1	atom950p-142	PyTorch/ATen	14	14.0	0.0558
+prefill_05	1	atom950p-143	PyTorch/ATen	14	14.0	0.05708
+prefill_05	1	atom950p-144	PyTorch/ATen	1	1.0	0.094201
+prefill_05	1	atom950p-147	PyTorch/ATen	40	40.0	1.549567
+prefill_06	1	atom950p-001	linear/Opus BF16	3	3.0	0.243083
+prefill_06	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.576013
+prefill_06	1	atom950p-004	attention/Opus main	40	40.0	17.697612
+prefill_06	1	atom950p-010	mHC/HIP Mega	40	40.0	8.287288
+prefill_06	1	atom950p-011	mHC/HIP Mega	3	3.0	0.681885
+prefill_06	1	atom950p-012	mHC/HIP Mega	37	37.0	8.220325
+prefill_06	1	atom950p-020	mHC/separate post	3	3.0	0.355562
+prefill_06	1	atom950p-021	TP/allgather	2	2.0	1.150207
+prefill_06	1	atom950p-022	FFN/act-and-mul	40	40.0	0.378
+prefill_06	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.387573
+prefill_06	1	atom950p-029	quant/per-group	40	40.0	0.833124
+prefill_06	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.175921
+prefill_06	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.04644
+prefill_06	1	atom950p-034	_block_maxima_kernel	6	6.0	0.436723
+prefill_06	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02244
+prefill_06	1	atom950p-036	_collapse_kernel	1	1.0	0.0772
+prefill_06	1	atom950p-037	_compress_kernel	1	1.0	0.00492
+prefill_06	1	atom950p-038	cache/copy tiles	1	1.0	0.00504
+prefill_06	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00236
+prefill_06	1	atom950p-040	_engram_hash_kernel	2	2.0	0.269602
+prefill_06	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.400522
+prefill_06	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00368
+prefill_06	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.0524
+prefill_06	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.59648
+prefill_06	1	atom950p-046	_indices	9	9.0	0.414042
+prefill_06	1	atom950p-047	_indptr_scan_all	1	1.0	0.117921
+prefill_06	1	atom950p-048	_lift_kernel	4	4.0	0.06888
+prefill_06	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.03252
+prefill_06	1	atom950p-050	KV/RoPE window	40	40.0	3.576624
+prefill_06	1	atom950p-051	_swa_write_kernel	40	40.0	0.1942
+prefill_06	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.0194
+prefill_06	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.220766
+prefill_06	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.0314
+prefill_06	1	atom950p-076	linear/MXscale BMM	40	40.0	1.478733
+prefill_06	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.332571
+prefill_06	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.788775
+prefill_06	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.94589
+prefill_06	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.392645
+prefill_06	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	6.906431
+prefill_06	1	atom950p-087	MoE/Down	40	40.0	12.629912
+prefill_06	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.054281
+prefill_06	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.809889
+prefill_06	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.159082
+prefill_06	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.01512
+prefill_06	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.00632
+prefill_06	1	atom950p-105	MoE/GateUp	40	40.0	23.583246
+prefill_06	1	atom950p-109	MoE/reduction	40	40.0	4.237106
+prefill_06	1	atom950p-110	TP/RCCL	81	81.0	64.624333
+prefill_06	1	atom950p-111	index/FP4 scores	23	23.0	6.340793
+prefill_06	1	atom950p-112	quant/group32 FP8	122	122.0	2.11881
+prefill_06	1	atom950p-113	index/radix	6	6.0	0.241081
+prefill_06	1	atom950p-114	index/radix	8	8.0	1.454728
+prefill_06	1	atom950p-115	index/radix	15	15.0	1.878211
+prefill_06	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00732
+prefill_06	1	atom950p-121	AITER/HIP	40	40.0	0.359841
+prefill_06	1	atom950p-123	MoE/sort	40	40.0	0.17636
+prefill_06	1	atom950p-125	MoE/sort	40	40.0	0.17188
+prefill_06	1	atom950p-128	MoE/sort	40	40.0	0.165602
+prefill_06	1	atom950p-130	MoE/sort	40	40.0	0.670403
+prefill_06	1	atom950p-132	MoE/router	40	40.0	0.463244
+prefill_06	1	atom950p-134	PyTorch/ATen	1	1.0	0.00404
+prefill_06	1	atom950p-136	PyTorch/ATen	1	1.0	0.0944
+prefill_06	1	atom950p-137	PyTorch/ATen	1	1.0	0.247162
+prefill_06	1	atom950p-142	PyTorch/ATen	15	15.0	0.06116
+prefill_06	1	atom950p-143	PyTorch/ATen	15	15.0	0.06368
+prefill_06	1	atom950p-144	PyTorch/ATen	1	1.0	0.04344
+prefill_06	1	atom950p-147	PyTorch/ATen	40	40.0	1.55039
+prefill_07	1	atom950p-001	linear/Opus BF16	3	3.0	0.24448
+prefill_07	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.566882
+prefill_07	1	atom950p-004	attention/Opus main	40	40.0	17.830109
+prefill_07	1	atom950p-010	mHC/HIP Mega	40	40.0	8.290207
+prefill_07	1	atom950p-011	mHC/HIP Mega	3	3.0	0.586964
+prefill_07	1	atom950p-012	mHC/HIP Mega	37	37.0	8.228809
+prefill_07	1	atom950p-020	mHC/separate post	3	3.0	0.357202
+prefill_07	1	atom950p-021	TP/allgather	2	2.0	0.984606
+prefill_07	1	atom950p-022	FFN/act-and-mul	40	40.0	0.380042
+prefill_07	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.302456
+prefill_07	1	atom950p-029	quant/per-group	40	40.0	0.832883
+prefill_07	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.178962
+prefill_07	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.03512
+prefill_07	1	atom950p-034	_block_maxima_kernel	7	7.0	0.563644
+prefill_07	1	atom950p-035	_candidate_table_kernel	1	1.0	0.0236
+prefill_07	1	atom950p-036	_collapse_kernel	1	1.0	0.0762
+prefill_07	1	atom950p-037	_compress_kernel	1	1.0	0.00476
+prefill_07	1	atom950p-038	cache/copy tiles	1	1.0	0.00512
+prefill_07	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00236
+prefill_07	1	atom950p-040	_engram_hash_kernel	2	2.0	0.292401
+prefill_07	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.398042
+prefill_07	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00356
+prefill_07	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.052401
+prefill_07	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.551474
+prefill_07	1	atom950p-046	_indices	9	9.0	0.41209
+prefill_07	1	atom950p-047	_indptr_scan_all	1	1.0	0.07136
+prefill_07	1	atom950p-048	_lift_kernel	4	4.0	0.06828
+prefill_07	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.03172
+prefill_07	1	atom950p-050	KV/RoPE window	40	40.0	3.110809
+prefill_07	1	atom950p-051	_swa_write_kernel	40	40.0	0.179682
+prefill_07	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.0198
+prefill_07	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.320647
+prefill_07	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.030841
+prefill_07	1	atom950p-076	linear/MXscale BMM	40	40.0	1.480175
+prefill_07	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.350571
+prefill_07	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.966925
+prefill_07	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.93153
+prefill_07	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.398161
+prefill_07	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.188123
+prefill_07	1	atom950p-087	MoE/Down	40	40.0	12.55703
+prefill_07	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.0526
+prefill_07	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.804571
+prefill_07	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.159801
+prefill_07	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.015
+prefill_07	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.006
+prefill_07	1	atom950p-105	MoE/GateUp	40	40.0	23.608571
+prefill_07	1	atom950p-109	MoE/reduction	40	40.0	4.228352
+prefill_07	1	atom950p-110	TP/RCCL	81	81.0	64.307594
+prefill_07	1	atom950p-111	index/FP4 scores	27	27.0	7.596667
+prefill_07	1	atom950p-112	quant/group32 FP8	122	122.0	2.131792
+prefill_07	1	atom950p-113	index/radix	7	7.0	0.261041
+prefill_07	1	atom950p-114	index/radix	8	8.0	1.451115
+prefill_07	1	atom950p-115	index/radix	19	19.0	2.161491
+prefill_07	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00836
+prefill_07	1	atom950p-121	AITER/HIP	40	40.0	0.360283
+prefill_07	1	atom950p-123	MoE/sort	40	40.0	0.174838
+prefill_07	1	atom950p-125	MoE/sort	40	40.0	0.169517
+prefill_07	1	atom950p-128	MoE/sort	40	40.0	0.162194
+prefill_07	1	atom950p-130	MoE/sort	40	40.0	0.669318
+prefill_07	1	atom950p-132	MoE/router	40	40.0	0.464633
+prefill_07	1	atom950p-134	PyTorch/ATen	1	1.0	0.004
+prefill_07	1	atom950p-136	PyTorch/ATen	1	1.0	0.06236
+prefill_07	1	atom950p-137	PyTorch/ATen	1	1.0	0.412362
+prefill_07	1	atom950p-142	PyTorch/ATen	19	19.0	0.077361
+prefill_07	1	atom950p-143	PyTorch/ATen	19	19.0	0.079761
+prefill_07	1	atom950p-144	PyTorch/ATen	1	1.0	0.06104
+prefill_07	1	atom950p-147	PyTorch/ATen	40	40.0	1.558405
+prefill_08	1	atom950p-001	linear/Opus BF16	3	3.0	0.243801
+prefill_08	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.551573
+prefill_08	1	atom950p-004	attention/Opus main	40	40.0	17.882616
+prefill_08	1	atom950p-010	mHC/HIP Mega	40	40.0	8.293643
+prefill_08	1	atom950p-011	mHC/HIP Mega	3	3.0	0.573883
+prefill_08	1	atom950p-012	mHC/HIP Mega	37	37.0	8.263725
+prefill_08	1	atom950p-020	mHC/separate post	3	3.0	0.356682
+prefill_08	1	atom950p-021	TP/allgather	2	2.0	1.003726
+prefill_08	1	atom950p-022	FFN/act-and-mul	40	40.0	0.379161
+prefill_08	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.306008
+prefill_08	1	atom950p-029	quant/per-group	40	40.0	0.835162
+prefill_08	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.174601
+prefill_08	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.03696
+prefill_08	1	atom950p-034	_block_maxima_kernel	8	8.0	0.712486
+prefill_08	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02416
+prefill_08	1	atom950p-036	_collapse_kernel	1	1.0	0.0762
+prefill_08	1	atom950p-037	_compress_kernel	1	1.0	0.00476
+prefill_08	1	atom950p-038	cache/copy tiles	1	1.0	0.00512
+prefill_08	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00204
+prefill_08	1	atom950p-040	_engram_hash_kernel	2	2.0	0.276282
+prefill_08	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.401122
+prefill_08	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00372
+prefill_08	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.0526
+prefill_08	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.555883
+prefill_08	1	atom950p-046	_indices	9	9.0	0.412203
+prefill_08	1	atom950p-047	_indptr_scan_all	1	1.0	0.01828
+prefill_08	1	atom950p-048	_lift_kernel	4	4.0	0.06628
+prefill_08	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.0336
+prefill_08	1	atom950p-050	KV/RoPE window	40	40.0	3.052536
+prefill_08	1	atom950p-051	_swa_write_kernel	40	40.0	0.178601
+prefill_08	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01816
+prefill_08	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.293607
+prefill_08	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.0308
+prefill_08	1	atom950p-076	linear/MXscale BMM	40	40.0	1.47901
+prefill_08	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.356653
+prefill_08	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.985777
+prefill_08	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.931691
+prefill_08	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.390361
+prefill_08	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.318599
+prefill_08	1	atom950p-087	MoE/Down	40	40.0	12.662744
+prefill_08	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.05472
+prefill_08	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.824169
+prefill_08	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.155242
+prefill_08	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.0144
+prefill_08	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.0062
+prefill_08	1	atom950p-105	MoE/GateUp	40	40.0	23.648721
+prefill_08	1	atom950p-109	MoE/reduction	40	40.0	4.24522
+prefill_08	1	atom950p-110	TP/RCCL	81	81.0	64.637998
+prefill_08	1	atom950p-111	index/FP4 scores	28	28.0	8.939406
+prefill_08	1	atom950p-112	quant/group32 FP8	122	122.0	2.12445
+prefill_08	1	atom950p-113	index/radix	8	8.0	0.28772
+prefill_08	1	atom950p-114	index/radix	8	8.0	1.460128
+prefill_08	1	atom950p-115	index/radix	20	20.0	2.557655
+prefill_08	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00844
+prefill_08	1	atom950p-121	AITER/HIP	40	40.0	0.363123
+prefill_08	1	atom950p-123	MoE/sort	40	40.0	0.175962
+prefill_08	1	atom950p-125	MoE/sort	40	40.0	0.1702
+prefill_08	1	atom950p-128	MoE/sort	40	40.0	0.166922
+prefill_08	1	atom950p-130	MoE/sort	40	40.0	0.670525
+prefill_08	1	atom950p-132	MoE/router	40	40.0	0.464682
+prefill_08	1	atom950p-134	PyTorch/ATen	1	1.0	0.00412
+prefill_08	1	atom950p-136	PyTorch/ATen	1	1.0	0.09592
+prefill_08	1	atom950p-137	PyTorch/ATen	1	1.0	0.377002
+prefill_08	1	atom950p-142	PyTorch/ATen	20	20.0	0.08092
+prefill_08	1	atom950p-143	PyTorch/ATen	20	20.0	0.079721
+prefill_08	1	atom950p-144	PyTorch/ATen	1	1.0	0.061921
+prefill_08	1	atom950p-147	PyTorch/ATen	40	40.0	1.550208
+prefill_09	1	atom950p-001	linear/Opus BF16	3	3.0	0.244882
+prefill_09	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.612051
+prefill_09	1	atom950p-004	attention/Opus main	40	40.0	17.805382
+prefill_09	1	atom950p-010	mHC/HIP Mega	40	40.0	8.297763
+prefill_09	1	atom950p-011	mHC/HIP Mega	3	3.0	0.555841
+prefill_09	1	atom950p-012	mHC/HIP Mega	37	37.0	8.247643
+prefill_09	1	atom950p-020	mHC/separate post	3	3.0	0.356642
+prefill_09	1	atom950p-021	TP/allgather	2	2.0	0.997446
+prefill_09	1	atom950p-022	FFN/act-and-mul	40	40.0	0.377562
+prefill_09	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.368245
+prefill_09	1	atom950p-029	quant/per-group	40	40.0	0.832885
+prefill_09	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.17384
+prefill_09	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.04764
+prefill_09	1	atom950p-034	_block_maxima_kernel	9	9.0	0.701323
+prefill_09	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02288
+prefill_09	1	atom950p-036	_collapse_kernel	1	1.0	0.069161
+prefill_09	1	atom950p-037	_compress_kernel	1	1.0	0.00476
+prefill_09	1	atom950p-038	cache/copy tiles	1	1.0	0.0052
+prefill_09	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00232
+prefill_09	1	atom950p-040	_engram_hash_kernel	2	2.0	0.291601
+prefill_09	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.400803
+prefill_09	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00356
+prefill_09	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.05112
+prefill_09	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.556244
+prefill_09	1	atom950p-046	_indices	9	9.0	0.414601
+prefill_09	1	atom950p-047	_indptr_scan_all	1	1.0	0.0176
+prefill_09	1	atom950p-048	_lift_kernel	4	4.0	0.06808
+prefill_09	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.0318
+prefill_09	1	atom950p-050	KV/RoPE window	40	40.0	3.182414
+prefill_09	1	atom950p-051	_swa_write_kernel	40	40.0	0.202001
+prefill_09	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01792
+prefill_09	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.321247
+prefill_09	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.02992
+prefill_09	1	atom950p-076	linear/MXscale BMM	40	40.0	1.483638
+prefill_09	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.358176
+prefill_09	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.968696
+prefill_09	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.945091
+prefill_09	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.388642
+prefill_09	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.199166
+prefill_09	1	atom950p-087	MoE/Down	40	40.0	12.483588
+prefill_09	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.05348
+prefill_09	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.829076
+prefill_09	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.158842
+prefill_09	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.0146
+prefill_09	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.00612
+prefill_09	1	atom950p-105	MoE/GateUp	40	40.0	23.570046
+prefill_09	1	atom950p-109	MoE/reduction	40	40.0	4.217261
+prefill_09	1	atom950p-110	TP/RCCL	81	81.0	64.767993
+prefill_09	1	atom950p-111	index/FP4 scores	32	32.0	8.788328
+prefill_09	1	atom950p-112	quant/group32 FP8	122	122.0	2.125292
+prefill_09	1	atom950p-113	index/radix	8	8.0	0.315682
+prefill_09	1	atom950p-114	index/radix	8	8.0	1.452929
+prefill_09	1	atom950p-115	index/radix	24	24.0	2.071931
+prefill_09	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00952
+prefill_09	1	atom950p-119	index/block2048	1	1.0	0.016
+prefill_09	1	atom950p-121	AITER/HIP	40	40.0	0.360204
+prefill_09	1	atom950p-123	MoE/sort	40	40.0	0.17575
+prefill_09	1	atom950p-125	MoE/sort	40	40.0	0.171713
+prefill_09	1	atom950p-128	MoE/sort	40	40.0	0.1642
+prefill_09	1	atom950p-130	MoE/sort	40	40.0	0.669565
+prefill_09	1	atom950p-132	MoE/router	40	40.0	0.464602
+prefill_09	1	atom950p-134	PyTorch/ATen	1	1.0	0.0042
+prefill_09	1	atom950p-136	PyTorch/ATen	1	1.0	0.094481
+prefill_09	1	atom950p-137	PyTorch/ATen	1	1.0	0.292561
+prefill_09	1	atom950p-142	PyTorch/ATen	24	24.0	0.09428
+prefill_09	1	atom950p-143	PyTorch/ATen	24	24.0	0.096081
+prefill_09	1	atom950p-144	PyTorch/ATen	1	1.0	0.163681
+prefill_09	1	atom950p-147	PyTorch/ATen	40	40.0	1.556648
+prefill_10	1	atom950p-001	linear/Opus BF16	3	3.0	0.248601
+prefill_10	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.636576
+prefill_10	1	atom950p-004	attention/Opus main	40	40.0	17.95558
+prefill_10	1	atom950p-010	mHC/HIP Mega	40	40.0	8.254085
+prefill_10	1	atom950p-011	mHC/HIP Mega	3	3.0	0.606804
+prefill_10	1	atom950p-012	mHC/HIP Mega	37	37.0	8.211187
+prefill_10	1	atom950p-020	mHC/separate post	3	3.0	0.351202
+prefill_10	1	atom950p-021	TP/allgather	2	2.0	1.018286
+prefill_10	1	atom950p-022	FFN/act-and-mul	40	40.0	0.378323
+prefill_10	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.379326
+prefill_10	1	atom950p-029	quant/per-group	40	40.0	0.835123
+prefill_10	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.173522
+prefill_10	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.047921
+prefill_10	1	atom950p-034	_block_maxima_kernel	10	10.0	0.713724
+prefill_10	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02368
+prefill_10	1	atom950p-036	_collapse_kernel	1	1.0	0.07132
+prefill_10	1	atom950p-037	_compress_kernel	1	1.0	0.0048
+prefill_10	1	atom950p-038	cache/copy tiles	1	1.0	0.00496
+prefill_10	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00204
+prefill_10	1	atom950p-040	_engram_hash_kernel	2	2.0	0.280602
+prefill_10	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.399442
+prefill_10	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00364
+prefill_10	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.05336
+prefill_10	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.580684
+prefill_10	1	atom950p-046	_indices	9	9.0	0.418361
+prefill_10	1	atom950p-047	_indptr_scan_all	1	1.0	0.01964
+prefill_10	1	atom950p-048	_lift_kernel	4	4.0	0.0682
+prefill_10	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.03208
+prefill_10	1	atom950p-050	KV/RoPE window	40	40.0	3.182579
+prefill_10	1	atom950p-051	_swa_write_kernel	40	40.0	0.202401
+prefill_10	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01852
+prefill_10	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.279046
+prefill_10	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.03184
+prefill_10	1	atom950p-076	linear/MXscale BMM	40	40.0	1.481965
+prefill_10	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.357616
+prefill_10	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.982578
+prefill_10	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.93381
+prefill_10	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.391002
+prefill_10	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.153595
+prefill_10	1	atom950p-087	MoE/Down	40	40.0	12.476834
+prefill_10	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.053801
+prefill_10	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.822768
+prefill_10	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.156761
+prefill_10	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.01512
+prefill_10	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.00616
+prefill_10	1	atom950p-105	MoE/GateUp	40	40.0	23.576285
+prefill_10	1	atom950p-109	MoE/reduction	40	40.0	4.234656
+prefill_10	1	atom950p-110	TP/RCCL	81	81.0	64.727089
+prefill_10	1	atom950p-111	index/FP4 scores	33	33.0	8.220164
+prefill_10	1	atom950p-112	quant/group32 FP8	122	122.0	2.115571
+prefill_10	1	atom950p-113	index/radix	9	9.0	0.340083
+prefill_10	1	atom950p-114	index/radix	8	8.0	1.452848
+prefill_10	1	atom950p-115	index/radix	25	25.0	2.308292
+prefill_10	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00832
+prefill_10	1	atom950p-119	index/block2048	1	1.0	0.01588
+prefill_10	1	atom950p-121	AITER/HIP	40	40.0	0.361082
+prefill_10	1	atom950p-123	MoE/sort	40	40.0	0.17864
+prefill_10	1	atom950p-125	MoE/sort	40	40.0	0.170841
+prefill_10	1	atom950p-128	MoE/sort	40	40.0	0.16604
+prefill_10	1	atom950p-130	MoE/sort	40	40.0	0.671768
+prefill_10	1	atom950p-132	MoE/router	40	40.0	0.466926
+prefill_10	1	atom950p-134	PyTorch/ATen	1	1.0	0.00416
+prefill_10	1	atom950p-136	PyTorch/ATen	1	1.0	0.092441
+prefill_10	1	atom950p-137	PyTorch/ATen	1	1.0	0.277082
+prefill_10	1	atom950p-142	PyTorch/ATen	25	25.0	0.100081
+prefill_10	1	atom950p-143	PyTorch/ATen	25	25.0	0.10184
+prefill_10	1	atom950p-144	PyTorch/ATen	1	1.0	0.09792
+prefill_10	1	atom950p-147	PyTorch/ATen	40	40.0	1.556174
+prefill_11	1	atom950p-001	linear/Opus BF16	3	3.0	0.242882
+prefill_11	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.586253
+prefill_11	1	atom950p-004	attention/Opus main	40	40.0	18.006259
+prefill_11	1	atom950p-010	mHC/HIP Mega	40	40.0	8.262967
+prefill_11	1	atom950p-011	mHC/HIP Mega	3	3.0	0.582363
+prefill_11	1	atom950p-012	mHC/HIP Mega	37	37.0	8.189327
+prefill_11	1	atom950p-020	mHC/separate post	3	3.0	0.351923
+prefill_11	1	atom950p-021	TP/allgather	2	2.0	1.025925
+prefill_11	1	atom950p-022	FFN/act-and-mul	40	40.0	0.379482
+prefill_11	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.361567
+prefill_11	1	atom950p-029	quant/per-group	40	40.0	0.834526
+prefill_11	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.175922
+prefill_11	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.04928
+prefill_11	1	atom950p-034	_block_maxima_kernel	11	11.0	0.838004
+prefill_11	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02428
+prefill_11	1	atom950p-036	_collapse_kernel	1	1.0	0.07072
+prefill_11	1	atom950p-037	_compress_kernel	1	1.0	0.00472
+prefill_11	1	atom950p-038	cache/copy tiles	1	1.0	0.00504
+prefill_11	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00224
+prefill_11	1	atom950p-040	_engram_hash_kernel	2	2.0	0.294922
+prefill_11	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.406282
+prefill_11	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.0036
+prefill_11	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.05224
+prefill_11	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.554761
+prefill_11	1	atom950p-046	_indices	9	9.0	0.428043
+prefill_11	1	atom950p-047	_indptr_scan_all	1	1.0	0.01848
+prefill_11	1	atom950p-048	_lift_kernel	4	4.0	0.06684
+prefill_11	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.03208
+prefill_11	1	atom950p-050	KV/RoPE window	40	40.0	3.147573
+prefill_11	1	atom950p-051	_swa_write_kernel	40	40.0	0.20236
+prefill_11	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01836
+prefill_11	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.254727
+prefill_11	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.03108
+prefill_11	1	atom950p-076	linear/MXscale BMM	40	40.0	1.478568
+prefill_11	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.360054
+prefill_11	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.978414
+prefill_11	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.935651
+prefill_11	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.393282
+prefill_11	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.106688
+prefill_11	1	atom950p-087	MoE/Down	40	40.0	12.653707
+prefill_11	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.05432
+prefill_11	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.82369
+prefill_11	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.15788
+prefill_11	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.01424
+prefill_11	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.00648
+prefill_11	1	atom950p-105	MoE/GateUp	40	40.0	23.582529
+prefill_11	1	atom950p-109	MoE/reduction	40	40.0	4.305662
+prefill_11	1	atom950p-110	TP/RCCL	81	81.0	64.725991
+prefill_11	1	atom950p-111	index/FP4 scores	37	37.0	9.181051
+prefill_11	1	atom950p-112	quant/group32 FP8	122	122.0	2.114287
+prefill_11	1	atom950p-113	index/radix	10	10.0	0.380883
+prefill_11	1	atom950p-114	index/radix	8	8.0	1.441168
+prefill_11	1	atom950p-115	index/radix	29	29.0	2.683052
+prefill_11	1	atom950p-116	scatter_packed_bytes	2	2.0	0.008641
+prefill_11	1	atom950p-119	index/block2048	1	1.0	0.01616
+prefill_11	1	atom950p-121	AITER/HIP	40	40.0	0.360841
+prefill_11	1	atom950p-123	MoE/sort	40	40.0	0.177242
+prefill_11	1	atom950p-125	MoE/sort	40	40.0	0.16952
+prefill_11	1	atom950p-128	MoE/sort	40	40.0	0.16692
+prefill_11	1	atom950p-130	MoE/sort	40	40.0	0.665848
+prefill_11	1	atom950p-132	MoE/router	40	40.0	0.465761
+prefill_11	1	atom950p-134	PyTorch/ATen	1	1.0	0.00412
+prefill_11	1	atom950p-136	PyTorch/ATen	1	1.0	0.089281
+prefill_11	1	atom950p-137	PyTorch/ATen	1	1.0	0.305162
+prefill_11	1	atom950p-142	PyTorch/ATen	29	29.0	0.118241
+prefill_11	1	atom950p-143	PyTorch/ATen	29	29.0	0.11964
+prefill_11	1	atom950p-144	PyTorch/ATen	1	1.0	0.10224
+prefill_11	1	atom950p-147	PyTorch/ATen	40	40.0	1.550406
+prefill_12	1	atom950p-001	linear/Opus BF16	3	3.0	0.244123
+prefill_12	1	atom950p-003	linear/Opus MXFP8	40	40.0	2.574574
+prefill_12	1	atom950p-004	attention/Opus main	40	40.0	18.095649
+prefill_12	1	atom950p-010	mHC/HIP Mega	40	40.0	8.273604
+prefill_12	1	atom950p-011	mHC/HIP Mega	3	3.0	0.660802
+prefill_12	1	atom950p-012	mHC/HIP Mega	37	37.0	8.211083
+prefill_12	1	atom950p-020	mHC/separate post	3	3.0	0.362002
+prefill_12	1	atom950p-021	TP/allgather	2	2.0	0.988246
+prefill_12	1	atom950p-022	FFN/act-and-mul	40	40.0	0.380042
+prefill_12	1	atom950p-028	output/inverse RoPE+quant	40	40.0	1.374207
+prefill_12	1	atom950p-029	quant/per-group	40	40.0	0.831968
+prefill_12	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.175842
+prefill_12	1	atom950p-033	__amd_rocclr_copyBuffer	4	4.0	0.04628
+prefill_12	1	atom950p-034	_block_maxima_kernel	11	11.0	0.953405
+prefill_12	1	atom950p-035	_candidate_table_kernel	1	1.0	0.02332
+prefill_12	1	atom950p-036	_collapse_kernel	1	1.0	0.074441
+prefill_12	1	atom950p-037	_compress_kernel	1	1.0	0.00476
+prefill_12	1	atom950p-038	cache/copy tiles	1	1.0	0.00504
+prefill_12	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.002
+prefill_12	1	atom950p-040	_engram_hash_kernel	2	2.0	0.285681
+prefill_12	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.404243
+prefill_12	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.0036
+prefill_12	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.05356
+prefill_12	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.557843
+prefill_12	1	atom950p-046	_indices	9	9.0	0.423843
+prefill_12	1	atom950p-047	_indptr_scan_all	1	1.0	0.019881
+prefill_12	1	atom950p-048	_lift_kernel	4	4.0	0.06936
+prefill_12	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.032361
+prefill_12	1	atom950p-050	KV/RoPE window	40	40.0	3.21113
+prefill_12	1	atom950p-051	_swa_write_kernel	40	40.0	0.202682
+prefill_12	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01876
+prefill_12	1	atom950p-053	_uva_lookup_kernel	2	2.0	1.224887
+prefill_12	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.03152
+prefill_12	1	atom950p-076	linear/MXscale BMM	40	40.0	1.476131
+prefill_12	1	atom950p-080	linear/MXFP8 preshuffle	40	40.0	2.353573
+prefill_12	1	atom950p-081	linear/MXFP8 preshuffle	40	40.0	2.987217
+prefill_12	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	1.941971
+prefill_12	1	atom950p-083	linear/MXFP8 preshuffle	8	8.0	0.393724
+prefill_12	1	atom950p-084	linear/MXFP8 preshuffle	80	80.0	7.104557
+prefill_12	1	atom950p-087	MoE/Down	40	40.0	12.471466
+prefill_12	1	atom950p-088	linear/BF16 GEMM	1	1.0	0.054641
+prefill_12	1	atom950p-089	linear/BF16 GEMM	40	40.0	1.805209
+prefill_12	1	atom950p-094	linear/BF16 GEMM	8	8.0	0.16052
+prefill_12	1	atom950p-097	linear/BF16 GEMM	3	3.0	0.0148
+prefill_12	1	atom950p-102	linear/BF16 GEMM	1	1.0	0.00668
+prefill_12	1	atom950p-105	MoE/GateUp	40	40.0	23.515808
+prefill_12	1	atom950p-109	MoE/reduction	40	40.0	4.199224
+prefill_12	1	atom950p-110	TP/RCCL	81	81.0	64.702755
+prefill_12	1	atom950p-111	index/FP4 scores	37	37.0	10.186615
+prefill_12	1	atom950p-112	quant/group32 FP8	122	122.0	2.117528
+prefill_12	1	atom950p-113	index/radix	11	11.0	0.372442
+prefill_12	1	atom950p-114	index/radix	8	8.0	1.445889
+prefill_12	1	atom950p-115	index/radix	29	29.0	2.809815
+prefill_12	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00848
+prefill_12	1	atom950p-121	AITER/HIP	40	40.0	0.360721
+prefill_12	1	atom950p-123	MoE/sort	40	40.0	0.17864
+prefill_12	1	atom950p-125	MoE/sort	40	40.0	0.169481
+prefill_12	1	atom950p-128	MoE/sort	40	40.0	0.165881
+prefill_12	1	atom950p-130	MoE/sort	40	40.0	0.669522
+prefill_12	1	atom950p-132	MoE/router	40	40.0	0.466361
+prefill_12	1	atom950p-134	PyTorch/ATen	1	1.0	0.0042
+prefill_12	1	atom950p-136	PyTorch/ATen	1	1.0	0.0698
+prefill_12	1	atom950p-137	PyTorch/ATen	1	1.0	0.246921
+prefill_12	1	atom950p-142	PyTorch/ATen	29	29.0	0.11844
+prefill_12	1	atom950p-143	PyTorch/ATen	29	29.0	0.11984
+prefill_12	1	atom950p-144	PyTorch/ATen	1	1.0	0.086881
+prefill_12	1	atom950p-147	PyTorch/ATen	40	40.0	1.545167
+prefill_13	1	atom950p-002	linear/Opus BF16	3	3.0	0.145682
+prefill_13	1	atom950p-004	attention/Opus main	40	40.0	4.219632
+prefill_13	1	atom950p-007	mHC/HIP Mega	40	40.0	2.006499
+prefill_13	1	atom950p-008	mHC/HIP Mega	3	3.0	0.189961
+prefill_13	1	atom950p-009	mHC/HIP Mega	37	37.0	1.942546
+prefill_13	1	atom950p-019	mHC/separate post	3	3.0	0.08076
+prefill_13	1	atom950p-021	TP/allgather	2	2.0	0.224641
+prefill_13	1	atom950p-022	FFN/act-and-mul	40	40.0	0.195442
+prefill_13	1	atom950p-024	AITER/HIP	81	81.0	13.383891
+prefill_13	1	atom950p-028	output/inverse RoPE+quant	40	40.0	0.372246
+prefill_13	1	atom950p-029	quant/per-group	80	80.0	0.454053
+prefill_13	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.062416
+prefill_13	1	atom950p-033	__amd_rocclr_copyBuffer	86	86.0	0.53261
+prefill_13	1	atom950p-034	_block_maxima_kernel	3	3.0	0.20104
+prefill_13	1	atom950p-035	_candidate_table_kernel	1	1.0	0.01164
+prefill_13	1	atom950p-036	_collapse_kernel	1	1.0	0.012641
+prefill_13	1	atom950p-037	_compress_kernel	1	1.0	0.00476
+prefill_13	1	atom950p-038	cache/copy tiles	1	1.0	0.00516
+prefill_13	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.0022
+prefill_13	1	atom950p-040	_engram_hash_kernel	2	2.0	0.05052
+prefill_13	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.08468
+prefill_13	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00356
+prefill_13	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.02304
+prefill_13	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.237845
+prefill_13	1	atom950p-046	_indices	9	9.0	0.110267
+prefill_13	1	atom950p-047	_indptr_scan_all	1	1.0	0.0072
+prefill_13	1	atom950p-048	_lift_kernel	4	4.0	0.017574
+prefill_13	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.00952
+prefill_13	1	atom950p-050	KV/RoPE window	40	40.0	0.638453
+prefill_13	1	atom950p-051	_swa_write_kernel	40	40.0	0.176182
+prefill_13	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.01892
+prefill_13	1	atom950p-053	_uva_lookup_kernel	2	2.0	0.273361
+prefill_13	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.019
+prefill_13	1	atom950p-056	linear/MXscale BMM	40	40.0	0.844804
+prefill_13	1	atom950p-057	linear/MXscale BMM	8	8.0	0.125591
+prefill_13	1	atom950p-069	linear/MXscale BMM	40	40.0	0.748547
+prefill_13	1	atom950p-073	linear/MXscale BMM	40	40.0	0.95487
+prefill_13	1	atom950p-074	linear/MXscale BMM	40	40.0	0.463806
+prefill_13	1	atom950p-075	linear/MXscale BMM	40	40.0	1.076868
+prefill_13	1	atom950p-079	linear/MXFP8 preshuffle	40	40.0	1.007804
+prefill_13	1	atom950p-082	linear/MXFP8 preshuffle	2	2.0	0.429762
+prefill_13	1	atom950p-092	linear/BF16 GEMM	3	3.0	0.01384
+prefill_13	1	atom950p-093	linear/BF16 GEMM	1	1.0	0.00508
+prefill_13	1	atom950p-096	linear/BF16 GEMM	8	8.0	0.053149
+prefill_13	1	atom950p-101	linear/BF16 GEMM	1	1.0	0.02664
+prefill_13	1	atom950p-103	linear/BF16 GEMM	40	40.0	0.706992
+prefill_13	1	atom950p-104	MoE/GateUp	40	40.0	7.903468
+prefill_13	1	atom950p-108	MoE/Down	40	40.0	5.461868
+prefill_13	1	atom950p-111	index/FP4 scores	13	13.0	2.151048
+prefill_13	1	atom950p-112	quant/group32 FP8	122	122.0	0.716963
+prefill_13	1	atom950p-113	index/radix	3	3.0	0.098481
+prefill_13	1	atom950p-114	index/radix	4	4.0	0.313574
+prefill_13	1	atom950p-115	index/radix	9	9.0	0.57948
+prefill_13	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00784
+prefill_13	1	atom950p-121	AITER/HIP	40	40.0	0.199797
+prefill_13	1	atom950p-122	AITER/HIP	40	40.0	0.17395
+prefill_13	1	atom950p-127	MoE/sort	40	40.0	0.19896
+prefill_13	1	atom950p-130	MoE/sort	40	40.0	0.409342
+prefill_13	1	atom950p-132	MoE/router	40	40.0	0.2884
+prefill_13	1	atom950p-134	PyTorch/ATen	1	1.0	0.00424
+prefill_13	1	atom950p-136	PyTorch/ATen	1	1.0	0.00468
+prefill_13	1	atom950p-137	PyTorch/ATen	1	1.0	0.155241
+prefill_13	1	atom950p-142	PyTorch/ATen	9	9.0	0.036379
+prefill_13	1	atom950p-143	PyTorch/ATen	9	9.0	0.038041
+prefill_13	1	atom950p-144	PyTorch/ATen	1	1.0	0.00404
+prefill_13	1	atom950p-147	PyTorch/ATen	40	40.0	0.377971
+prefill_14	1	atom950p-004	attention/Opus main	40	40.0	1.072608
+prefill_14	1	atom950p-016	mHC/HIP Mega	40	40.0	0.587844
+prefill_14	1	atom950p-017	mHC/HIP Mega	3	3.0	0.048161
+prefill_14	1	atom950p-018	mHC/HIP Mega	37	37.0	0.558113
+prefill_14	1	atom950p-019	mHC/separate post	3	3.0	0.01688
+prefill_14	1	atom950p-021	TP/allgather	3	3.0	0.047802
+prefill_14	1	atom950p-022	FFN/act-and-mul	40	40.0	0.195361
+prefill_14	1	atom950p-023	RMSNorm/template	1	1.0	0.004201
+prefill_14	1	atom950p-024	AITER/HIP	81	81.0	2.433322
+prefill_14	1	atom950p-025	MoE/quant sort	40	40.0	0.345361
+prefill_14	1	atom950p-027	output/inverse RoPE+quant	40	40.0	0.192121
+prefill_14	1	atom950p-031	linear/BF16 prebuilt	3	3.0	0.04664
+prefill_14	1	atom950p-032	index/Q rotate+FP4	8	8.0	0.03948
+prefill_14	1	atom950p-033	__amd_rocclr_copyBuffer	12	12.0	0.05528
+prefill_14	1	atom950p-034	_block_maxima_kernel	1	1.0	0.0202
+prefill_14	1	atom950p-035	_candidate_table_kernel	1	1.0	0.00504
+prefill_14	1	atom950p-036	_collapse_kernel	1	1.0	0.00388
+prefill_14	1	atom950p-037	_compress_kernel	1	1.0	0.00484
+prefill_14	1	atom950p-038	cache/copy tiles	1	1.0	0.00532
+prefill_14	1	atom950p-039	_engram_cursor_kernel	1	1.0	0.00252
+prefill_14	1	atom950p-040	_engram_hash_kernel	2	2.0	0.01128
+prefill_14	1	atom950p-041	_engram_post_wkv_kernel	2	2.0	0.01732
+prefill_14	1	atom950p-042	_engram_snapshot_kernel	1	1.0	0.00352
+prefill_14	1	atom950p-044	_fused_compress_attn_kernel	4	4.0	0.01972
+prefill_14	1	atom950p-045	QK/dual RMSNorm MXFP8	40	40.0	0.186681
+prefill_14	1	atom950p-046	_indices	9	9.0	0.042853
+prefill_14	1	atom950p-047	_indptr_scan_all	1	1.0	0.00448
+prefill_14	1	atom950p-048	_lift_kernel	4	4.0	0.0186
+prefill_14	1	atom950p-049	_masked_embedding_kernel	1	1.0	0.00464
+prefill_14	1	atom950p-050	KV/RoPE window	40	40.0	0.1646
+prefill_14	1	atom950p-051	_swa_write_kernel	40	40.0	0.216954
+prefill_14	1	atom950p-052	_update_compressor_states_kernel	4	4.0	0.0194
+prefill_14	1	atom950p-053	_uva_lookup_kernel	2	2.0	0.02788
+prefill_14	1	atom950p-055	_write_index_fp4_kernel	4	4.0	0.0172
+prefill_14	1	atom950p-058	linear/MXscale BMM	2	2.0	0.11768
+prefill_14	1	atom950p-059	linear/MXscale BMM	40	40.0	0.364522
+prefill_14	1	atom950p-068	linear/MXscale BMM	40	40.0	0.401763
+prefill_14	1	atom950p-070	linear/MXscale BMM	8	8.0	0.0472
+prefill_14	1	atom950p-071	linear/MXscale BMM	40	40.0	0.461481
+prefill_14	1	atom950p-072	linear/MXscale BMM	40	40.0	0.409002
+prefill_14	1	atom950p-077	linear/MXscale BMM	40	40.0	0.230682
+prefill_14	1	atom950p-078	linear/MXscale BMM	40	40.0	0.3542
+prefill_14	1	atom950p-086	MoE/Down	40	40.0	1.258651
+prefill_14	1	atom950p-091	linear/BF16 GEMM	1	1.0	0.06356
+prefill_14	1	atom950p-092	linear/BF16 GEMM	3	3.0	0.01512
+prefill_14	1	atom950p-095	linear/BF16 GEMM	8	8.0	0.046
+prefill_14	1	atom950p-098	linear/BF16 GEMM	1	1.0	0.00612
+prefill_14	1	atom950p-099	linear/BF16 GEMM	1	1.0	0.00792
+prefill_14	1	atom950p-100	linear/BF16 GEMM	40	40.0	0.303481
+prefill_14	1	atom950p-106	MoE/GateUp	40	40.0	2.34317
+prefill_14	1	atom950p-110	TP/RCCL	1	1.0	0.01016
+prefill_14	1	atom950p-111	index/FP4 scores	8	8.0	0.109083
+prefill_14	1	atom950p-112	quant/group32 FP8	122	122.0	0.572881
+prefill_14	1	atom950p-113	index/radix	1	1.0	0.01948
+prefill_14	1	atom950p-114	index/radix	4	4.0	0.0732
+prefill_14	1	atom950p-115	index/radix	4	4.0	0.10376
+prefill_14	1	atom950p-116	scatter_packed_bytes	2	2.0	0.00856
+prefill_14	1	atom950p-117	sampling/argmax	1	1.0	0.002291
+prefill_14	1	atom950p-118	sampling/argmax	1	1.0	0.00349
+prefill_14	1	atom950p-126	MoE/sort	40	40.0	0.181201
+prefill_14	1	atom950p-129	MoE/sort	40	40.0	0.195362
+prefill_14	1	atom950p-132	MoE/router	40	40.0	0.266122
+prefill_14	1	atom950p-134	PyTorch/ATen	1	1.0	0.0042
+prefill_14	1	atom950p-135	PyTorch/ATen	1	1.0	0.002099
+prefill_14	1	atom950p-136	PyTorch/ATen	1	1.0	0.00444
+prefill_14	1	atom950p-137	PyTorch/ATen	1	1.0	0.0192
+prefill_14	1	atom950p-138	PyTorch/ATen	1	1.0	0.00652
+prefill_14	1	atom950p-141	PyTorch/ATen	1	1.0	0.00202
+prefill_14	1	atom950p-144	PyTorch/ATen	1	1.0	0.00392
+prefill_14	1	atom950p-145	PyTorch/ATen	1	1.0	0.00236
+prefill_14	1	atom950p-146	PyTorch/ATen	1	1.0	0.00408
+prefill_14	1	atom950p-147	PyTorch/ATen	40	40.0	0.200402
